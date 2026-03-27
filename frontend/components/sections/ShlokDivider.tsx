@@ -33,7 +33,7 @@ export const ShlokDivider: React.FC<ShlokDividerProps> = ({
 
           {/* Sanskrit Shlok */}
           <p className="text-lg md:text-xl font-display italic text-primary font-medium leading-relaxed">
-            "{shlok}"
+            &ldquo;{shlok}&rdquo;
           </p>
 
           {/* English Translation */}

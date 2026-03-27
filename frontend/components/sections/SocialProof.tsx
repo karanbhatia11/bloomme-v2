@@ -54,7 +54,7 @@ export const SocialProof: React.FC = () => {
                 ))}
               </div>
               <p className="text-lg leading-relaxed italic font-display">
-                "{testimonial.quote}"
+                &ldquo;{testimonial.quote}&rdquo;
               </p>
               <div className="flex items-center gap-4 mt-4">
                 <div
