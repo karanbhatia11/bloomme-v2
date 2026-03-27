@@ -78,9 +78,16 @@ ssh -i "$EC2_KEY" "$EC2_USER@$EC2_IP" << 'DEPLOY_SCRIPT'
     cd ../backend
     npm install
 
+    # Install admin portal dependencies
+    echo "Installing admin portal dependencies..."
+    cd ../admin-portal
+    npm install
+    npm run build
+
     echo -e "\n✅ Deployment complete!"
     echo "Frontend build: $(pwd)/../frontend/out"
     echo "Backend ready to run"
+    echo "Admin Portal built and ready on port 9000"
 DEPLOY_SCRIPT
 
 echo -e "${GREEN}✅ Deployment to EC2 complete!${NC}"

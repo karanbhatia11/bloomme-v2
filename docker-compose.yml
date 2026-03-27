@@ -26,6 +26,20 @@ services:
       - backend
     restart: unless-stopped
 
+  admin-portal:
+    build:
+      context: ./admin-portal
+      dockerfile: Dockerfile
+    ports:
+      - "9000:9000"
+    environment:
+      - ADMIN_PORT=9000
+      - BACKEND_URL=http://backend:5000
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   nginx:
     image: nginx:latest
     ports:
@@ -36,6 +50,7 @@ services:
     depends_on:
       - backend
       - frontend
+      - admin-portal
     restart: unless-stopped
 
 volumes:

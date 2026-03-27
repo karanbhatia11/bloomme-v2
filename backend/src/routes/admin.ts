@@ -164,4 +164,37 @@ router.post('/config/site-mode', async (req, res) => {
     }
 });
 
+// --- HOMEPAGE CONTENT ---
+router.get('/homepage-content', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM homepage_content ORDER BY section ASC');
+        res.json(result.rows);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.put('/homepage-content/:section', async (req, res) => {
+    try {
+        const { section } = req.params;
+        const { title, subtitle, description, image_url, cta_text, cta_link } = req.body;
+        const result = await pool.query(
+            `UPDATE homepage_content
+             SET title = COALESCE($1, title),
+                 subtitle = COALESCE($2, subtitle),
+                 description = COALESCE($3, description),
+                 image_url = COALESCE($4, image_url),
+                 cta_text = COALESCE($5, cta_text),
+                 cta_link = COALESCE($6, cta_link),
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE section = $7
+             RETURNING *`,
+            [title, subtitle, description, image_url, cta_text, cta_link, section]
+        );
+        res.json(result.rows[0] || { error: 'Section not found' });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 export default router;
