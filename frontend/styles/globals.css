@@ -1,0 +1,180 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 120px;
+}
+
+body {
+  font-family: "EB Garamond", serif;
+  font-size: 0.95rem;
+  background-color: #fffaf8;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(255, 218, 185, 0.15) 0%, transparent 25%),
+    radial-gradient(circle at 85% 15%, rgba(255, 200, 150, 0.12) 0%, transparent 30%),
+    radial-gradient(circle at 25% 80%, rgba(200, 230, 180, 0.1) 0%, transparent 28%),
+    radial-gradient(circle at 75% 85%, rgba(255, 200, 200, 0.12) 0%, transparent 26%),
+    radial-gradient(circle at 50% 50%, rgba(255, 245, 200, 0.08) 0%, transparent 50%);
+  background-attachment: fixed;
+  color: #2f1500;
+}
+
+/* Material Icons */
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+/* Editorial Accent */
+.editorial-accent {
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+}
+
+/* Glass Navigation */
+.glass-nav {
+  background: rgba(255, 248, 245, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Hero Gradient */
+.hero-gradient {
+  background: radial-gradient(circle at top right, #ffeadd 0%, #fff8f5 60%);
+}
+
+/* Shadow Bloom Effect */
+.shadow-bloom {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shadow-bloom:hover {
+  box-shadow: 0 20px 40px rgba(196, 160, 82, 0.15);
+  transform: translateY(-8px);
+}
+
+/* No Scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Editorial Text */
+.editorial-text {
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+}
+
+/* Petal Animation */
+@keyframes drift {
+  0% {
+    transform: translateY(-10vh) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(110vh) translateX(100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.petal {
+  position: absolute;
+  background: rgba(232, 193, 112, 0.3);
+  border-radius: 50% 0 50% 50%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.petal-1 {
+  width: 15px;
+  height: 15px;
+  left: 10%;
+  animation: drift 15s linear infinite;
+}
+
+.petal-2 {
+  width: 10px;
+  height: 10px;
+  left: 30%;
+  animation: drift 12s linear infinite 2s;
+}
+
+.petal-3 {
+  width: 12px;
+  height: 12px;
+  left: 55%;
+  animation: drift 18s linear infinite 5s;
+}
+
+.petal-4 {
+  width: 8px;
+  height: 8px;
+  left: 80%;
+  animation: drift 14s linear infinite 1s;
+}
+
+.petal-5 {
+  width: 14px;
+  height: 14px;
+  left: 95%;
+  animation: drift 16s linear infinite 8s;
+}
+
+/* Bloom Hover Effect */
+.bloom-hover {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bloom-hover:hover {
+  transform: scale(1.02);
+  box-shadow: 0 20px 40px rgba(119, 90, 17, 0.15);
+}
+
+.bloom-image-trigger:hover img {
+  transform: scale(1.08);
+  filter: saturate(1.1);
+}
+
+.bloom-image-trigger img {
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+    filter 0.8s ease;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fff8f5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1c5b3;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #7f7666;
+}
