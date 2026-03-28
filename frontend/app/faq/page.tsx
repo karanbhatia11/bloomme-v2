@@ -249,9 +249,7 @@ export default function FAQPage() {
                 whileTap={{ scale: 0.95 }}
               >
                 <span
-                  className={`material-symbols-outlined mb-3 text-3xl ${
-                    category.secondary ? "text-secondary" : "text-primary"
-                  }`}
+                  className="material-symbols-outlined mb-3 text-3xl text-primary"
                 >
                   {category.icon}
                 </span>

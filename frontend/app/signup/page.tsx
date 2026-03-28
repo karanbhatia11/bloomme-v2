@@ -249,7 +249,7 @@ export default function SignupPage() {
                       30-day money-back guarantee
                     </h3>
                     <p className="text-sm text-on-surface-variant leading-relaxed">
-                      If our blooms don't brighten your space as promised, we'll make it right or refund your first month.
+                      If our blooms don&apos;t brighten your space as promised, we&apos;ll make it right or refund your first month.
                     </p>
                   </div>
                 </li>
@@ -287,7 +287,7 @@ export default function SignupPage() {
                 </div>
               </div>
               <p className="font-accent italic text-lg text-on-surface leading-relaxed">
-                "Waking up to a fresh bouquet every Monday has completely transformed my home's energy. Bloomme is more than a service, it's a weekly ritual of joy."
+                &ldquo;Waking up to a fresh bouquet every Monday has completely transformed my home&apos;s energy. Bloomme is more than a service, it&apos;s a weekly ritual of joy.&rdquo;
               </p>
             </div>
           </motion.section>

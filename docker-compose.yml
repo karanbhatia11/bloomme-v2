@@ -1,17 +1,35 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=bloomme_user
+      - POSTGRES_PASSWORD=bloomme_secure_password_change_this
+      - POSTGRES_DB=bloomme_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bloomme_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
       - "5002:5000"
-    environment:
-      - NODE_ENV=production
-      - PORT=5000
+    env_file:
+      - ./backend/.env
     volumes:
       - ./backend/uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
@@ -21,7 +39,7 @@ services:
     ports:
       - "5001:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:5002
+      - NEXT_PUBLIC_API_URL=/api
     depends_on:
       - backend
     restart: unless-stopped
@@ -34,7 +52,7 @@ services:
       - "5003:9000"
     environment:
       - ADMIN_PORT=9000
-      - BACKEND_URL=http://backend:5002
+      - BACKEND_URL=http://backend:5000
       - NODE_ENV=production
     depends_on:
       - backend
@@ -54,4 +72,5 @@ services:
     restart: unless-stopped
 
 volumes:
+  postgres_data:
   backend-uploads:
