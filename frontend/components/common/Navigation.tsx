@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { NAV_LINKS, LOGO_URL } from "@/constants";
-import { Button } from "./Button";
 
 export const Navigation: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
