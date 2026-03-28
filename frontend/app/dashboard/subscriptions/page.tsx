@@ -101,7 +101,7 @@ export default function SubscriptionsPage() {
       {/* Sidebar */}
       <aside className="h-screen w-64 fixed left-0 top-0 pt-20 bg-[#fff1e9] flex flex-col gap-2 p-4 hidden md:flex">
         <div className="px-4 py-2 mb-4">
-          <div className="text-lg font-bold text-on-surface font-headline">Atelier Dashboard</div>
+          <div className="text-lg font-bold text-on-surface font-headline">Bloomme Dashboard</div>
           <div className="text-xs text-on-surface-variant font-medium">Premium Floral Management</div>
         </div>
 
