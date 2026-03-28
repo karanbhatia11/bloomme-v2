@@ -272,7 +272,7 @@ export default function DashboardPage() {
       </main>
 
       {/* Shell: Footer */}
-      <footer className="w-full py-12 bg-surface mt-16 border-t border-stone-200/20">
+      <footer className="w-full py-12 bg-surface mt-16 border-t border-stone-200/20 md:ml-64">
         <div className="flex flex-col md:flex-row justify-between items-center px-12 opacity-60">
           <span className="font-['Inter'] text-xs leading-relaxed text-[#4d4638] dark:text-stone-500">
             © 2024 Bloomme Atelier. All rights reserved.
