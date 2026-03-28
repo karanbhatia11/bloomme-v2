@@ -210,7 +210,6 @@ export default function DashboardPage() {
         {/* TopAppBar (Mobile & Global Actions) */}
         <header className="fixed top-0 right-0 left-0 md:left-64 h-20 glass-nav bg-white/80 z-30 flex items-center justify-between px-6 md:px-12 border-b border-outline-variant/10">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-on-surface">Bloomme</h1>
           </div>
           <div className="flex items-center gap-6">
             <div className="hidden sm:flex items-center gap-8 text-sm font-semibold tracking-tight">
