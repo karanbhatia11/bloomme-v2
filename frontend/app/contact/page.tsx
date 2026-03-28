@@ -85,14 +85,14 @@ export default function ContactPage() {
             </span>
           </div>
           <h1 className="text-5xl md:text-7xl font-display font-bold tracking-tighter text-on-surface max-w-2xl leading-[0.9]">
-            Let's create something{" "}
+            Let&rsquo;s create something{" "}
             <span className="font-accent italic font-normal text-primary">
               beautiful
             </span>{" "}
             together.
           </h1>
           <p className="text-on-surface-variant max-w-lg text-lg leading-relaxed pt-4">
-            Whether you're planning a grand ceremony or a quiet gesture of love,
+            Whether you&rsquo;re planning a grand ceremony or a quiet gesture of love,
             our florists are here to guide your choice.
           </p>
         </motion.div>
@@ -203,7 +203,7 @@ export default function ContactPage() {
 
               {submitStatus === "success" && (
                 <p className="text-secondary font-semibold">
-                  ✓ Message sent! We'll be in touch soon.
+                  ✓ Message sent! We&rsquo;ll be in touch soon.
                 </p>
               )}
               {submitStatus === "error" && (

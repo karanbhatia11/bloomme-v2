@@ -2,7 +2,6 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import { Navigation } from "@/components/common/Navigation";
 import { Footer } from "@/components/sections/Footer";
 
@@ -96,8 +95,8 @@ export default function AboutPage() {
                     meaningful beauty back into the daily ritual of gifting.
                   </p>
                   <p className="font-accent italic text-xl text-primary-container leading-relaxed">
-                    "We don't just sell flowers; we facilitate moments of
-                    connection that transcend words."
+                    &ldquo;We don&rsquo;t just sell flowers; we facilitate moments of
+                    connection that transcend words.&rdquo;
                   </p>
                   <p>
                     Today, Bloomme has grown into a premier floral atelier, yet

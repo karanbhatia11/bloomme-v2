@@ -96,13 +96,13 @@ export const Footer: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-3 mt-4">
               <Link
                 href="/contact"
-                className="inline-block px-6 py-3 bg-primary text-on-primary rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity active:scale-95"
+                className="inline-block px-6 py-3 bg-gradient-to-r from-primary to-primary-fixed text-on-primary rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity active:scale-95"
               >
                 Get in Touch
               </Link>
               <Link
                 href="/faq"
-                className="inline-block px-6 py-3 bg-surface-container text-primary rounded-lg font-semibold text-sm hover:bg-surface-container-high transition-colors active:scale-95"
+                className="inline-block px-6 py-3 bg-gradient-to-r from-surface-container to-surface-container-high text-primary rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity active:scale-95"
               >
                 FAQ
               </Link>

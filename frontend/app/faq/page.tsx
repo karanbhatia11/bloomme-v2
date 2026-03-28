@@ -11,12 +11,12 @@ const FAQCategories = [
     id: "general",
     icon: "info",
     label: "General",
+    active: true,
   },
   {
-    id: "delivery",
-    icon: "local_shipping",
-    label: "Delivery",
-    active: true,
+    id: "plans",
+    icon: "card_membership",
+    label: "Plans",
   },
   {
     id: "subscription",
@@ -24,60 +24,155 @@ const FAQCategories = [
     label: "Subscription",
   },
   {
-    id: "payment",
-    icon: "payments",
-    label: "Payment",
+    id: "delivery",
+    icon: "local_shipping",
+    label: "Delivery",
   },
   {
-    id: "festival",
-    icon: "auto_awesome",
-    label: "Festival Upgrades",
-    secondary: true,
+    id: "quality",
+    icon: "verified",
+    label: "Quality",
   },
   {
-    id: "referral",
-    icon: "group_add",
-    label: "Referrals",
+    id: "sustainability",
+    icon: "eco",
+    label: "Sustainability",
   },
 ];
 
 const FAQItems = [
   {
-    category: "delivery",
-    question: "Can I schedule a specific time for my flower delivery?",
+    category: "general",
+    question: "What is Bloomme?",
     answer:
-      "Yes! We offer time-slot selection during checkout. For our premium subscribers, we provide a 1-hour delivery window tracking. Standard orders can choose between Morning (9 AM - 1 PM) and Evening (4 PM - 8 PM) slots.",
+      "Bloomme is a subscription-based flower delivery service for daily puja and spiritual rituals. We deliver fresh, hygienic, and beautifully packed flowers directly to your doorstep early in the morning, so your flowers are ready before your daily prayers. Unlike traditional flower vendors, Bloomme focuses on freshness, variety, and reliability.",
+  },
+  {
+    category: "general",
+    question: "Why should I choose Bloomme instead of my local flower vendor?",
+    answer:
+      "Local vendors typically deliver low-quality flowers, the same flowers every day, sometimes skip delivery, and provide no hygiene or packaging. Bloomme solves these problems with fresh flowers sourced daily, different flowers rotated through the week, clean eco-friendly packaging, reliable morning delivery, and a pre-planned monthly subscription with no daily ordering hassle.",
+  },
+  {
+    category: "general",
+    question: "What makes Bloomme different?",
+    answer:
+      "Bloomme is designed to provide a premium daily puja experience. We offer fresh flowers every day, rotating flower combinations to avoid monotony, eco-friendly packaging, on-time early morning delivery, flexible subscription plans, custom delivery days, and add-ons like malas, lotus, and puja essentials. We don't just deliver flowers—we deliver a complete daily puja solution.",
+  },
+  {
+    category: "general",
+    question: "How does the Bloomme subscription work?",
+    answer:
+      "The process is simple: 1) Choose your plan (Basic, Premium, or Elite), 2) Select your preferred delivery days, 3) Complete your monthly subscription, 4) Receive fresh flowers at your doorstep every delivery day. Your flowers will arrive early in the morning before your prayer time.",
+  },
+  {
+    category: "general",
+    question: "Can I customize my flowers?",
+    answer:
+      "Yes, Bloomme allows limited customization. You can request a specific flower on a particular day, provided we receive the request at least 24 hours in advance. Since flowers are sourced fresh daily, full customization for every customer is not possible, but we do our best to accommodate special requests.",
+  },
+  {
+    category: "plans",
+    question: "What are the different Bloomme plans?",
+    answer:
+      "Bloomme offers three carefully designed plans: Basic Plan (perfect for simple daily puja with 3 types of flowers, rotated weekly, eco-friendly paper packaging), Premium Plan (for customers who want more variety with 3–4 flower varieties, premium packaging box, better combinations), and Elite Plan (most premium offering with 3 premium flower varieties around 200g, high-quality flowers including exotic varieties, premium box packaging).",
+  },
+  {
+    category: "subscription",
+    question: "Can I choose which days I want flowers?",
+    answer:
+      "Yes, Bloomme offers flexible delivery schedules. You can choose daily delivery, only weekdays, only weekends, specific days like Monday/Wednesday/Sunday, or any custom combination of days. Your monthly price automatically adjusts based on your selected days.",
+  },
+  {
+    category: "subscription",
+    question: "Can I pause my subscription?",
+    answer:
+      "Yes, you can easily pause your subscription if you are traveling, out of town, or temporarily not requiring deliveries. You can resume deliveries anytime without any hassle.",
+  },
+  {
+    category: "subscription",
+    question: "What if I want to change my delivery days?",
+    answer:
+      "You can modify your delivery schedule through your account anytime. Changes must be made at least 24 hours before the next delivery.",
+  },
+  {
+    category: "subscription",
+    question: "How do I subscribe?",
+    answer:
+      "Simply follow these steps: 1) Visit our website or application, 2) Sign up or Sign in, 3) Select your plan, 4) Choose delivery days, 5) Complete payment, 6) Start receiving fresh flowers.",
+  },
+  {
+    category: "subscription",
+    question: "Why is Bloomme subscription-based?",
+    answer:
+      "Daily ordering creates uncertainty for both customers and suppliers. Our subscription model ensures consistent flower supply, better flower quality, reliable early morning delivery, and stable pricing for customers. This allows us to maintain higher quality standards.",
   },
   {
     category: "delivery",
-    question: "Do you offer same-day delivery for artisan bouquets?",
+    question: "What time are the flowers delivered?",
     answer:
-      "Same-day delivery is available for orders placed before 1:00 PM local time. Please note that certain 'Reserve Collection' arrangements require a 24-hour lead time to ensure the rarest stems are sourced fresh from our growers.",
+      "Flowers are delivered early in the morning, typically between 5:30 AM – 7:30 AM. This ensures flowers are available before most people perform their morning prayers.",
   },
   {
     category: "delivery",
-    question: "How are the flowers kept fresh during transport?",
+    question: "What if I am not home during delivery?",
     answer:
-      "We use custom-engineered climate-controlled delivery pods. Each bouquet is housed in a hydration-lock base containing our proprietary nutrient solution, ensuring they remain at peak freshness from our atelier to your doorstep.",
+      "No problem. Our delivery partners will safely place the flowers at your doorstep or designated location. You can also add delivery instructions during checkout.",
   },
   {
-    category: "festival",
-    question: "Can I customize a bouquet for religious festivals?",
+    category: "delivery",
+    question: "What if flowers are damaged during delivery?",
     answer:
-      "Absolutely. Our 'Ritual Collection' is specifically designed for ceremonies. You can select traditional flowers like Marigolds, Lotus, or Jasmine. Use the 'Festival Upgrade' toggle in your cart to include ritual-specific packaging.",
+      "In the rare case of damaged flowers, please contact our support team. We will either arrange a replacement (if possible) or credit your account. Customer satisfaction is very important to us.",
   },
   {
-    category: "festival",
-    question: "What is included in the 'Sacred Offering' pack?",
+    category: "delivery",
+    question: "What if I need extra flowers or malas?",
     answer:
-      "The Sacred Offering pack includes hand-picked ceremonial grade flowers, a curated selection of eco-friendly incense, and a vial of artisanal rose water, all delivered in a biodegradable, compostable woven basket.",
+      "Bloomme offers Add-ons including flower malas, lotus flowers, special puja flowers, exotic flowers, and puja essentials like dhoop, diya, and agarbatti. Add-ons must be ordered 24 hours in advance.",
+  },
+  {
+    category: "quality",
+    question: "Where do your flowers come from?",
+    answer:
+      "Bloomme sources fresh flowers daily from trusted suppliers and carefully prepares them so they arrive at your doorstep fresh, fragrant, and ready for your prayers. We handpick fresh flowers to ensure freshness, fragrance, and quality.",
+  },
+  {
+    category: "quality",
+    question: "How fresh are the flowers?",
+    answer:
+      "Flowers are sourced early morning, sorted, packed, and delivered the same day. This ensures maximum freshness for your daily puja.",
+  },
+  {
+    category: "sustainability",
+    question: "Do you deliver everywhere?",
+    answer:
+      "Currently, Bloomme is launching in selected areas of Faridabad. We are starting with NIT areas and will expand gradually as demand grows.",
+  },
+  {
+    category: "sustainability",
+    question: "Is Bloomme environmentally friendly?",
+    answer:
+      "Yes, we focus on eco-friendly packaging using paper bags, recyclable materials, and minimal plastic usage. In the future, we also plan to reuse returned flowers for sustainable purposes.",
+  },
+  {
+    category: "sustainability",
+    question: "What happens to used flowers?",
+    answer:
+      "We are developing a flower return program. Customers who return previous day flowers for proper disposal may receive reward points. These points can later be redeemed for add-ons or special products.",
+  },
+  {
+    category: "sustainability",
+    question: "How can I contact Bloomme?",
+    answer:
+      "You can reach us through our website contact form, WhatsApp support, or email support. Our team will respond as quickly as possible. At Bloomme, we believe devotion deserves freshness, beauty, and reliability.",
   },
 ];
 
 export default function FAQPage() {
-  const [selectedCategory, setSelectedCategory] = useState("delivery");
+  const [selectedCategory, setSelectedCategory] = useState("general");
   const [expandedItems, setExpandedItems] = useState<string[]>([
-    "delivery-0",
+    "general-0",
   ]);
 
   const filteredFAQs = FAQItems.filter((item) => item.category === selectedCategory);
@@ -255,7 +350,7 @@ export default function FAQPage() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   href="/contact"
-                  className="bg-primary text-on-primary px-8 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity active:scale-95"
+                  className="bg-gradient-to-r from-primary to-primary-fixed text-on-primary px-8 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity active:scale-95"
                 >
                   Contact Concierge
                 </Link>
@@ -263,7 +358,7 @@ export default function FAQPage() {
                   href="https://wa.me/919950707995"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-surface-container-lowest text-primary px-8 py-3 rounded-xl font-semibold hover:bg-surface-container-highest transition-colors active:scale-95"
+                  className="bg-gradient-to-r from-surface-container-lowest to-surface-container-highest text-primary px-8 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity active:scale-95"
                 >
                   WhatsApp Us
                 </a>

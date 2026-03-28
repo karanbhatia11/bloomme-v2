@@ -1,19 +1,9 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import { motion } from "framer-motion";
-import { Button } from "../common/Button";
 
 export const HeroSection: React.FC = () => {
-  const petals = [
-    { id: 1, left: "10%", delay: 0 },
-    { id: 2, left: "30%", delay: 2 },
-    { id: 3, left: "55%", delay: 5 },
-    { id: 4, left: "80%", delay: 1 },
-    { id: 5, left: "95%", delay: 8 },
-  ];
-
   return (
     <header className="relative w-full pt-20 sm:pt-24 md:pt-32 pb-12 sm:pb-16 md:pb-20 flex items-center justify-center overflow-hidden bg-cover bg-center min-h-[calc(100vh-80px)] sm:min-h-[calc(100vh-90px)] md:min-h-[calc(100vh-100px)]"
       style={{

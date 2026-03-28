@@ -5,22 +5,6 @@ import { motion } from "framer-motion";
 import { HOW_IT_WORKS } from "@/constants";
 
 export const HowItWorks: React.FC = () => {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8 } },
-  };
-
   return (
     <section className="py-32 bg-surface-container-low overflow-hidden relative" id="how-it-works">
       {/* Decorative Flower Background */}

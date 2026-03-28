@@ -8,9 +8,9 @@ import { Button } from "../common/Button";
 
 export const PricingSection: React.FC = () => {
   const planImages = {
-    traditional: "https://lh3.googleusercontent.com/aida-public/AB6AXuAJaEDDG5IdcBC-JTn1Im19MuTahFSHRgcgpcFCt9NUg8-wbo4x-ap1WBcQJUATgMdyIl2OO8j_osLqz226EqrjrC6zkqRJTIr1kDWKViqlMaBqg6k5Frv6vuCVZt7VdbVxQWI8JeYLYRVRr1IQAeZXHbq2q0Hl2X-YBC9SZtcFn_oWmIKjUMNpP62_K3eJfZXlg9_uZVa6yaHmsMxaXzv5vWFp3fL3t39V_ZOU-I4sW5PMOxmCED3C7390S9P4vGznK3VV8AcXtpUm",
-    divine: "https://lh3.googleusercontent.com/aida-public/AB6AXuBcPYWEfoe1WE388z2NE69MMaXWpU1iPKpHrs0Vol8M_abMSoV9Q_cJcKd7qFDMiK5hEGpnMwvbndr_cXwAxizzze1d1opFYpMIVA8ia3s_FH49cg5Hxi3Z5Ot5dHPWDndP9Ui_ICX4x7KMTmyuNDoKjFScvs1M1_39EGpOiw71ghWlGJbaCUJHT2BMX4H3toTZvQaRkfebr4PVOWzMDYrGPMYPxacJiTeCi0BzEErGHXXgbukulXNmDaqcdoyk95A0XAQgelkchBeC",
-    celestial: "https://lh3.googleusercontent.com/aida-public/AB6AXuB-8Vvzd2Xx3c8ju93HjA4gPOAFSXVeHSRoAoG2zPfB9Rlh_rp8vAB33fDFUKyI94hvjJQ90aIBzynD6haHC3KDdes_fs-Vjhc7hrXbHMox1VUJNu9nTKJk6_rnKXQUoACkEliuItPVLeDfZVPiorKu2hdvVaFRZKKoAd4z3RJjMSEddo6xzk_AQCTmZ3Wikj8Q7ENW9SNtSe9NV9zCWwtfo9UPj8X30qhqbEwfsdvVFpxPEIn-ajau3SoQ5oSEr3q6l0dxudo3xuXL",
+    traditional: "/images/traditional.png",
+    divine: "/images/divine.png",
+    celestial: "/images/celestial.png",
   };
 
   return (
@@ -69,12 +69,12 @@ export const PricingSection: React.FC = () => {
                   </div>
                 )}
 
-                <div className="h-48 overflow-hidden rounded-t-[2rem]">
+                <div className="h-64 overflow-hidden rounded-t-[2rem] bg-gray-50 flex items-center justify-center">
                   <Image
                     src={imageSrc}
                     alt={plan.name}
                     width={400}
-                    height={192}
+                    height={256}
                     className="w-full h-full object-cover"
                   />
                 </div>

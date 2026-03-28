@@ -1,0 +1,298 @@
+"use client";
+
+import React from "react";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { Navigation } from "@/components/common/Navigation";
+import { Footer } from "@/components/sections/Footer";
+import { SUBSCRIPTION_PLANS } from "@/constants";
+import { Button } from "@/components/common/Button";
+
+export default function PlansPage() {
+  const planImages = {
+    traditional: "/images/traditional.png",
+    divine: "/images/divine.png",
+    celestial: "/images/celestial.png",
+  };
+
+  return (
+    <>
+      <Navigation />
+      <main className="min-h-screen bg-surface pt-32 pb-20">
+        <section className="py-24 bg-surface relative overflow-hidden">
+          {/* Decorative Flower Background */}
+          <div className="absolute top-12 right-16 opacity-15 select-none pointer-events-none">
+            <span className="material-symbols-outlined text-[200px] text-primary">
+              local_florist
+            </span>
+          </div>
+          <div className="absolute bottom-16 left-10 opacity-15 -rotate-12 select-none pointer-events-none">
+            <span className="material-symbols-outlined text-[180px] text-secondary">
+              local_florist
+            </span>
+          </div>
+          <div className="absolute top-1/3 left-1/4 opacity-12 rotate-45 select-none pointer-events-none">
+            <span className="material-symbols-outlined text-[160px] text-primary/50">
+              local_florist
+            </span>
+          </div>
+
+          <div className="max-w-[1440px] mx-auto px-6 md:px-12 relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-16"
+            >
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                Subscription Plans
+              </h1>
+              <p className="text-on-surface-variant">
+                Tailored for your daily spiritual needs
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {SUBSCRIPTION_PLANS.map((plan, index) => {
+                const imageKey = (plan.name.toLowerCase() as keyof typeof planImages) || "traditional";
+                const imageSrc = planImages[imageKey] || planImages.traditional;
+
+                return (
+                  <motion.div
+                    key={plan.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                    whileHover={{ y: -8 }}
+                    className={`rounded-[2rem] flex flex-col relative ${
+                      plan.highlighted
+                        ? "bg-primary text-on-primary scale-105 shadow-2xl"
+                        : "bg-surface-container-lowest border border-transparent hover:border-primary-container/20"
+                    }`}
+                  >
+                    {plan.highlighted && (
+                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-secondary px-5 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest shadow-lg z-20 flex items-center gap-2">
+                        <span
+                          className="material-symbols-outlined"
+                          style={{ fontSize: "16px" }}
+                        >
+                          favorite
+                        </span>
+                        Divine Choice
+                      </div>
+                    )}
+
+                    <div className="h-64 overflow-hidden rounded-t-[2rem] bg-gray-50 flex items-center justify-center">
+                      <Image
+                        src={imageSrc}
+                        alt={plan.name}
+                        width={400}
+                        height={256}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    <div className="p-10 flex flex-col flex-grow">
+                      <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                      <p
+                        className={`text-sm mb-8 ${
+                          plan.highlighted ? "opacity-70" : "text-on-surface-variant"
+                        }`}
+                      >
+                        {plan.description}
+                      </p>
+
+                      <div className="mb-8">
+                        <span className="text-4xl font-bold">₹{plan.price}</span>
+                        <span className={plan.highlighted ? "opacity-70" : ""}>
+                          {plan.period}
+                        </span>
+                      </div>
+
+                      <ul className="space-y-4 mb-10 flex-grow">
+                        {plan.features.map((feature, idx) => (
+                          <li key={idx} className="flex items-center gap-3 text-sm">
+                            <span
+                              className="material-symbols-outlined text-sm"
+                              style={{ fontSize: "20px" }}
+                            >
+                              check_circle
+                            </span>
+                            {feature}
+                          </li>
+                        ))}
+                        {plan.disabled?.map((feature, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-center gap-3 text-sm opacity-40"
+                          >
+                            <span
+                              className="material-symbols-outlined text-sm"
+                              style={{ fontSize: "20px" }}
+                            >
+                              cancel
+                            </span>
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+
+                      <Button
+                        variant={plan.highlighted ? "ghost" : "outline"}
+                        size="lg"
+                        className={`w-full ${
+                          plan.highlighted ? "bg-on-primary text-primary hover:bg-on-primary/90" : ""
+                        }`}
+                      >
+                        {plan.cta}
+                      </Button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Comparison Table */}
+        <section className="max-w-screen-lg mx-auto px-8 py-24">
+          <h2 className="text-3xl font-bold text-center mb-16 font-headline">
+            Compare our rituals
+          </h2>
+          <div className="overflow-hidden bg-surface-container-lowest rounded-xl shadow-sm">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-surface-container-low">
+                  <th className="p-6 font-semibold text-on-surface-variant text-sm">
+                    Features
+                  </th>
+                  <th className="p-6 font-bold text-on-surface">Traditional</th>
+                  <th className="p-6 font-bold text-primary">Divine</th>
+                  <th className="p-6 font-bold text-on-surface">Celestial</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-surface-container">
+                <tr>
+                  <td className="p-6 text-sm text-on-surface-variant">
+                    Flower Count
+                  </td>
+                  <td className="p-6 text-sm">12 Stems</td>
+                  <td className="p-6 text-sm font-semibold">24 Stems</td>
+                  <td className="p-6 text-sm">40+ Stems</td>
+                </tr>
+                <tr>
+                  <td className="p-6 text-sm text-on-surface-variant">
+                    Exotic Variety
+                  </td>
+                  <td className="p-6 text-sm">
+                    <span className="material-symbols-outlined text-error/30">
+                      close
+                    </span>
+                  </td>
+                  <td className="p-6 text-sm">
+                    <span className="material-symbols-outlined text-primary">
+                      done
+                    </span>
+                  </td>
+                  <td className="p-6 text-sm">
+                    <span className="material-symbols-outlined text-primary">
+                      done_all
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="p-6 text-sm text-on-surface-variant">
+                    Priority Logistics
+                  </td>
+                  <td className="p-6 text-sm">
+                    <span className="material-symbols-outlined text-error/30">
+                      close
+                    </span>
+                  </td>
+                  <td className="p-6 text-sm">
+                    <span className="material-symbols-outlined text-primary">
+                      done
+                    </span>
+                  </td>
+                  <td className="p-6 text-sm">
+                    <span className="material-symbols-outlined text-primary">
+                      done
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="p-6 text-sm text-on-surface-variant">
+                    Atelier Vessel
+                  </td>
+                  <td className="p-6 text-sm">Basic Cardboard</td>
+                  <td className="p-6 text-sm font-semibold">Glass Vase</td>
+                  <td className="p-6 text-sm">Signature Ceramic</td>
+                </tr>
+                <tr>
+                  <td className="p-6 text-sm text-on-surface-variant">
+                    Subscription Pause
+                  </td>
+                  <td className="p-6 text-sm">Once/month</td>
+                  <td className="p-6 text-sm font-semibold">Unlimited</td>
+                  <td className="p-6 text-sm">Unlimited</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Social Proof / Bento Grid Style */}
+        <section className="max-w-screen-xl mx-auto px-8 py-24 grid grid-cols-1 md:grid-cols-4 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="md:col-span-2 bg-surface-container-low p-10 rounded-xl relative overflow-hidden group"
+          >
+            <div className="relative z-10">
+              <span className="material-symbols-outlined text-4xl text-primary mb-4 block">
+                eco
+              </span>
+              <h3 className="text-2xl font-bold mb-4">Sustainably Crafted</h3>
+              <p className="text-on-surface-variant leading-relaxed">
+                Every bloom is sourced from ethical farms that prioritize soil
+                health and water conservation. Luxury without compromise.
+              </p>
+            </div>
+            <div className="absolute right-[-20%] bottom-[-20%] opacity-10 group-hover:scale-110 transition-transform duration-700">
+              <span className="material-symbols-outlined text-[200px]">spa</span>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="bg-primary p-10 rounded-xl text-on-primary flex flex-col justify-between"
+          >
+            <p className="text-3xl font-bold leading-tight">150k+</p>
+            <p className="text-on-primary/80 text-sm">
+              Arrangements delivered to premium homes across the globe.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="bg-tertiary p-10 rounded-xl text-on-tertiary flex flex-col justify-between"
+          >
+            <p className="text-3xl font-bold leading-tight">4.9/5</p>
+            <p className="text-on-tertiary/80 text-sm">
+              Member satisfaction rate for our Divine and Celestial plans.
+            </p>
+          </motion.div>
+        </section>
+      </main>
+      <Footer />
+    </>
+  );
+}

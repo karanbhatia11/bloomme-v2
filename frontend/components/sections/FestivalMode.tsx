@@ -6,20 +6,48 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const FESTIVAL_IMAGES = [
   {
-    alt: "Diwali Lights",
-    src: "https://lh3.googleusercontent.com/aida-public/AB6AXuD7C8yfQ-vt6ULu2wKoL7OP13ar13RsmcXnffj_-c4cmj0jxsz_Jy-3304xOkZKO0stkNN_h7CCv_9_9nO1didaieHrevHVjvu_yonqpbizvrc4-y41ermDCkK9e0pdOs5mjWTooQOEk-gZn8ZilMaba6cAwNd_qDdjQSciYkknTzVFR7pFZ09YVLe9bTw8SH_X1ykMUrc6b_h6eqJsP8N1w0vQ9z21_03Y7jnnJ0u00m0xYyrLv-j9O1zj4p73VRYBJAE7msEbhZvH",
+    alt: "Gudi Padwa / Ugadi — Hindu New Year",
+    src: "/images/Festivals/Gudi Padwa celebration offerings and decorations.png",
   },
   {
-    alt: "Ganesh Chaturthi",
-    src: "https://lh3.googleusercontent.com/aida-public/AB6AXuBd0-84wxBJfdq3134lg128mQChLtCMYzK18NNhk0THVaByXB-yfNGPqYgoBjCP8iUVLs00OJkB0tlZT5bDEKnsz8BD3A8VOCWd8bS4BjQEmO5x-qpgs4SGqNiePyAXFaHCJ38soazN9uB_kXJV6hdN9KBW_ESSb3vNYwv3qryN_MHQqhzWGHMmEblPIKbNxh7tUayhKp5CjfelV9-TgRrtPoXu-y3OZdVSqAyQeFAsdhEJdRA_uN03u2C-U-lgjIaOHl4wVwfLyGgU",
+    alt: "Hanuman Jayanti",
+    src: "/images/Festivals/Serene Hanuman Jayanti devotion setup.png",
   },
   {
-    alt: "Navratri Celebration",
-    src: "https://lh3.googleusercontent.com/aida-public/AB6AXuDh4Hu7y1K8D7E8F9G0H1I2J3K4L5M6N7O8P9Q0R1S2T3U4V5W6X7Y8Z9A0B",
+    alt: "Akshaya Tritiya",
+    src: "/images/Festivals/Akshaya Tritiya celebration with gold offerings.png",
   },
   {
-    alt: "Holi Festival",
-    src: "https://lh3.googleusercontent.com/aida-public/AB6AXuFi5Iv8z2L9M0N1O2P3Q4R5S6T7U8V9W0X1Y2Z3A4B5C6D7E8F9G0H1I",
+    alt: "Buddha Purnima",
+    src: "/images/Festivals/Buddha Purnima celebration with serene offerings.png",
+  },
+];
+
+const FESTIVAL_DETAILS = [
+  {
+    name: "Gudi Padwa / Ugadi",
+    subtitle: "Hindu New Year",
+    date: "📅 9 April 2026",
+    description: "Celebrate the beginning of a prosperous new year with fresh malas, vibrant flowers, and auspicious puja essentials. Perfect for welcoming positivity, new beginnings, and festive home decorations.",
+    bestFor: ["New year puja setups", "Home entrance decor", "Festive subscriptions"],
+  },
+  {
+    name: "Hanuman Jayanti",
+    date: "📅 19 April 2026",
+    description: "Offer devotion with marigold malas, sindoor, diyas, and sacred puja items dedicated to Lord Hanuman. Ideal for temple offerings, home puja, and strength-focused spiritual rituals.",
+    bestFor: ["Marigold malas", "Sindoor kits", "Incense", "Diya sets"],
+  },
+  {
+    name: "Akshaya Tritiya",
+    date: "📅 27 April 2026",
+    description: "A highly auspicious day symbolizing prosperity, abundance, and new purchases. Perfect for premium puja arrangements, lotus flowers, and complete spiritual setups for wealth and blessings.",
+    bestFor: ["Premium Celestial plan", "Full puja kits", "Prosperity rituals"],
+  },
+  {
+    name: "Buddha Purnima",
+    date: "📅 1 May 2026",
+    description: "A peaceful celebration focused on mindfulness, calmness, and spiritual reflection. Soft lotus flowers, diyas, and incense create a serene environment for meditation and prayer.",
+    bestFor: ["Lotus flowers", "Calm puja setups", "Meditation offerings"],
   },
 ];
 
@@ -46,14 +74,14 @@ export const FestivalMode: React.FC = () => {
         <span className="material-symbols-outlined text-[160px] text-secondary/50">local_florist</span>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
+      <div className="max-w-[1440px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center relative z-10">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           className="order-2 lg:order-1 relative bloom-image-trigger"
         >
-          <div className="relative aspect-square rounded-3xl shadow-xl overflow-hidden bg-surface-container">
+          <div className="relative aspect-[5/4] shadow-xl overflow-hidden bg-surface-container">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentImageIndex}
@@ -67,7 +95,9 @@ export const FestivalMode: React.FC = () => {
                   alt={FESTIVAL_IMAGES[currentImageIndex].alt}
                   src={FESTIVAL_IMAGES[currentImageIndex].src}
                   fill
-                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 500px"
+                  className="object-contain object-center"
+                  priority={currentImageIndex === 0}
                 />
               </motion.div>
             </AnimatePresence>
@@ -104,54 +134,40 @@ export const FestivalMode: React.FC = () => {
             Never Miss a Ritual
           </h2>
           <p className="text-lg text-on-surface-variant mb-10 leading-relaxed">
-            During Diwali, Navratri, or Ganesh Chaturthi, Bloomme automatically
-            upgrades your daily box with traditional garlands, specific auspicious
-            flowers, and ritual essentials required for the occasion.
+            {FESTIVAL_DETAILS[currentImageIndex].description}
           </p>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <motion.div
-              whileHover={{ x: 8 }}
-              className="flex items-center gap-4 p-4 rounded-2xl bg-surface-container-low border border-outline-variant/10"
+              key={currentImageIndex}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="space-y-4"
             >
-              <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-                <span
-                  className="material-symbols-outlined"
-                  style={{
-                    fontSize: "24px",
-                    fontVariationSettings: "'FILL' 1",
-                  }}
-                >
-                  stars
-                </span>
-              </div>
               <div>
-                <p className="font-bold">Diwali Special</p>
-                <p className="text-sm text-on-surface-variant">
-                  Laxmi Puja essentials &amp; decorative garlands included.
+                <h3 className="text-2xl font-bold mb-1">
+                  {FESTIVAL_DETAILS[currentImageIndex].name}
+                </h3>
+                <p className="text-secondary font-semibold text-sm mb-2">
+                  {FESTIVAL_DETAILS[currentImageIndex].date}
                 </p>
               </div>
-            </motion.div>
 
-            <motion.div
-              whileHover={{ x: 8 }}
-              className="flex items-center gap-4 p-4 rounded-2xl bg-surface-container-low border border-outline-variant/10"
-            >
-              <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-                <span
-                  className="material-symbols-outlined"
-                  style={{
-                    fontSize: "24px",
-                    fontVariationSettings: "'FILL' 1",
-                  }}
-                >
-                  stars
-                </span>
-              </div>
-              <div>
-                <p className="font-bold">Ganesh Chaturthi</p>
-                <p className="text-sm text-on-surface-variant">
-                  Durva grass and Hibiscus flowers prioritized.
+              <div className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/10">
+                <p className="text-sm text-on-surface-variant leading-relaxed mb-4">
+                  {FESTIVAL_DETAILS[currentImageIndex].description}
                 </p>
+                <div>
+                  <p className="text-xs font-bold uppercase text-secondary mb-2">Best for:</p>
+                  <ul className="text-sm text-on-surface-variant space-y-1">
+                    {FESTIVAL_DETAILS[currentImageIndex].bestFor.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-secondary mt-1">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </motion.div>
           </div>

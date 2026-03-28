@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { PRODUCTS } from "@/constants";
-import { ProductCard } from "../common/ProductCard";
 
 export const ProductShowcase: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -75,7 +74,7 @@ export const ProductShowcase: React.FC = () => {
               transition={{ delay: index * 0.1 }}
               className="min-w-[320px] md:min-w-[400px] bg-surface-container-low rounded-[40px] overflow-hidden shadow-bloom transition-all group"
             >
-              <div className="h-64 overflow-hidden">
+              <div className="h-96 overflow-hidden">
                 <div
                   className="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
                   style={{ backgroundImage: `url('${product.image}')` }}

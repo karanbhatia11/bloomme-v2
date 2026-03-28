@@ -38,7 +38,7 @@ export const Navigation: React.FC = () => {
           <button className="hidden md:block text-on-background opacity-70 hover:text-primary transition-colors">
             <span className="material-symbols-outlined">shopping_bag</span>
           </button>
-          <Link href="#login" className="hidden md:block text-sm font-medium text-on-background opacity-80 hover:text-primary transition-colors">
+          <Link href="/login" className="hidden md:block text-sm font-medium text-on-background opacity-80 hover:text-primary transition-colors">
             Login
           </Link>
         </div>

@@ -173,7 +173,7 @@ export default function PrivacyPage() {
               </div>
               <a
                 href="mailto:privacy@bloomme.co.in"
-                className="bg-on-background text-surface px-8 py-3 rounded-full font-bold text-sm hover:opacity-90 transition-opacity active:scale-95 whitespace-nowrap"
+                className="bg-gradient-to-r from-on-background to-on-background/70 text-surface px-8 py-3 rounded-full font-bold text-sm hover:opacity-90 transition-opacity active:scale-95 whitespace-nowrap"
               >
                 Email Privacy Team
               </a>
