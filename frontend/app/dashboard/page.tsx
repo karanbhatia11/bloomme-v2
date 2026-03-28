@@ -119,7 +119,7 @@ export default function DashboardPage() {
   return (
     <div className="bg-background text-on-surface font-body">
       {/* Shell: SideNavBar (Desktop) */}
-      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col p-4 space-y-2 bg-[#fff1e9] dark:bg-stone-950 z-40 border-r-0">
+      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col p-4 space-y-2 bg-[#2a2a2a] dark:bg-stone-950 z-40 border-r-0">
         <div className="flex items-center gap-3 px-2 py-6">
           <img
             alt="Bloomme Logo"
@@ -132,8 +132,8 @@ export default function DashboardPage() {
             onClick={() => setActiveTab("dashboard")}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold transition-all duration-300 ease-in-out ${
               activeTab === "dashboard"
-                ? "bg-[#ffdcc3] dark:bg-stone-800 text-[#2f1500] dark:text-stone-100"
-                : "text-[#4d4638] dark:text-stone-400 hover:bg-[#fff1e9] dark:hover:bg-stone-900/50"
+                ? "bg-[#775a11] text-white"
+                : "text-gray-300 hover:bg-[#3a3a3a]"
             }`}
           >
             <span className="material-symbols-outlined" data-icon="dashboard">
@@ -146,8 +146,8 @@ export default function DashboardPage() {
             onClick={() => setActiveTab("subscriptions")}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out ${
               activeTab === "subscriptions"
-                ? "bg-[#ffdcc3] dark:bg-stone-800 text-[#2f1500] dark:text-stone-100"
-                : "text-[#4d4638] dark:text-stone-400 hover:bg-[#fff1e9] dark:hover:bg-stone-900/50"
+                ? "bg-[#775a11] text-white"
+                : "text-gray-300 hover:bg-[#3a3a3a]"
             }`}
           >
             <span className="material-symbols-outlined" data-icon="card_membership">
@@ -160,8 +160,8 @@ export default function DashboardPage() {
             onClick={() => setActiveTab("orders")}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out ${
               activeTab === "orders"
-                ? "bg-[#ffdcc3] dark:bg-stone-800 text-[#2f1500] dark:text-stone-100"
-                : "text-[#4d4638] dark:text-stone-400 hover:bg-[#fff1e9] dark:hover:bg-stone-900/50"
+                ? "bg-[#775a11] text-white"
+                : "text-gray-300 hover:bg-[#3a3a3a]"
             }`}
           >
             <span className="material-symbols-outlined" data-icon="shopping_cart">
@@ -174,8 +174,8 @@ export default function DashboardPage() {
             onClick={() => setActiveTab("settings")}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out ${
               activeTab === "settings"
-                ? "bg-[#ffdcc3] dark:bg-stone-800 text-[#2f1500] dark:text-stone-100"
-                : "text-[#4d4638] dark:text-stone-400 hover:bg-[#fff1e9] dark:hover:bg-stone-900/50"
+                ? "bg-[#775a11] text-white"
+                : "text-gray-300 hover:bg-[#3a3a3a]"
             }`}
           >
             <span className="material-symbols-outlined" data-icon="settings">
@@ -185,7 +185,7 @@ export default function DashboardPage() {
           </button>
         </nav>
 
-        <div className="mt-auto pt-4 space-y-1 border-t border-[#fff1e9] dark:border-stone-800">
+        <div className="mt-auto pt-4 space-y-1 border-t border-[#3a3a3a]">
           <button className="w-full bg-primary text-on-primary rounded-xl py-3 px-4 font-semibold text-sm shadow-md shadow-primary/20 flex items-center justify-center gap-2 mb-4 hover:scale-[1.02] active:scale-[0.98] transition-transform">
             <span className="material-symbols-outlined text-sm" data-icon="add">
               add
