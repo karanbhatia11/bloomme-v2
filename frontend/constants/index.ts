@@ -1,9 +1,9 @@
 export const NAV_LINKS = [
-  { href: "#how-it-works", label: "How It Works" },
-  { href: "#plans", label: "Plans" },
-  { href: "#festivals", label: "Festivals" },
-  { href: "#add-ons", label: "Add Ons" },
-  { href: "#delivery", label: "Delivery" },
+  { href: "/#how-it-works", label: "How It Works" },
+  { href: "/#plans", label: "Plans" },
+  { href: "/#festivals", label: "Festivals" },
+  { href: "/#add-ons", label: "Add Ons" },
+  { href: "/#delivery", label: "Delivery" },
   { href: "/about", label: "Our Story" },
   { href: "/contact", label: "Contact" },
 ];
@@ -183,9 +183,9 @@ export const FAQ = [
 
 export const FOOTER_LINKS = {
   product: [
-    { label: "Features", href: "#features" },
-    { label: "How It Works", href: "#how-it-works" },
-    { label: "Plans", href: "#plans" },
+    { label: "Features", href: "/#features" },
+    { label: "How It Works", href: "/#how-it-works" },
+    { label: "Plans", href: "/#plans" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
   ],
