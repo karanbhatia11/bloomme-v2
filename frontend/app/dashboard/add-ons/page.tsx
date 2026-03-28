@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { PRODUCTS } from "@/constants";
 
 interface UserData {
   id: string;
@@ -50,40 +51,6 @@ export default function AddOnsPage() {
     return null;
   }
 
-  const addOnProducts = [
-    {
-      id: 1,
-      name: "Mysore Sandalwood Incense",
-      price: 45,
-      description: "Hand-rolled sticks with pure essential oils for a divine aroma.",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBYxvA_x1cEPh5QnsitnZPQWVUcpUoFBUG_jLWtU6v1kCwvfOIivgpfeeTa4ygiqyQ3VnjTCWgcIrFGtTktuYC9_N2xBDS0v5LFtOmoHq24ogSb9j5HUvae_uY3YBdTPda9Sk0kIoTsTpsLQcbrHMBybAOV2Y3QOhjKDVhR0nfs7_yY0uE1E9QBnFEzFyyllTPVAZCHPdWvEgdTX-RSnbbD8gwbGe9L1k4oEhSPa9xy80PH7OZFKp2ISB_qdrTEG-YHDkwf-v9NS2xO",
-      badge: "Premium",
-    },
-    {
-      id: 2,
-      name: "Traditional Akshata Rice",
-      price: 25,
-      description: "Organic un-broken rice grains mixed with turmeric for puja.",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuA-iLMa6hOyLu2hexnYUYh0BU7GTF0Ds5ssFSGkMGMU9c6MCBgte2vYgI1w49mMO0-UAl-vYrSNmmCHzIh2ggPkQXcyxtO1oK1t9_QXQIFQLZewH3c5OHJXIMdrq1gfkkBrNg4lKW9uD0up3IchvwrN6cRPrYkKLYNKknfiu2uW4ceZ1hdWUfFtrUgtk4BTiouZqeD-S1JWFDAVnOJTPZdZMM7v1GxztAXfY1NqgWJ9KHhMQfmgiqR3g8T0TtqgbeDEcOchcv8YIl3k",
-      badge: null,
-    },
-    {
-      id: 3,
-      name: "Jasmine Night Candle",
-      price: 120,
-      description: "Pure soy wax candles to elevate your meditation space.",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDug58sW_wAOqpKqm2b2dzoWA_Ob0aoaaoIpI_njqcFgX_L1ABgW1yw22igGKjUqeIkE-keEUg7kkJ9gCu6vLnTU0652D4GJklPBhb0i1AHGdo1FIvMYAwgxMMEuwbP1RJJr_r3poHYznnQaz2xdx8vC4oPvdrVGKcze5YJOn_F_qBQ-L75Sbpn3_wBfCatYCMLzO01a36S0AsknzzQML0b-QdmO8k_uAOKpBhkR7Hrfffh3CNQFxYTHegIcuon75-xuaz-m6pUX7hg",
-      badge: null,
-    },
-    {
-      id: 4,
-      name: "Assorted Dried Petals",
-      price: 15,
-      description: "Sustainably dried flower petals for daily decorative rangoli.",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCaSVAU7nxGxeHbrZR5kiLTzPPCKXwMHVrUEpRmX7LRtZExNyazPvdQWzt4-wfbzZRPsT0j-vrMSfWU9WBHNl_bD5jUOdEAx6UKO7v4yruQDRWhc5drA-3jgsu1zsGexN_C-KMmmTbLnUWJRI24FgOz4tIb_0oSS5hcd8xsDIXVj3tyuOl2cOqMyJiWTMvlbVsGpHR8jXxPwlG0q8uOIqcZCiibbBDR3tS2wUCHlsTucF_rvuHgDhc6yHgUQDPUuw7VmrWrF6pfQLi1",
-      badge: null,
-    },
-  ];
 
   return (
     <div className="bg-surface text-on-surface font-body">
@@ -276,25 +243,18 @@ export default function AddOnsPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {addOnProducts.map((product) => (
+                {PRODUCTS.map((product) => (
                   <div key={product.id} className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm group">
                     <div className="h-40 overflow-hidden relative">
                       <img
-                        alt={product.name}
+                        alt={product.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         src={product.image}
                       />
-                      {product.badge && (
-                        <div className="absolute top-2 right-2">
-                          <span className="bg-secondary text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-tighter">
-                            {product.badge}
-                          </span>
-                        </div>
-                      )}
                     </div>
                     <div className="p-4">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-headline font-bold text-on-surface">{product.name}</h3>
+                        <h3 className="font-headline font-bold text-on-surface">{product.title}</h3>
                         <span className="text-primary font-bold">₹{product.price}</span>
                       </div>
                       <p className="text-sm text-on-surface-variant mb-4 line-clamp-2">{product.description}</p>
