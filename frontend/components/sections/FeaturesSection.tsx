@@ -28,17 +28,17 @@ export const FeaturesSection: React.FC = () => {
         <span className="material-symbols-outlined text-[160px] text-secondary/50">local_florist</span>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-6 md:px-12 relative z-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 relative z-10">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-4xl md:text-5xl font-bold tracking-tight mb-16"
+          className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-12 sm:mb-16"
         >
           Designed for Devotion
         </motion.h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6">
           {/* Main Card - Delivered Before The First Prayer */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -46,18 +46,18 @@ export const FeaturesSection: React.FC = () => {
             viewport={{ once: true }}
             className="md:col-span-2 md:row-span-2 bg-white rounded-[2rem] overflow-hidden hover:shadow-xl transition-shadow flex flex-col"
           >
-            <div className="p-10 flex-grow flex flex-col">
-              <span className="text-xs font-bold uppercase tracking-widest text-secondary mb-4">
+            <div className="p-6 sm:p-10 flex-grow flex flex-col">
+              <span className="text-xs font-bold uppercase tracking-widest text-secondary mb-2 sm:mb-4">
                 The Bloomme Standard
               </span>
-              <h3 className="text-3xl font-bold mb-6">
+              <h3 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
                 Delivered Before<br />The First Prayer
               </h3>
-              <p className="text-on-surface-variant mb-8">
+              <p className="text-sm sm:text-base text-on-surface-variant mb-6 sm:mb-8">
                 Our specialized logistics team ensures your flowers arrive between 5:30 AM and 7:30 AM, every single day.
               </p>
             </div>
-            <div className="grid grid-cols-3 gap-3 px-10 pb-10">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 px-6 sm:px-10 pb-6 sm:pb-10">
               <div className="h-24 overflow-hidden rounded-lg">
                 <Image
                   src={featureImages.mainCard1}

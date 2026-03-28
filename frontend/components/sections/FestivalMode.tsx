@@ -74,7 +74,7 @@ export const FestivalMode: React.FC = () => {
         <span className="material-symbols-outlined text-[160px] text-secondary/50">local_florist</span>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center relative z-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 items-center relative z-10">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -126,17 +126,17 @@ export const FestivalMode: React.FC = () => {
           viewport={{ once: true }}
           className="order-1 lg:order-2"
         >
-          <span className="editorial-accent text-2xl text-secondary block mb-4">
+          <span className="editorial-accent text-lg sm:text-xl md:text-2xl text-secondary block mb-2 sm:mb-4">
             Celestial Celebrations
           </span>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-8">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4 sm:mb-6 md:mb-8">
             Festival Mode: <br />
             Never Miss a Ritual
           </h2>
-          <p className="text-lg text-on-surface-variant mb-10 leading-relaxed">
+          <p className="text-xs sm:text-sm md:text-base lg:text-lg text-on-surface-variant mb-6 sm:mb-8 md:mb-10 leading-relaxed">
             {FESTIVAL_DETAILS[currentImageIndex].description}
           </p>
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <motion.div
               key={currentImageIndex}
               initial={{ opacity: 0, y: 10 }}

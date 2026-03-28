@@ -18,22 +18,22 @@ export const HowItWorks: React.FC = () => {
         <span className="material-symbols-outlined text-[160px] text-secondary/50">local_florist</span>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-6 text-center relative z-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 text-center relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mb-20"
+          className="mb-12 sm:mb-16 md:mb-20"
         >
-          <h2 className="text-4xl md:text-5xl font-black mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4">
             A Ritual of Freshness
           </h2>
-          <p className="text-lg text-on-surface-variant italic font-display mb-20 max-w-xl mx-auto">
+          <p className="text-xs sm:text-sm md:text-base lg:text-lg text-on-surface-variant italic font-display mb-12 sm:mb-20 max-w-xl mx-auto">
             From our garden to your sanctuary in four mindful steps.
           </p>
         </motion.div>
 
-        <div className="relative grid grid-cols-1 md:grid-cols-4 gap-12 max-w-5xl mx-auto">
+        <div className="relative grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8 md:gap-12 max-w-5xl mx-auto">
           {/* Connector Line (Hidden on Mobile) */}
           <div className="hidden md:block absolute top-12 left-20 right-20 h-0.5 border-t-2 border-dashed border-primary-container/30"></div>
 

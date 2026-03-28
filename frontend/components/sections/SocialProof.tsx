@@ -18,20 +18,20 @@ export const SocialProof: React.FC = () => {
         <span className="material-symbols-outlined text-[160px] text-primary/50">local_florist</span>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-6 relative z-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-20"
+          className="text-center mb-12 sm:mb-20"
         >
-          <h2 className="text-4xl md:text-5xl font-black mb-6">Voices of Devotion</h2>
-          <p className="text-on-surface-variant max-w-2xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-6">Voices of Devotion</h2>
+          <p className="text-xs sm:text-sm md:text-base text-on-surface-variant max-w-2xl mx-auto">
             Join over 2,000 families in Faridabad who have transformed their morning rituals with Bloomme.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
           {TESTIMONIALS.map((testimonial, idx) => (
             <motion.div
               key={idx}
@@ -39,7 +39,7 @@ export const SocialProof: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1 }}
-              className="bg-surface p-10 rounded-[32px] shadow-xl shadow-on-surface/5 flex flex-col gap-6"
+              className="bg-surface p-6 sm:p-8 md:p-10 rounded-[32px] shadow-xl shadow-on-surface/5 flex flex-col gap-4 sm:gap-6"
             >
               <div className="flex gap-1 text-primary">
                 {[...Array(testimonial.rating || 5)].map((_, i) => (
@@ -52,10 +52,10 @@ export const SocialProof: React.FC = () => {
                   </span>
                 ))}
               </div>
-              <p className="text-lg leading-relaxed italic font-display">
+              <p className="text-sm sm:text-base md:text-lg leading-relaxed italic font-display">
                 &ldquo;{testimonial.quote}&rdquo;
               </p>
-              <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mt-2 sm:mt-4">
                 <div
                   className="w-12 h-12 rounded-full bg-cover bg-center"
                   style={{ backgroundImage: `url('${testimonial.image}')` }}

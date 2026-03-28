@@ -6,30 +6,30 @@ import { motion } from "framer-motion";
 
 export const DashboardPreview: React.FC = () => {
   return (
-    <section className="py-24 bg-surface-container-highest/30">
-      <div className="max-w-[1200px] mx-auto px-6">
+    <section className="py-16 sm:py-24 bg-surface-container-highest/30">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="bg-surface-container-lowest rounded-[2rem] p-2 md:p-8 shadow-2xl border border-outline-variant/20"
+          className="bg-surface-container-lowest rounded-[2rem] p-3 sm:p-4 md:p-8 shadow-2xl border border-outline-variant/20"
         >
           {/* Browser Chrome */}
-          <div className="flex items-center gap-4 mb-8 px-4">
+          <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-8 px-3 sm:px-4">
             <div className="flex gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-red-400"></div>
-              <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-              <div className="w-3 h-3 rounded-full bg-green-400"></div>
+              <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-400"></div>
+              <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-amber-400"></div>
+              <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-400"></div>
             </div>
-            <div className="bg-surface-container-low px-4 py-1 rounded-lg text-xs font-mono text-outline">
+            <div className="bg-surface-container-low px-3 sm:px-4 py-1 rounded-lg text-xs font-mono text-outline overflow-hidden text-ellipsis whitespace-nowrap">
               app.bloomme.in/dashboard
             </div>
           </div>
 
           {/* Dashboard Content */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 p-4">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 md:gap-8 p-3 sm:p-4">
             {/* Sidebar */}
-            <div className="md:col-span-3 space-y-6">
+            <div className="md:col-span-3 space-y-4 sm:space-y-6">
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -54,17 +54,17 @@ export const DashboardPreview: React.FC = () => {
             </div>
 
             {/* Main Content */}
-            <div className="md:col-span-9 space-y-6">
+            <div className="md:col-span-9 space-y-4 sm:space-y-6">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
-                className="grid grid-cols-3 gap-4"
+                className="grid grid-cols-3 gap-3 sm:gap-4"
               >
-                <div className="h-24 bg-surface-container/30 rounded-2xl border border-outline-variant/10"></div>
-                <div className="h-24 bg-surface-container/30 rounded-2xl border border-outline-variant/10"></div>
-                <div className="h-24 bg-surface-container/30 rounded-2xl border border-outline-variant/10"></div>
+                <div className="h-16 sm:h-24 bg-surface-container/30 rounded-2xl border border-outline-variant/10"></div>
+                <div className="h-16 sm:h-24 bg-surface-container/30 rounded-2xl border border-outline-variant/10"></div>
+                <div className="h-16 sm:h-24 bg-surface-container/30 rounded-2xl border border-outline-variant/10"></div>
               </motion.div>
 
               <motion.div
@@ -72,7 +72,7 @@ export const DashboardPreview: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.3 }}
-                className="h-64 bg-surface rounded-3xl border border-outline-variant/10 relative overflow-hidden"
+                className="h-40 sm:h-64 bg-surface rounded-3xl border border-outline-variant/10 relative overflow-hidden"
               >
                 <Image
                   alt="Data chart"

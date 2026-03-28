@@ -41,30 +41,30 @@ export const ProductShowcase: React.FC = () => {
         <span className="material-symbols-outlined text-[160px] text-primary/50">local_florist</span>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-6 relative z-10">
-        <div className="flex justify-between items-center mb-16">
-          <h2 className="text-4xl font-black tracking-tight">Add Ons</h2>
-          <div className="flex gap-4">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 relative z-10">
+        <div className="flex justify-between items-center mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight">Add Ons</h2>
+          <div className="flex gap-2 sm:gap-4">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handlePrev}
-              className="w-12 h-12 rounded-full border border-outline flex items-center justify-center hover:bg-primary hover:text-white transition-all"
+              className="w-10 sm:w-12 h-10 sm:h-12 rounded-full border border-outline flex items-center justify-center hover:bg-primary hover:text-white transition-all"
             >
-              <span className="material-symbols-outlined">chevron_left</span>
+              <span className="material-symbols-outlined text-xl sm:text-2xl">chevron_left</span>
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleNext}
-              className="w-12 h-12 rounded-full border border-outline flex items-center justify-center hover:bg-primary hover:text-white transition-all"
+              className="w-10 sm:w-12 h-10 sm:h-12 rounded-full border border-outline flex items-center justify-center hover:bg-primary hover:text-white transition-all"
             >
-              <span className="material-symbols-outlined">chevron_right</span>
+              <span className="material-symbols-outlined text-xl sm:text-2xl">chevron_right</span>
             </motion.button>
           </div>
         </div>
 
-        <div ref={carouselRef} className="flex overflow-x-auto gap-8 no-scrollbar pb-10">
+        <div ref={carouselRef} className="flex overflow-x-auto gap-4 sm:gap-8 no-scrollbar pb-8 sm:pb-10">
           {PRODUCTS.map((product, index) => (
             <motion.div
               key={product.id}

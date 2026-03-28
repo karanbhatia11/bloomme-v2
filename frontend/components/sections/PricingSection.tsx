@@ -26,22 +26,22 @@ export const PricingSection: React.FC = () => {
         <span className="material-symbols-outlined text-[160px] text-primary/50">local_florist</span>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-6 md:px-12 relative z-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-12 sm:mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 sm:mb-6">
             Subscription Plans
           </h2>
-          <p className="text-on-surface-variant">
+          <p className="text-xs sm:text-sm md:text-base text-on-surface-variant">
             Tailored for your daily spiritual needs
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
           {SUBSCRIPTION_PLANS.map((plan, index) => {
             const imageKey = (plan.name.toLowerCase() as keyof typeof planImages) || "traditional";
             const imageSrc = planImages[imageKey] || planImages.traditional;
@@ -56,7 +56,7 @@ export const PricingSection: React.FC = () => {
                 whileHover={{ y: -8 }}
                 className={`rounded-[2rem] flex flex-col relative ${
                   plan.highlighted
-                    ? "bg-primary text-on-primary scale-105 shadow-2xl"
+                    ? "bg-primary text-on-primary md:scale-105 shadow-2xl"
                     : "bg-surface-container-lowest border border-transparent hover:border-primary-container/20"
                 }`}
               >
