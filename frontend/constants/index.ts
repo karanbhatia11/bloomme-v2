@@ -5,6 +5,7 @@ export const NAV_LINKS = [
   { href: "/#add-ons", label: "Add Ons" },
   { href: "/#delivery", label: "Delivery" },
   { href: "/about", label: "Our Story" },
+  { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ];
 
@@ -187,6 +188,7 @@ export const FOOTER_LINKS = {
     { label: "How It Works", href: "/#how-it-works" },
     { label: "Plans", href: "/#plans" },
     { label: "About", href: "/about" },
+    { label: "FAQ", href: "/faq" },
     { label: "Contact", href: "/contact" },
   ],
   legal: [
