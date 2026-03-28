@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { LOGO_URL } from "@/constants";
 
@@ -92,6 +93,12 @@ export const Footer: React.FC = () => {
                 </div>
               </div>
             </div>
+            <Link
+              href="/contact"
+              className="inline-block mt-4 px-6 py-3 bg-primary text-on-primary rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity active:scale-95"
+            >
+              Get in Touch
+            </Link>
           </motion.div>
 
           {/* Right Section - Newsletter */}

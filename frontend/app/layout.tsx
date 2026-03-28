@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
+import { LayoutClient } from "./layout-client";
 
 export const metadata: Metadata = {
   title: "Bloomme | Daily Fresh Puja Flowers & Essentials Delivered Before Sunrise",
@@ -22,7 +23,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body className="bg-surface text-on-surface font-body selection:bg-primary-fixed-dim selection:text-on-primary-fixed">
-        {children}
+        <LayoutClient>{children}</LayoutClient>
       </body>
     </html>
   );
