@@ -119,7 +119,7 @@ export default function DashboardPage() {
   return (
     <div className="bg-background text-on-surface font-body">
       {/* Shell: SideNavBar (Desktop) */}
-      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col p-4 space-y-2 bg-[#2a2a2a] dark:bg-stone-950 z-40 border-r-0">
+      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col p-4 space-y-2 bg-[#fff8f5] dark:bg-stone-950 z-40 border-r-0">
         <div className="flex items-center gap-3 px-2 py-6">
           <img
             alt="Bloomme Logo"
@@ -208,7 +208,7 @@ export default function DashboardPage() {
       {/* Main Canvas */}
       <main className="md:ml-64 min-h-screen flex flex-col">
         {/* TopAppBar (Mobile & Global Actions) */}
-        <header className="fixed top-0 right-0 left-0 md:left-64 h-20 glass-nav bg-[#fff1e9] dark:bg-stone-900/80 z-30 flex items-center justify-between px-6 md:px-12 border-b border-outline-variant/10">
+        <header className="fixed top-0 right-0 left-0 md:left-64 h-20 glass-nav bg-white/80 dark:bg-stone-900/80 z-30 flex items-center justify-between px-6 md:px-12 border-b border-outline-variant/10">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold text-on-surface">Bloomme</h1>
           </div>
