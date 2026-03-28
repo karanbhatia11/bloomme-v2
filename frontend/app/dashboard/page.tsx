@@ -120,13 +120,13 @@ export default function DashboardPage() {
     <div className="bg-background text-on-surface font-body">
       {/* Shell: SideNavBar (Desktop) */}
       <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col p-4 space-y-2 bg-surface z-40 border-r-0">
-        <div className="flex items-center gap-3 px-2 py-6">
+        <Link href="/" className="flex items-center gap-3 px-2 py-6">
           <img
             alt="Bloomme Logo"
             className="h-20 w-auto object-contain mx-auto"
             src="https://lh3.googleusercontent.com/aida/ADBb0uh7ZKyDJvwqw8ovYvtb0IHQdG6Jv2KaAOnHu1AGUxaY7f5yWx8Bm8bW4DdhajWiRGZI7aDPD80yHUQvArr709jqO0Rind89sxZ8IGlrzj_y9d76cmJXkujDpYGK96y1vFLGvzNj-84QvcdHvqUDZ0V9CeBkTJn-SpYg1fdwMw49RF6jD4a2hqRJw8d1kv9dDTXF8PRjNUwzz12qcm7zXkim20_naL4SjhWp0jH2caARUwlDppLyhWakTC5HuWY9y3cjlT0VSdPZjp8"
           />
-        </div>
+        </Link>
         <nav className="flex-1 space-y-1">
           <button
             onClick={() => setActiveTab("dashboard")}
@@ -275,7 +275,7 @@ export default function DashboardPage() {
       <footer className="w-full py-12 bg-surface mt-16 border-t border-stone-200/20 md:ml-64">
         <div className="flex flex-col md:flex-row justify-between items-center px-12 opacity-60">
           <span className="font-['Inter'] text-xs leading-relaxed text-[#4d4638] dark:text-stone-500">
-            © 2024 Bloomme Atelier. All rights reserved.
+            © 2026 blomme Crafted for devotion
           </span>
           <div className="flex gap-8 mt-6 md:mt-0">
             <Link
