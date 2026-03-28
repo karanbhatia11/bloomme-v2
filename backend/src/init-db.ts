@@ -173,6 +173,25 @@ const initDb = async () => {
                 completed_at TIMESTAMP
             );
 
+            CREATE TABLE IF NOT EXISTS page_content (
+                id SERIAL PRIMARY KEY,
+                page_name VARCHAR(100) NOT NULL,
+                section_name VARCHAR(100) NOT NULL,
+                display_order INTEGER DEFAULT 0,
+                title TEXT,
+                subtitle TEXT,
+                description TEXT,
+                image_url TEXT,
+                cta_text VARCHAR(100),
+                cta_link VARCHAR(255),
+                metadata JSONB DEFAULT '{}',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(page_name, section_name)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_page_content_page_section ON page_content(page_name, section_name);
+
             -- Initial App Config
             INSERT INTO app_config (key, value) VALUES ('site_mode', '{"mode": "coming_soon"}') ON CONFLICT (key) DO NOTHING;
         `);
