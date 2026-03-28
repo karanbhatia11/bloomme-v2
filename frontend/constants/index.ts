@@ -5,6 +5,7 @@ export const NAV_LINKS = [
   { href: "#add-ons", label: "Add Ons" },
   { href: "#delivery", label: "Delivery" },
   { href: "/about", label: "Our Story" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export const PRODUCTS = [
@@ -185,7 +186,8 @@ export const FOOTER_LINKS = {
     { label: "Features", href: "#features" },
     { label: "How It Works", href: "#how-it-works" },
     { label: "Plans", href: "#plans" },
-    { label: "About", href: "#about" },
+    { label: "About", href: "/about" },
+    { label: "Contact", href: "/contact" },
   ],
   legal: [
     { label: "Privacy Policy", href: "#" },
@@ -193,7 +195,7 @@ export const FOOTER_LINKS = {
     { label: "Shipping Policy", href: "#" },
   ],
   contact: [
-    { label: "Contact Support", href: "#" },
+    { label: "Contact Support", href: "/contact" },
     { label: "info@bloomme.co.in", href: "mailto:info@bloomme.co.in" },
   ],
 };
