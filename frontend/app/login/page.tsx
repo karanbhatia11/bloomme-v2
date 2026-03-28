@@ -1,13 +1,66 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Navigation } from "@/components/common/Navigation";
 import { Footer } from "@/components/sections/Footer";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      // Demo login - test user
+      if (email === "demo@bloomme.com" && password === "Demo@123") {
+        localStorage.setItem("token", "demo_token_" + Date.now());
+        localStorage.setItem("user", JSON.stringify({
+          id: "1",
+          name: "Demo User",
+          email: "demo@bloomme.com",
+        }));
+        if (typeof window !== "undefined") {
+          window.location.href = "/dashboard";
+        }
+        return;
+      }
+
+      // Real login attempt
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Invalid credentials");
+      }
+
+      const data = await response.json();
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      if (typeof window !== "undefined") {
+        window.location.href = "/dashboard";
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -30,7 +83,23 @@ export default function LoginPage() {
               </p>
             </header>
 
-            <form className="space-y-6">
+            {error && (
+              <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-lg">
+                <p className="text-sm text-error">{error}</p>
+              </div>
+            )}
+
+            {/* Demo Login Info */}
+            <div className="mb-6 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+              <p className="text-xs text-primary font-semibold mb-2">🧪 Demo Account</p>
+              <p className="text-xs text-on-surface-variant">
+                Email: <span className="font-mono">demo@bloomme.com</span>
+                <br />
+                Password: <span className="font-mono">Demo@123</span>
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
               <div className="space-y-2">
                 <label
@@ -45,6 +114,9 @@ export default function LoginPage() {
                     id="email"
                     placeholder="name@atelier.com"
                     type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                   <div className="h-[2px] w-0 group-focus-within:w-full bg-primary transition-all duration-300"></div>
                 </div>
@@ -73,6 +145,9 @@ export default function LoginPage() {
                       id="password"
                       placeholder="••••••••"
                       type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
                     />
                     <button
                       type="button"
@@ -105,10 +180,11 @@ export default function LoginPage() {
 
               {/* CTA */}
               <button
-                className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-4 rounded-lg font-headline font-bold text-sm tracking-wide shadow-lg shadow-primary/20 hover:shadow-xl active:scale-95 transition-all"
+                className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-4 rounded-lg font-headline font-bold text-sm tracking-wide shadow-lg shadow-primary/20 hover:shadow-xl active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 type="submit"
+                disabled={loading}
               >
-                Sign In
+                {loading ? "Signing in..." : "Sign In"}
               </button>
             </form>
 
