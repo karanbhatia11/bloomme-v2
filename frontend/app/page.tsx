@@ -8,7 +8,6 @@ import { HowItWorks } from "@/components/sections/HowItWorks";
 import { FeaturesSection } from "@/components/sections/FeaturesSection";
 import { FestivalMode } from "@/components/sections/FestivalMode";
 import { PricingSection } from "@/components/sections/PricingSection";
-import { DashboardPreview } from "@/components/sections/DashboardPreview";
 import { SocialProof } from "@/components/sections/SocialProof";
 import { Footer } from "@/components/sections/Footer";
 
