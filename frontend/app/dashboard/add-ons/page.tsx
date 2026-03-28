@@ -163,73 +163,42 @@ export default function AddOnsPage() {
                   <span className="material-symbols-outlined text-secondary">auto_awesome</span>
                   Current Ritual Add-ons
                 </h2>
-                <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/60">2 Items Active</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/60">{PRODUCTS.slice(0, 2).length} Items Active</span>
               </div>
 
               <div className="flex flex-col gap-4">
-                {/* Add-on Item 1 */}
-                <div className="flex items-center justify-between p-4 rounded-lg bg-surface-container-low group hover:bg-surface-container-high transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                      <img
-                        alt="Sacred Lotus"
-                        className="w-full h-full object-cover"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvNt8GXd99qrgfuwMKEsvk6LzdYsynZhzqsQ2OhOfKUS9I2V29u7sSHqv_4Kcb0fLcNBrfoIK-JH-wV03SZJiKyOg5rxEvLY0vy-Er8MRGfBVvglPN7mWJovjait-Vqxli2iBRlS01bmbu6BE3KUK7jcK4LghiS50Ljm1xbfM2c1T7dalH5tAceZ4zL4YOytrFDTYo5wxJcJd_0X_Jpvf0xAGWy71wXmJrw9WDo1fdPjP8pPjzf3cAWiOGy5GWqfHNMPgYB9GylDrK"
-                      />
+                {PRODUCTS.slice(0, 2).map((product) => (
+                  <div key={product.id} className="flex items-center justify-between p-4 rounded-lg bg-surface-container-low group hover:bg-surface-container-high transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                        <img
+                          alt={product.title}
+                          className="w-full h-full object-cover"
+                          src={product.image}
+                        />
+                      </div>
+                      <div>
+                        <h3 className="font-headline font-bold text-on-surface">{product.title}</h3>
+                        <p className="text-sm text-on-surface-variant">{product.description}</p>
+                        <p className="text-primary font-bold mt-1">₹{product.price}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-headline font-bold text-on-surface">Sacred Lotus</h3>
-                      <p className="text-sm text-on-surface-variant">Daily freshness, hand-picked</p>
-                      <p className="text-primary font-bold mt-1">₹30/month</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center bg-surface-container-lowest rounded-full p-1 border border-outline-variant/30">
-                      <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors">
-                        <span className="material-symbols-outlined text-sm">remove</span>
-                      </button>
-                      <span className="px-4 font-bold text-sm">1</span>
-                      <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors">
-                        <span className="material-symbols-outlined text-sm">add</span>
-                      </button>
-                    </div>
-                    <button className="text-on-surface-variant hover:text-error transition-colors p-2">
-                      <span className="material-symbols-outlined">delete</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Add-on Item 2 */}
-                <div className="flex items-center justify-between p-4 rounded-lg bg-surface-container-low group hover:bg-surface-container-high transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                      <img
-                        alt="Organic Ghee"
-                        className="w-full h-full object-cover"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0-kH8FaFZqKc38yAeU8Z0L79JOJswgq8OW94pVddFyibOE4E4Bler48ikSn2W3V5wlFm7b4hugtN1gVr3k3R3BOJf1Is8InO3UtGBJ1NOflcO209TmFucbuBgf_UPCzhsGYnCPa7HEovNBIXgQpzowmHE-zMjs6PNbKwHokkuQrXBwykgyUUUp0chCCE6dxJRNzJTixvtp6vQ5nRi_XhHpvzr0TrcmPhS_3DevDB5uey4c713yicN47YktcBft41gR4FuBoD6s3Mx"
-                      />
-                    </div>
-                    <div>
-                      <h3 className="font-headline font-bold text-on-surface">Pure Organic Ghee</h3>
-                      <p className="text-sm text-on-surface-variant">Cow ghee for traditional rituals</p>
-                      <p className="text-primary font-bold mt-1">₹100/month</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center bg-surface-container-lowest rounded-full p-1 border border-outline-variant/30">
-                      <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors">
-                        <span className="material-symbols-outlined text-sm">remove</span>
-                      </button>
-                      <span className="px-4 font-bold text-sm">1</span>
-                      <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors">
-                        <span className="material-symbols-outlined text-sm">add</span>
+                    <div className="flex items-center gap-6">
+                      <div className="flex items-center bg-surface-container-lowest rounded-full p-1 border border-outline-variant/30">
+                        <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors">
+                          <span className="material-symbols-outlined text-sm">remove</span>
+                        </button>
+                        <span className="px-4 font-bold text-sm">1</span>
+                        <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors">
+                          <span className="material-symbols-outlined text-sm">add</span>
+                        </button>
+                      </div>
+                      <button className="text-on-surface-variant hover:text-error transition-colors p-2">
+                        <span className="material-symbols-outlined">delete</span>
                       </button>
                     </div>
-                    <button className="text-on-surface-variant hover:text-error transition-colors p-2">
-                      <span className="material-symbols-outlined">delete</span>
-                    </button>
                   </div>
-                </div>
+                ))}
               </div>
             </section>
 
