@@ -137,6 +137,48 @@ export const Footer: React.FC = () => {
             </div>
           </motion.div>
         </div>
+
+        {/* Legal Section */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3 }}
+          className="border-t border-outline-variant/20 mt-12 pt-8"
+        >
+          <div className="flex flex-wrap gap-4 justify-center text-xs">
+            <Link
+              href="/faq"
+              className="text-on-surface-variant hover:text-primary underline underline-offset-2 decoration-outline-variant/30 transition-colors"
+            >
+              FAQ
+            </Link>
+            <span className="text-outline-variant/30">•</span>
+            <Link
+              href="/privacy"
+              className="text-on-surface-variant hover:text-primary underline underline-offset-2 decoration-outline-variant/30 transition-colors"
+            >
+              Privacy Policy
+            </Link>
+            <span className="text-outline-variant/30">•</span>
+            <Link
+              href="/terms"
+              className="text-on-surface-variant hover:text-primary underline underline-offset-2 decoration-outline-variant/30 transition-colors"
+            >
+              Terms of Service
+            </Link>
+            <span className="text-outline-variant/30">•</span>
+            <a
+              href="mailto:info@bloomme.co.in"
+              className="text-on-surface-variant hover:text-primary underline underline-offset-2 decoration-outline-variant/30 transition-colors"
+            >
+              Support
+            </a>
+          </div>
+          <p className="text-center text-on-surface-variant text-xs mt-6 opacity-60">
+            © 2024 Bloomme Floral Atelier. Crafted for Devotion.
+          </p>
+        </motion.div>
       </div>
     </footer>
   );
