@@ -119,7 +119,7 @@ export default function DashboardPage() {
   return (
     <div className="bg-background text-on-surface font-body">
       {/* Shell: SideNavBar (Desktop) */}
-      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col p-4 space-y-2 bg-[#fff8f5] dark:bg-stone-950 z-40 border-r-0">
+      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col p-4 space-y-2 bg-white/80 dark:bg-stone-900/80 z-40 border-r-0">
         <div className="flex items-center gap-3 px-2 py-6">
           <img
             alt="Bloomme Logo"
@@ -143,17 +143,17 @@ export default function DashboardPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab("arrangements")}
+            onClick={() => setActiveTab("subscriptions")}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out ${
-              activeTab === "arrangements"
+              activeTab === "subscriptions"
                 ? "bg-[#ffdcc3] dark:bg-stone-800 text-[#2f1500] dark:text-stone-100"
                 : "text-[#4d4638] dark:text-stone-400 hover:bg-[#fff1e9] dark:hover:bg-stone-900/50"
             }`}
           >
-            <span className="material-symbols-outlined" data-icon="local_florist">
-              local_florist
+            <span className="material-symbols-outlined" data-icon="card_membership">
+              card_membership
             </span>
-            <span className="text-sm font-medium">Arrangements</span>
+            <span className="text-sm font-medium">Subscriptions</span>
           </button>
 
           <button
@@ -190,7 +190,7 @@ export default function DashboardPage() {
             <span className="material-symbols-outlined text-sm" data-icon="add">
               add
             </span>
-            Create New Bouquet
+            New Plan
           </button>
 
           <button
@@ -210,11 +210,7 @@ export default function DashboardPage() {
         {/* TopAppBar (Mobile & Global Actions) */}
         <header className="fixed top-0 right-0 left-0 md:left-64 h-20 glass-nav bg-white/80 dark:bg-stone-900/80 z-30 flex items-center justify-between px-6 md:px-12 border-b border-outline-variant/10">
           <div className="flex items-center gap-4">
-            <img
-              alt="Bloomme Logo"
-              className="h-12 md:h-16 w-auto object-contain"
-              src="https://lh3.googleusercontent.com/aida/ADBb0uh7ZKyDJvwqw8ovYvtb0IHQdG6Jv2KaAOnHu1AGUxaY7f5yWx8Bm8bW4DdhajWiRGZI7aDPD80yHUQvArr709jqO0Rind89sxZ8IGlrzj_y9d76cmJXkujDpYGK96y1vFLGvzNj-84QvcdHvqUDZ0V9CeBkTJn-SpYg1fdwMw49RF6jD4a2hqRJw8d1kv9dDTXF8PRjNUwzz12qcm7zXkim20_naL4SjhWp0jH2caARUwlDppLyhWakTC5HuWY9y3cjlT0VSdPZjp8"
-            />
+            <h1 className="text-xl font-bold text-on-surface">Bloomme</h1>
           </div>
           <div className="flex items-center gap-6">
             <div className="hidden sm:flex items-center gap-8 text-sm font-semibold tracking-tight">
@@ -227,6 +223,16 @@ export default function DashboardPage() {
                 }`}
               >
                 Dashboard
+              </button>
+              <button
+                onClick={() => setActiveTab("subscriptions")}
+                className={`pb-1 border-b-2 transition-colors ${
+                  activeTab === "subscriptions"
+                    ? "text-[#C4A052] border-[#C4A052]"
+                    : "text-stone-500 hover:text-[#C4A052] border-transparent"
+                }`}
+              >
+                Subscriptions
               </button>
               <button
                 onClick={() => setActiveTab("orders")}
@@ -260,7 +266,7 @@ export default function DashboardPage() {
         {/* Content Area */}
         <div className="mt-20 px-6 md:px-12 py-8 flex-1 max-w-[1440px] w-full mx-auto">
           {activeTab === "dashboard" && <DashboardTab user={user} />}
-          {activeTab === "arrangements" && <ArrangementsTab />}
+          {activeTab === "subscriptions" && <SubscriptionsTab />}
           {activeTab === "orders" && <OrdersTab />}
           {activeTab === "settings" && <SettingsTab user={user} />}
         </div>
@@ -313,15 +319,15 @@ export default function DashboardPage() {
           <span className="text-[10px] font-bold">Home</span>
         </button>
         <button
-          onClick={() => setActiveTab("arrangements")}
+          onClick={() => setActiveTab("subscriptions")}
           className={`flex flex-col items-center gap-1 transition-colors ${
-            activeTab === "arrangements" ? "text-[#C4A052]" : "text-on-surface-variant opacity-60"
+            activeTab === "subscriptions" ? "text-[#C4A052]" : "text-on-surface-variant opacity-60"
           }`}
         >
-          <span className="material-symbols-outlined" data-icon="local_florist">
-            local_florist
+          <span className="material-symbols-outlined" data-icon="card_membership">
+            card_membership
           </span>
-          <span className="text-[10px] font-bold">Blooms</span>
+          <span className="text-[10px] font-bold">Plans</span>
         </button>
         <div className="relative -top-6">
           <button className="w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg shadow-primary/30 flex items-center justify-center">
@@ -660,10 +666,10 @@ function DashboardTab({ user }: { user: UserData }) {
 }
 
 // Placeholder Tab Components
-function ArrangementsTab() {
+function SubscriptionsTab() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-      <h2 className="text-3xl font-bold mb-8">Your Arrangements</h2>
+      <h2 className="text-3xl font-bold mb-8">Your Subscriptions</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[1, 2, 3].map((i) => (
           <div
@@ -672,10 +678,10 @@ function ArrangementsTab() {
           >
             <div className="h-40 bg-gradient-to-br from-primary/20 to-secondary/20"></div>
             <div className="p-4">
-              <h3 className="font-bold text-on-surface mb-1">Arrangement {i}</h3>
-              <p className="text-sm text-on-surface-variant">Beautiful flower arrangement</p>
+              <h3 className="font-bold text-on-surface mb-1">Plan {i}</h3>
+              <p className="text-sm text-on-surface-variant">Subscription plan details</p>
               <button className="mt-4 px-4 py-2 bg-primary text-on-primary rounded-lg text-xs font-bold hover:scale-105 transition-transform">
-                View Details
+                Manage Plan
               </button>
             </div>
           </div>
