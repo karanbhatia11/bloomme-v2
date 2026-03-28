@@ -4,7 +4,7 @@ export const NAV_LINKS = [
   { href: "#festivals", label: "Festivals" },
   { href: "#add-ons", label: "Add Ons" },
   { href: "#delivery", label: "Delivery" },
-  { href: "#about", label: "Our Story" },
+  { href: "/about", label: "Our Story" },
 ];
 
 export const PRODUCTS = [
