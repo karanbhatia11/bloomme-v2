@@ -107,7 +107,7 @@ export default function DashboardPage() {
         </div>
 
         <nav className="flex-grow space-y-1">
-          <a className="flex items-center gap-3 px-4 py-3 bg-[#ffdcc3] text-on-surface rounded-lg mx-2 text-sm font-medium leading-relaxed" href="#">
+          <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium leading-relaxed hover:bg-[#ffdcc3]/50 transition-all" href="#">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
               loyalty
             </span>
