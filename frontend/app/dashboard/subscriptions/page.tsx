@@ -112,7 +112,7 @@ export default function SubscriptionsPage() {
             </span>
             Subscriptions
           </a>
-          <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium leading-relaxed hover:bg-[#ffdcc3]/50 transition-all" href="#">
+          <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium leading-relaxed hover:bg-[#ffdcc3]/50 transition-all" href="/dashboard/add-ons">
             <span className="material-symbols-outlined">featured_video</span>
             Add-ons
           </a>
