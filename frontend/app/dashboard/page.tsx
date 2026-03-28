@@ -133,7 +133,7 @@ export default function DashboardPage() {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold transition-all duration-300 ease-in-out ${
               activeTab === "dashboard"
                 ? "bg-[#775a11] text-white"
-                : "text-gray-300 hover:bg-[#3a3a3a]"
+                : "text-on-surface-variant hover:bg-[#fff1e9]"
             }`}
           >
             <span className="material-symbols-outlined" data-icon="dashboard">
@@ -147,7 +147,7 @@ export default function DashboardPage() {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out ${
               activeTab === "subscriptions"
                 ? "bg-[#775a11] text-white"
-                : "text-gray-300 hover:bg-[#3a3a3a]"
+                : "text-on-surface-variant hover:bg-[#fff1e9]"
             }`}
           >
             <span className="material-symbols-outlined" data-icon="card_membership">
@@ -161,7 +161,7 @@ export default function DashboardPage() {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out ${
               activeTab === "orders"
                 ? "bg-[#775a11] text-white"
-                : "text-gray-300 hover:bg-[#3a3a3a]"
+                : "text-on-surface-variant hover:bg-[#fff1e9]"
             }`}
           >
             <span className="material-symbols-outlined" data-icon="shopping_cart">
@@ -175,7 +175,7 @@ export default function DashboardPage() {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out ${
               activeTab === "settings"
                 ? "bg-[#775a11] text-white"
-                : "text-gray-300 hover:bg-[#3a3a3a]"
+                : "text-on-surface-variant hover:bg-[#fff1e9]"
             }`}
           >
             <span className="material-symbols-outlined" data-icon="settings">
@@ -185,7 +185,7 @@ export default function DashboardPage() {
           </button>
         </nav>
 
-        <div className="mt-auto pt-4 space-y-1 border-t border-[#3a3a3a]">
+        <div className="mt-auto pt-4 space-y-1 border-t border-stone-200">
           <button className="w-full bg-primary text-on-primary rounded-xl py-3 px-4 font-semibold text-sm shadow-md shadow-primary/20 flex items-center justify-center gap-2 mb-4 hover:scale-[1.02] active:scale-[0.98] transition-transform">
             <span className="material-symbols-outlined text-sm" data-icon="add">
               add
