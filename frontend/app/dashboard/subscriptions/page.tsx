@@ -159,7 +159,7 @@ export default function SubscriptionsPage() {
               <div className="md:w-1/3 relative h-64 md:h-auto overflow-hidden">
                 <img
                   className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbCqqfjohc801QFlkeo3--3K4yyeex-kN9nExxrxELZFhQ_fmrwDu6w6Wj6luu2xTAmHh7UXVoIEZWJq_U5wuJgtlASEaU8yiGzsP6rJzZBcQoeOpyuyG7ZljSUi56nFWhKENpIknxthOBLtubxvS_Zb5x5qeVKATLZZAxXj-e7mqshILOUU9gJPNAMV2QTrExQ0Wk_ktGfF2ZYJjkd0EANIMr9hvtPnE-R1aoICqNzDXPwh6EbjBsujpEqlvuU-xlgJmC9SZDEEX9"
+                  src="/images/divine.png"
                   alt="Divine Plan flowers"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-on-surface/40 to-transparent"></div>
