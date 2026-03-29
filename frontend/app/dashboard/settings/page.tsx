@@ -232,7 +232,7 @@ export default function SettingsPage() {
 
         {/* Tabs */}
         <div className="flex gap-8 mb-8 border-b border-outline-variant/20 overflow-x-auto pb-4">
-          {["profile", "address", "preferences", "notifications", "security", "danger"].map((tab) => (
+          {["profile", "address", "notifications", "security", "danger"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -441,30 +441,6 @@ export default function SettingsPage() {
         )}
 
         {/* Preferences Tab */}
-        {activeTab === "preferences" && (
-          <section className="bg-surface-container-low rounded-xl p-8 max-w-2xl">
-            <h3 className="text-xl font-bold mb-6">Preferences</h3>
-            <div className="space-y-6">
-              <div className="flex items-center justify-between pb-6 border-b border-outline-variant/20">
-                <div>
-                  <p className="font-bold">Flower Preferences</p>
-                  <p className="text-sm text-on-surface-variant">Select your favorite flower types for recommendations</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-bold">Seasonal Rotation</p>
-                  <p className="text-sm text-on-surface-variant">Automatically include seasonal flowers</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input checked className="sr-only peer" type="checkbox" />
-                  <div className="w-11 h-6 bg-primary rounded-full peer peer-checked:bg-primary peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                </label>
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* Notifications Tab */}
         {activeTab === "notifications" && (
           <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
