@@ -24,6 +24,9 @@ export default function ReferralsPage() {
   const [user, setUser] = useState<UserData | null>(null);
   const [referralCode, setReferralCode] = useState("BLOOM2026");
   const [copied, setCopied] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showCart, setShowCart] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [referrals, setReferrals] = useState<Referral[]>([
     {
       id: "1",
@@ -167,24 +170,92 @@ export default function ReferralsPage() {
             <a className="text-[#C4A052] font-bold border-b-2 border-[#C4A052]" href="#">
               Referrals
             </a>
-            <a className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="#">
+            <Link className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="/contact">
               Support
-            </a>
+            </Link>
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">
-              notifications
-            </span>
-            <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">
-              shopping_cart
-            </span>
-            <div className="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden">
-              <img
-                alt="User profile avatar"
-                className="w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZGCW-2Yg-NfYjvjLMP5mjP8d1L0cygpIsoBCu_DLMevAPbeW6H-8_HIlvhViti-HMJICGXqq7FpY6YqmE2peGWZlqDr7Iirxtncmch1qEfWH_vLzdiOF1Luh1Oq8VDCwXD6GtPinM7VGqYjiq1HffL5N7vBJE_vxr2Xy1cZMqgaFj_5ZvqeEECObl0iBkzpNfMFjad91kXlqPIT_djKcN8y9MwSQ8KgXDQcN_UYeXU9gtRezXaNFlOkKD1SXQrJcINvMgsXgCwe-r"
-              />
+            {/* Notifications Dropdown */}
+            <div className="relative">
+              <span
+                className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
+                onClick={() => {
+                  setShowNotifications(!showNotifications);
+                  setShowCart(false);
+                  setShowProfile(false);
+                }}
+              >
+                notifications
+              </span>
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
+                  <p className="text-sm text-on-surface-variant text-center py-8">No notifications</p>
+                </div>
+              )}
+            </div>
+
+            {/* Shopping Cart Dropdown */}
+            <div className="relative">
+              <span
+                className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
+                onClick={() => {
+                  setShowCart(!showCart);
+                  setShowNotifications(false);
+                  setShowProfile(false);
+                }}
+              >
+                shopping_cart
+              </span>
+              {showCart && (
+                <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
+                  <p className="text-sm text-on-surface-variant text-center py-8">Your cart is empty</p>
+                </div>
+              )}
+            </div>
+
+            {/* Profile Dropdown */}
+            <div className="relative">
+              <div
+                className="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden cursor-pointer"
+                onClick={() => {
+                  setShowProfile(!showProfile);
+                  setShowNotifications(false);
+                  setShowCart(false);
+                }}
+              >
+                <img
+                  alt="User profile avatar"
+                  className="w-full h-full object-cover"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZGCW-2Yg-NfYjvjLMP5mjP8d1L0cygpIsoBCu_DLMevAPbeW6H-8_HIlvhViti-HMJICGXqq7FpY6YqmE2peGWZlqDr7Iirxtncmch1qEfWH_vLzdiOF1Luh1Oq8VDCwXD6GtPinM7VGqYjiq1HffL5N7vBJE_vxr2Xy1cZMqgaFj_5ZvqeEECObl0iBkzpNfMFjad91kXlqPIT_djKcN8y9MwSQ8KgXDQcN_UYeXU9gtRezXaNFlOkKD1SXQrJcINvMgsXgCwe-r"
+                />
+              </div>
+              {showProfile && (
+                <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-3 border-b border-outline-variant/10 pb-4">
+                      <div className="h-10 w-10 rounded-full bg-surface-container-highest overflow-hidden">
+                        <img
+                          alt="User profile"
+                          className="w-full h-full object-cover"
+                          src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZGCW-2Yg-NfYjvjLMP5mjP8d1L0cygpIsoBCu_DLMevAPbeW6H-8_HIlvhViti-HMJICGXqq7FpY6YqmE2peGWZlqDr7Iirxtncmch1qEfWH_vLzdiOF1Luh1Oq8VDCwXD6GtPinM7VGqYjiq1HffL5N7vBJE_vxr2Xy1cZMqgaFj_5ZvqeEECObl0iBkzpNfMFjad91kXlqPIT_djKcN8y9MwSQ8KgXDQcN_UYeXU9gtRezXaNFlOkKD1SXQrJcINvMgsXgCwe-r"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <p className="text-sm font-bold text-on-surface">{user?.name}</p>
+                        <p className="text-xs text-on-surface-variant">{user?.email}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-2 text-sm font-bold text-primary hover:text-secondary transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-base">logout</span>
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
