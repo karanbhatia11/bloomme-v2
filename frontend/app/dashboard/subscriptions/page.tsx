@@ -156,7 +156,7 @@ export default function SubscriptionsPage() {
           <div className="col-span-12 lg:col-span-8 group relative bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(47,21,0,0.04)] border border-outline-variant/10">
             <div className="flex flex-col md:flex-row">
               {/* Visual Branding Section */}
-              <div className="md:w-1/3 relative h-64 md:h-auto overflow-hidden">
+              <div className="md:w-1/3 relative h-auto overflow-hidden">
                 <img
                   className="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-700"
                   src="/images/divine.png"
