@@ -176,7 +176,7 @@ export const Footer: React.FC = () => {
             </a>
           </div>
           <p className="text-center text-on-surface-variant text-xs mt-6 opacity-60">
-            © 2026 blomme™ Crafted for devotion
+            © 2026 blomme Crafted for devotion
           </p>
         </motion.div>
       </div>
