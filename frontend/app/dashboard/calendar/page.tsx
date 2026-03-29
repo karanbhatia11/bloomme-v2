@@ -13,6 +13,9 @@ interface UserData {
 export default function CalendarPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showCart, setShowCart] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -83,24 +86,76 @@ export default function CalendarPage() {
             <a className="text-[#C4A052] font-bold border-b-2 border-[#C4A052]" href="#">
               Calendar
             </a>
-            <a className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="#">
+            <Link className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="/contact">
               Support
-            </a>
+            </Link>
           </div>
 
-          <div className="flex items-center gap-4">
-            <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">
-              notifications
-            </span>
-            <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">
-              shopping_cart
-            </span>
-            <div className="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden">
-              <img
-                alt="User profile avatar"
-                className="w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZGCW-2Yg-NfYjvjLMP5mjP8d1L0cygpIsoBCu_DLMevAPbeW6H-8_HIlvhViti-HMJICGXqq7FpY6YqmE2peGWZlqDr7Iirxtncmch1qEfWH_vLzdiOF1Luh1Oq8VDCwXD6GtPinM7VGqYjiq1HffL5N7vBJE_vxr2Xy1cZMqgaFj_5ZvqeEECObl0iBkzpNfMFjad91kXlqPIT_djKcN8y9MwSQ8KgXDQcN_UYeXU9gtRezXaNFlOkKD1SXQrJcINvMgsXgCwe-r"
-              />
+          <div className="flex items-center gap-4 relative">
+            {/* Notifications Dropdown */}
+            <div className="relative">
+              <span
+                className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
+                onClick={() => {
+                  setShowNotifications(!showNotifications);
+                  setShowCart(false);
+                }}
+              >
+                notifications
+              </span>
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
+                  <p className="text-sm text-on-surface-variant text-center py-8">No notifications</p>
+                </div>
+              )}
+            </div>
+
+            {/* Cart Dropdown */}
+            <div className="relative">
+              <span
+                className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
+                onClick={() => {
+                  setShowCart(!showCart);
+                  setShowNotifications(false);
+                }}
+              >
+                shopping_cart
+              </span>
+              {showCart && (
+                <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
+                  <p className="text-sm text-on-surface-variant text-center py-8">Your cart is empty</p>
+                </div>
+              )}
+            </div>
+
+            {/* Profile Dropdown */}
+            <div className="relative">
+              <div
+                className="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                onClick={() => {
+                  setShowProfile(!showProfile);
+                  setShowNotifications(false);
+                  setShowCart(false);
+                }}
+              >
+                <img
+                  alt="User profile avatar"
+                  className="w-full h-full object-cover"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZGCW-2Yg-NfYjvjLMP5mjP8d1L0cygpIsoBCu_DLMevAPbeW6H-8_HIlvhViti-HMJICGXqq7FpY6YqmE2peGWZlqDr7Iirxtncmch1qEfWH_vLzdiOF1Luh1Oq8VDCwXD6GtPinM7VGqYjiq1HffL5N7vBJE_vxr2Xy1cZMqgaFj_5ZvqeEECObl0iBkzpNfMFjad91kXlqPIT_djKcN8y9MwSQ8KgXDQcN_UYeXU9gtRezXaNFlOkKD1SXQrJcINvMgsXgCwe-r"
+                />
+              </div>
+              {showProfile && (
+                <div className="absolute right-0 mt-2 w-48 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-3 z-50">
+                  <p className="text-sm font-medium text-on-surface mb-3">{user?.name}</p>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-3 py-2 text-sm text-error hover:bg-error/10 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-sm">logout</span>
+                    Sign Out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -361,9 +416,9 @@ export default function CalendarPage() {
         <div className="flex flex-col md:flex-row justify-between items-center px-8 opacity-60 max-w-[1440px] mx-auto space-y-4 md:space-y-0">
           <p className="text-xs leading-relaxed text-on-surface-variant">© 2026 blomme Crafted for devotion</p>
           <div className="flex gap-8">
-            <a className="text-xs leading-relaxed text-on-surface-variant hover:text-primary transition-all opacity-80 hover:opacity-100" href="#">Privacy Policy</a>
-            <a className="text-xs leading-relaxed text-on-surface-variant hover:text-primary transition-all opacity-80 hover:opacity-100" href="#">Terms of Service</a>
-            <a className="text-xs leading-relaxed text-on-surface-variant hover:text-primary transition-all opacity-80 hover:opacity-100" href="#">Contact Support</a>
+            <Link className="text-xs leading-relaxed text-on-surface-variant hover:text-primary transition-all opacity-80 hover:opacity-100" href="/privacy">Privacy Policy</Link>
+            <Link className="text-xs leading-relaxed text-on-surface-variant hover:text-primary transition-all opacity-80 hover:opacity-100" href="/terms">Terms of Service</Link>
+            <a className="text-xs leading-relaxed text-on-surface-variant hover:text-primary transition-all opacity-80 hover:opacity-100" href="mailto:info@bloomme.co.in">Contact Support</a>
           </div>
         </div>
       </footer>
