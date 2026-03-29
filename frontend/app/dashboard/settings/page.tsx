@@ -196,10 +196,6 @@ export default function SettingsPage() {
             <span className="material-symbols-outlined">calendar_today</span>
             Calendar
           </a>
-          <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium leading-relaxed hover:bg-[#ffdcc3]/50 transition-all" href="#">
-            <span className="material-symbols-outlined">local_shipping</span>
-            Orders
-          </a>
           <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium leading-relaxed hover:bg-[#ffdcc3]/50 transition-all" href="/dashboard/referrals">
             <span className="material-symbols-outlined">redeem</span>
             Referrals
