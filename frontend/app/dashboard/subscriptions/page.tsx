@@ -158,7 +158,7 @@ export default function SubscriptionsPage() {
               {/* Visual Branding Section */}
               <div className="md:w-1/3 relative h-64 md:h-auto overflow-hidden">
                 <img
-                  className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+                  className="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-700"
                   src="/images/divine.png"
                   alt="Divine Plan flowers"
                 />
