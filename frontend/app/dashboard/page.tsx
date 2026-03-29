@@ -14,6 +14,9 @@ export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showCart, setShowCart] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -73,27 +76,76 @@ export default function DashboardPage() {
             <a className="text-[#C4A052] font-semibold tracking-tight border-b-2 border-[#C4A052]" href="#">
               Dashboard
             </a>
-            <a className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="#">
+            <Link className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="/contact">
               Support
-            </a>
-            <a className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="#">
-              Help Center
-            </a>
+            </Link>
           </div>
 
-          <div className="flex items-center gap-4">
-            <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">
-              notifications
-            </span>
-            <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">
-              shopping_cart
-            </span>
-            <div className="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden">
-              <img
-                alt="User profile avatar"
-                className="w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHhyc1TjbQpgDV4EvaZYIBZl2PmpmUeGGZRfZaMTRz80LDFCO9qZZ10dXaJ2kK5xyhe_NlNVvP6bKIXHXPuxQS60SPC8jYn4wXFvTj-4ovjTjNynvdo_mMm7cnj_P51RkJxUWPQ7xFAGN8vmTHjk6tegBW6YAIlNbPtQYy46MkbKOiz9WeCGUgYnOcojT0bU64QFv_mqrixESzuQL4DRbfEOKD5wpKG689p4K7DrS0ezaVHoNtnoOF-3_cExJ2Yn64xwwzfOY3zisv"
-              />
+          <div className="flex items-center gap-4 relative">
+            {/* Notifications Dropdown */}
+            <div className="relative">
+              <span
+                className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
+                onClick={() => {
+                  setShowNotifications(!showNotifications);
+                  setShowCart(false);
+                }}
+              >
+                notifications
+              </span>
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
+                  <p className="text-sm text-on-surface-variant text-center py-8">No notifications</p>
+                </div>
+              )}
+            </div>
+
+            {/* Cart Dropdown */}
+            <div className="relative">
+              <span
+                className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
+                onClick={() => {
+                  setShowCart(!showCart);
+                  setShowNotifications(false);
+                }}
+              >
+                shopping_cart
+              </span>
+              {showCart && (
+                <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
+                  <p className="text-sm text-on-surface-variant text-center py-8">Your cart is empty</p>
+                </div>
+              )}
+            </div>
+
+            {/* Profile Dropdown */}
+            <div className="relative">
+              <div
+                className="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                onClick={() => {
+                  setShowProfile(!showProfile);
+                  setShowNotifications(false);
+                  setShowCart(false);
+                }}
+              >
+                <img
+                  alt="User profile avatar"
+                  className="w-full h-full object-cover"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHhyc1TjbQpgDV4EvaZYIBZl2PmpmUeGGZRfZaMTRz80LDFCO9qZZ10dXaJ2kK5xyhe_NlNVvP6bKIXHXPuxQS60SPC8jYn4wXFvTj-4ovjTjNynvdo_mMm7cnj_P51RkJxUWPQ7xFAGN8vmTHjk6tegBW6YAIlNbPtQYy46MkbKOiz9WeCGUgYnOcojT0bU64QFv_mqrixESzuQL4DRbfEOKD5wpKG689p4K7DrS0ezaVHoNtnoOF-3_cExJ2Yn64xwwzfOY3zisv"
+                />
+              </div>
+              {showProfile && (
+                <div className="absolute right-0 mt-2 w-48 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-3 z-50">
+                  <p className="text-sm font-medium text-on-surface mb-3">{user?.name}</p>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-3 py-2 text-sm text-error hover:bg-error/10 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-sm">logout</span>
+                    Sign Out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

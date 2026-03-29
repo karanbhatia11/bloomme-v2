@@ -74,9 +74,9 @@ export default function AddOnsPage() {
             <a className="text-[#C4A052] font-bold border-b-2 border-[#C4A052]" href="#">
               Add-ons
             </a>
-            <a className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="#">
+            <Link className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="/contact">
               Support
-            </a>
+            </Link>
           </div>
 
           <div className="flex items-center gap-4">
