@@ -33,7 +33,7 @@ export default function SignupPage() {
           >
             <div className="mb-10">
               <h1 className="text-4xl md:text-5xl font-bold font-headline tracking-tight text-on-surface mb-2">
-                Join Bloomme
+                Sign Up for Daily Puja Flower Delivery
               </h1>
               <p className="font-accent italic text-lg text-primary opacity-80">
                 Get fresh flowers delivered daily

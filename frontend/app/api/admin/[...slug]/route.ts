@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 
 async function handleRequest(
     request: NextRequest,
@@ -11,7 +11,7 @@ async function handleRequest(
         const pathname = request.nextUrl.pathname; // e.g., /api/admin/stats
 
         // Extract the path after /api and forward it
-        const backendPath = pathname.replace('/api', ''); // /admin/stats
+        const backendPath = pathname; // Keep /api prefix — backend routes are registered under /api/...
 
         const token = request.headers.get('Authorization');
 

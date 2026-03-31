@@ -14,7 +14,6 @@ interface PageContent {
 
 export default function AboutPage() {
   const [content, setContent] = useState<PageContent>({});
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -30,18 +29,12 @@ export default function AboutPage() {
           setContent(pageContent);
         }
       } catch (err) {
-        console.error('Failed to fetch about page content:', err);
-      } finally {
-        setLoading(false);
+        // Keep empty content, fallbacks render default text
       }
     };
 
     fetchContent();
   }, []);
-
-  if (loading) {
-    return <div className="min-h-screen bg-surface" />;
-  }
 
   const hero = content.hero || {};
   const story = content.story || {};
@@ -66,7 +59,7 @@ export default function AboutPage() {
               {hero.subtitle || "Crafting Devotion"}
             </span>
             <h1 className="font-display font-bold text-5xl md:text-7xl tracking-tighter text-on-background leading-[1.1] mb-6">
-              {hero.title || "More than just"} <br />{" "}
+              {hero.title || "About Bloomme"} <br />{" "}
               <span className="font-accent italic font-normal text-primary">
                 arrangements.
               </span>
@@ -92,14 +85,14 @@ export default function AboutPage() {
             <div className="rounded-2xl overflow-hidden aspect-[4/5] shadow-2xl hover:shadow-xl transition-all duration-500">
               <img
                 className="w-full h-full object-cover"
-                alt="About Bloomme"
+                alt="Bloomme founder curating fresh puja flower arrangements in Faridabad"
                 src={hero.image_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuBbPchiGMM45_qQyJbBdhsOj02PEo8KNhZYKiZ5hAF2RrH74Wb3gjoiWpWAmLnfVqNmW5yVBgwRsXU9ZT0EUpFfuA8lF94DPUp8-5FdLAWbvClwE9b5OH2yb8bbF0QBjagIO7vF1iqHA6SrTfNzoFnMZ5vOM9qpRMRTtNPouJ4wS9uM_skkUWjXxvEK7kTx0rUIYv3F-sGl-LUqkegZNy6XQXZLRaiU52btZDSNX0sW_VZQQyqN5jyRVE-cInNKxufmHldvLd-mz-kL"}
               />
             </div>
             <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-xl overflow-hidden shadow-xl hidden md:block">
               <img
                 className="w-full h-full object-cover"
-                alt="Flowers"
+                alt="Fresh marigold and jasmine puja flowers — Bloomme daily delivery"
                 src={hero.metadata?.secondary_image || "https://lh3.googleusercontent.com/aida-public/AB6AXuAmuJSsl2nCgozTNhhHsVC5LzpWPUKYE6-N8YueZ6UqZ4o1Tp5aJ_RIrWiFAenOfHSnClcmWl2ng4f8JWBXNdIvSMkEIeERC2wMk0mbCsXR-7CxUQ_6ftXYsIhTe_qMNwmtehPtuyP_447nqz6NgPNf4WWKqXRqOUBegDm7YadNHGRvmj8YQ48xX6J9KjJavx1GnVHA325IXb3umto_of8MIvML_-S9Zc9Ce-p3mG5mpmB2OTykw9flXflvf3vgylPysvZh4TAuDC-M"}
               />
             </div>
@@ -259,7 +252,7 @@ export default function AboutPage() {
               <div className="flex-1 w-full h-48 md:h-full relative overflow-hidden rounded-2xl">
                 <img
                   className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
-                  alt="Community"
+                  alt="Bloomme devotee community receiving daily puja flower subscription in Faridabad"
                   src={values.image_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuDkiE3cSJuD5LxWveSo1NfyQRiY0dRhl6yhANWSj1yUFEBGjUbjUw0zQDyK3FD3pIqg-x5R8AnTg-mW1Ul9-NpQu005_AU59n-wTsRaONTsDdz5p-WKS0JGUXHVe9W1Oxbh-5da2Ms_v-P9cx7T7hz0xBj4XODbJBf3p9bnWSTciSXWMsd5_gYsfb9ptXoht4QvLGtn7FGzpvnqO9UFeD6jmPrRzWXQtjMlMh8IN_sn9uriz382JW5yW8QL4EW0__gQrZR6juxOEurz"}
                 />
               </div>

@@ -7,19 +7,19 @@ import { motion, AnimatePresence } from "framer-motion";
 const FESTIVAL_IMAGES = [
   {
     alt: "Gudi Padwa / Ugadi — Hindu New Year",
-    src: "/images/Festivals/Gudi Padwa celebration offerings and decorations.png",
+    src: "/images/Festivals/gudi-padwa-celebration-offerings-and-decorations.png",
   },
   {
     alt: "Hanuman Jayanti",
-    src: "/images/Festivals/Serene Hanuman Jayanti devotion setup.png",
+    src: "/images/Festivals/serene-hanuman-jayanti-devotion-setup.png",
   },
   {
     alt: "Akshaya Tritiya",
-    src: "/images/Festivals/Akshaya Tritiya celebration with gold offerings.png",
+    src: "/images/Festivals/akshaya-tritiya-celebration-with-gold-offerings.png",
   },
   {
     alt: "Buddha Purnima",
-    src: "/images/Festivals/Buddha Purnima celebration with serene offerings.png",
+    src: "/images/Festivals/buddha-purnima-celebration-with-serene-offerings.png",
   },
 ];
 
@@ -107,7 +107,7 @@ export const FestivalMode: React.FC = () => {
           viewport={{ once: true }}
           className="order-2 lg:order-1 relative bloom-image-trigger"
         >
-          <div className="relative aspect-[5/4] shadow-xl overflow-hidden bg-surface-container">
+          <div className="relative rounded-2xl shadow-xl overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentImageIndex}
@@ -115,14 +115,13 @@ export const FestivalMode: React.FC = () => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.8 }}
-                className="absolute inset-0"
               >
                 <Image
                   alt={festivals[currentImageIndex]?.name || "Festival"}
                   src={festivals[currentImageIndex]?.image || FESTIVAL_IMAGES[0].src}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 500px"
-                  className="object-contain object-center"
+                  width={800}
+                  height={600}
+                  style={{ width: "100%", height: "auto", display: "block" }}
                   priority={currentImageIndex === 0}
                 />
               </motion.div>

@@ -185,6 +185,73 @@ export default function FAQPage() {
 
   return (
     <main className="min-h-screen bg-surface">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: [
+              {
+                "@type": "Question",
+                name: "What is Bloomme?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "Bloomme is a subscription-based flower delivery service for daily puja and spiritual rituals. We deliver fresh, hygienic flowers to your doorstep early morning before your daily prayers.",
+                },
+              },
+              {
+                "@type": "Question",
+                name: "What time are flowers delivered?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "Flowers are delivered between 5:30 AM – 7:30 AM daily, ensuring they are ready before morning prayers.",
+                },
+              },
+              {
+                "@type": "Question",
+                name: "Can I pause my subscription?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "Yes. You can pause your subscription anytime if travelling or temporarily not requiring deliveries, and resume whenever you like.",
+                },
+              },
+              {
+                "@type": "Question",
+                name: "Which areas do you deliver to?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "Currently delivering in selected areas of Faridabad, starting with NIT areas. More areas coming soon.",
+                },
+              },
+              {
+                "@type": "Question",
+                name: "How much does Bloomme cost?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "Plans start from ₹59/day for the Traditional plan. The Divine plan is ₹89/day and the Celestial plan is ₹179/day.",
+                },
+              },
+              {
+                "@type": "Question",
+                name: "Can I customize my flowers?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "Yes, Bloomme allows limited customization. You can request a specific flower on a particular day, provided we receive the request at least 24 hours in advance.",
+                },
+              },
+              {
+                "@type": "Question",
+                name: "Is Bloomme environmentally friendly?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "Yes, we focus on eco-friendly packaging using paper bags, recyclable materials, and minimal plastic usage.",
+                },
+              },
+            ],
+          }),
+        }}
+      />
       <Navigation />
 
       <div className="pt-32 pb-20">
@@ -201,11 +268,10 @@ export default function FAQPage() {
             </span>
           </div>
           <h1 className="text-5xl font-display font-bold tracking-tighter mb-4 text-on-background">
-            How can we{" "}
+            Frequently Asked{" "}
             <span className="font-accent italic font-normal text-primary">
-              assist you
-            </span>{" "}
-            today?
+              Questions
+            </span>
           </h1>
           <p className="text-on-surface-variant text-lg max-w-2xl mx-auto mb-12">
             Explore our curated guide to gifting, subscriptions, and our

@@ -157,7 +157,7 @@ export default function ReferralsPage() {
             <img
               alt="Bloomme Logo"
               className="h-12 w-auto object-contain"
-              src="https://lh3.googleusercontent.com/aida/ADBb0uh7ZKyDJvwqw8ovYvtb0IHQdG6Jv2KaAOnHu1AGUxaY7f5yWx8Bm8bW4DdhajWiRGZI7aDPD80yHUQvArr709jqO0Rind89sxZ8IGlrzj_y9d76cmJXkujDpYGK96y1vFLGvzNj-84QvcdHvqUDZ0V9CeBkTJn-SpYg1fdwMw49RF6jD4a2hqRJw8d1kv9dDTXF8PRjNUwzz12qcm7zXkim20_naL4SjhWp0jH2caARUwlDppLyhWakTC5HuWY9y3cjlT0VSdPZjp8"
+              src="/images/backgroundlesslogo.png"
             />
           </Link>
         </div>
@@ -315,7 +315,7 @@ export default function ReferralsPage() {
               <img
                 alt="Bloomme Logo"
                 className="w-auto self-start h-32"
-                src="https://lh3.googleusercontent.com/aida/ADBb0uh7ZKyDJvwqw8ovYvtb0IHQdG6Jv2KaAOnHu1AGUxaY7f5yWx8Bm8bW4DdhajWiRGZI7aDPD80yHUQvArr709jqO0Rind89sxZ8IGlrzj_y9d76cmJXkujDpYGK96y1vFLGvzNj-84QvcdHvqUDZ0V9CeBkTJn-SpYg1fdwMw49RF6jD4a2hqRJw8d1kv9dDTXF8PRjNUwzz12qcm7zXkim20_naL4SjhWp0jH2caARUwlDppLyhWakTC5HuWY9y3cjlT0VSdPZjp8"
+                src="/images/backgroundlesslogo.png"
               />
               <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-on-surface leading-none">
                 Spread the <span className="font-editorial italic text-primary">Beauty</span>,

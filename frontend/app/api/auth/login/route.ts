@@ -4,8 +4,8 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
 
-        // Forward to admin-portal backend (port 9000)
-        const response = await fetch('http://localhost:9000/api/auth/login', {
+        const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
+        const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

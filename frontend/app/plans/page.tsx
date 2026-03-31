@@ -3,12 +3,27 @@
 import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { Navigation } from "@/components/common/Navigation";
 import { Footer } from "@/components/sections/Footer";
 import { SUBSCRIPTION_PLANS } from "@/constants";
 import { Button } from "@/components/common/Button";
 
+const PLAN_ID_MAP: Record<string, string> = {
+  Traditional: "TRADITIONAL",
+  Divine: "DIVINE",
+  Celestial: "CELESTIAL",
+};
+
 export default function PlansPage() {
+  const router = useRouter();
+
+  const handleSelectPlan = (planName: string) => {
+    const planId = PLAN_ID_MAP[planName] || "TRADITIONAL";
+    localStorage.setItem("checkout_plan", planId);
+    router.push("/checkout/plan");
+  };
+
   const planImages = {
     traditional: "/images/traditional.png",
     divine: "/images/divine.png",
@@ -17,6 +32,56 @@ export default function PlansPage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            itemListElement: [
+              {
+                "@type": "Product",
+                position: 1,
+                name: "Traditional Plan",
+                description:
+                  "Daily puja essentials — loose marigolds and jasmine",
+                offers: {
+                  "@type": "Offer",
+                  price: "59",
+                  priceCurrency: "INR",
+                  availability: "https://schema.org/InStock",
+                },
+              },
+              {
+                "@type": "Product",
+                position: 2,
+                name: "Divine Plan",
+                description:
+                  "Comprehensive ritual coverage with malas and seasonal flowers",
+                offers: {
+                  "@type": "Offer",
+                  price: "89",
+                  priceCurrency: "INR",
+                  availability: "https://schema.org/InStock",
+                },
+              },
+              {
+                "@type": "Product",
+                position: 3,
+                name: "Celestial Plan",
+                description:
+                  "The complete florist's atelier — premium arrangements daily",
+                offers: {
+                  "@type": "Offer",
+                  price: "179",
+                  priceCurrency: "INR",
+                  availability: "https://schema.org/InStock",
+                },
+              },
+            ],
+          }),
+        }}
+      />
       <Navigation />
       <main className="min-h-screen bg-surface pt-32 pb-20">
         <section className="py-24 bg-surface relative overflow-hidden">
@@ -45,7 +110,7 @@ export default function PlansPage() {
               className="text-center mb-16"
             >
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-                Subscription Plans
+                Puja Flower Subscription Plans
               </h1>
               <p className="text-on-surface-variant">
                 Tailored for your daily spiritual needs
@@ -86,7 +151,7 @@ export default function PlansPage() {
                     <div className="h-64 overflow-hidden rounded-t-[2rem] bg-gray-50 flex items-center justify-center">
                       <Image
                         src={imageSrc}
-                        alt={plan.name}
+                        alt={`${plan.name} puja flower arrangement — Bloomme daily subscription plan`}
                         width={400}
                         height={256}
                         className="w-full h-full object-cover"
@@ -144,6 +209,7 @@ export default function PlansPage() {
                         className={`w-full ${
                           plan.highlighted ? "bg-on-primary text-primary hover:bg-on-primary/90" : ""
                         }`}
+                        onClick={() => handleSelectPlan(plan.name)}
                       >
                         {plan.cta}
                       </Button>
@@ -167,9 +233,9 @@ export default function PlansPage() {
                   <th className="p-6 font-semibold text-on-surface-variant text-sm">
                     Features
                   </th>
-                  <th className="p-6 font-bold text-on-surface">Traditional</th>
-                  <th className="p-6 font-bold text-primary">Divine</th>
-                  <th className="p-6 font-bold text-on-surface">Celestial</th>
+                  <th className="p-6 font-bold text-on-surface cursor-pointer hover:text-primary transition-colors" onClick={() => handleSelectPlan("Traditional")}>Traditional</th>
+                  <th className="p-6 font-bold text-primary cursor-pointer hover:text-primary/80 transition-colors" onClick={() => handleSelectPlan("Divine")}>Divine</th>
+                  <th className="p-6 font-bold text-on-surface cursor-pointer hover:text-primary transition-colors" onClick={() => handleSelectPlan("Celestial")}>Celestial</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-container">

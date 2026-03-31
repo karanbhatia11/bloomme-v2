@@ -19,7 +19,7 @@ interface HowItWorksContent {
 }
 
 const DEFAULT_CONTENT: HowItWorksContent = {
-  title: "A Ritual of Freshness",
+  title: "How Our Flower Delivery Works",
   subtitle: "From our garden to your sanctuary in four mindful steps.",
   metadata: {
     cards: HOW_IT_WORKS
@@ -28,7 +28,6 @@ const DEFAULT_CONTENT: HowItWorksContent = {
 
 export const HowItWorks: React.FC = () => {
   const [content, setContent] = useState<HowItWorksContent>(DEFAULT_CONTENT);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -47,9 +46,7 @@ export const HowItWorks: React.FC = () => {
           });
         }
       } catch (err) {
-        console.error('Failed to fetch how-it-works content:', err);
-      } finally {
-        setLoading(false);
+        // Keep DEFAULT_CONTENT on error
       }
     };
 
@@ -57,10 +54,6 @@ export const HowItWorks: React.FC = () => {
   }, []);
 
   const cards = content.metadata?.cards || DEFAULT_CONTENT.metadata?.cards || HOW_IT_WORKS;
-
-  if (loading) {
-    return <div className="py-32 bg-surface-container-low" />;
-  }
 
   return (
     <section className="py-32 bg-surface-container-low overflow-hidden relative" id="how-it-works">

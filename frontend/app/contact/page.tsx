@@ -29,7 +29,6 @@ export default function ContactPage() {
   >("idle");
 
   const [content, setContent] = useState<PageContent>({});
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -44,9 +43,7 @@ export default function ContactPage() {
           setContent(pageContent);
         }
       } catch (err) {
-        console.error('Failed to fetch contact page content:', err);
-      } finally {
-        setLoading(false);
+        // Keep empty content, fallbacks render default text
       }
     };
 
@@ -96,10 +93,6 @@ export default function ContactPage() {
     }
   };
 
-  if (loading) {
-    return <div className="min-h-screen bg-surface" />;
-  }
-
   const intro = content.intro || {};
 
   return (
@@ -124,11 +117,10 @@ export default function ContactPage() {
               <>{intro.title}</>
             ) : (
               <>
-                Let&rsquo;s create something{" "}
+                Contact{" "}
                 <span className="font-accent italic font-normal text-primary">
-                  beautiful
-                </span>{" "}
-                together.
+                  Bloomme
+                </span>
               </>
             )}
           </h1>

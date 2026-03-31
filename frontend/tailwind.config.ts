@@ -58,10 +58,12 @@ export default {
         "on-error": "#ffffff",
       },
       fontFamily: {
-        headline: ["EB Garamond", "serif"],
-        body: ["EB Garamond", "serif"],
-        label: ["EB Garamond", "serif"],
-        editorial: ["Playfair Display", "serif"],
+        headline: ["var(--font-garamond)", "EB Garamond", "serif"],
+        body: ["var(--font-garamond)", "EB Garamond", "serif"],
+        label: ["var(--font-garamond)", "EB Garamond", "serif"],
+        editorial: ["var(--font-playfair)", "Playfair Display", "serif"],
+        display: ["var(--font-playfair)", "Playfair Display", "serif"],
+        accent: ["var(--font-playfair)", "Playfair Display", "serif"],
       },
       borderRadius: {
         DEFAULT: "0.25rem",

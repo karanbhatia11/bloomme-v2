@@ -5,6 +5,7 @@ export const NAV_LINKS = [
   { href: "/#add-ons", label: "Add Ons" },
   { href: "/#delivery", label: "Delivery" },
   { href: "/about", label: "Our Story" },
+  { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ];
 
