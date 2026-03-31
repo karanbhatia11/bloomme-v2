@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -8,6 +8,12 @@ import { NAV_LINKS, LOGO_URL } from "@/constants";
 
 export const Navigation: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
 
   return (
     <nav className="fixed top-0 w-full z-50 glass-nav shadow-[0_20px_40px_rgba(47,21,0,0.06)]">
@@ -38,9 +44,15 @@ export const Navigation: React.FC = () => {
           <button className="hidden md:block text-on-background opacity-70 hover:text-primary transition-colors">
             <span className="material-symbols-outlined">shopping_bag</span>
           </button>
-          <Link href="/login" className="hidden md:block text-sm font-medium text-on-background opacity-80 hover:text-primary transition-colors">
-            Login
-          </Link>
+          {isLoggedIn ? (
+            <Link href="/dashboard" className="hidden md:block text-sm font-medium text-on-background opacity-80 hover:text-primary transition-colors">
+              My Account
+            </Link>
+          ) : (
+            <Link href="/login" className="hidden md:block text-sm font-medium text-on-background opacity-80 hover:text-primary transition-colors">
+              Login
+            </Link>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -70,6 +82,25 @@ export const Navigation: React.FC = () => {
               {link.label}
             </Link>
           ))}
+          <div className="border-t border-outline-variant/10 py-3">
+            {isLoggedIn ? (
+              <Link
+                href="/dashboard"
+                className="block py-3 text-sm font-medium text-on-background opacity-80 hover:text-primary transition-all"
+                onClick={() => setIsOpen(false)}
+              >
+                My Account
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="block py-3 text-sm font-medium text-on-background opacity-80 hover:text-primary transition-all"
+                onClick={() => setIsOpen(false)}
+              >
+                Login
+              </Link>
+            )}
+          </div>
         </motion.div>
       )}
     </nav>

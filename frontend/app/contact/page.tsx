@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Navigation } from "@/components/common/Navigation";
@@ -9,6 +9,10 @@ import { Footer } from "@/components/sections/Footer";
 const PHONE_NUMBER = "9950707995";
 const EMAIL = "info@bloomme.co.in";
 const WHATSAPP_URL = `https://wa.me/91${PHONE_NUMBER}`;
+
+interface PageContent {
+  intro?: any;
+}
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -23,6 +27,31 @@ export default function ContactPage() {
   const [submitStatus, setSubmitStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
+
+  const [content, setContent] = useState<PageContent>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const response = await fetch('/api/admin/page-content?page=contact');
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          const pageContent: PageContent = {};
+          data.forEach((item: any) => {
+            pageContent[item.section_name as keyof PageContent] = item;
+          });
+          setContent(pageContent);
+        }
+      } catch (err) {
+        console.error('Failed to fetch contact page content:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContent();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -67,6 +96,12 @@ export default function ContactPage() {
     }
   };
 
+  if (loading) {
+    return <div className="min-h-screen bg-surface" />;
+  }
+
+  const intro = content.intro || {};
+
   return (
     <main className="min-h-screen bg-surface">
       <Navigation />
@@ -85,15 +120,20 @@ export default function ContactPage() {
             </span>
           </div>
           <h1 className="text-5xl md:text-7xl font-display font-bold tracking-tighter text-on-surface max-w-2xl leading-[0.9]">
-            Let&rsquo;s create something{" "}
-            <span className="font-accent italic font-normal text-primary">
-              beautiful
-            </span>{" "}
-            together.
+            {intro.title ? (
+              <>{intro.title}</>
+            ) : (
+              <>
+                Let&rsquo;s create something{" "}
+                <span className="font-accent italic font-normal text-primary">
+                  beautiful
+                </span>{" "}
+                together.
+              </>
+            )}
           </h1>
           <p className="text-on-surface-variant max-w-lg text-lg leading-relaxed pt-4">
-            Whether you&rsquo;re planning a grand ceremony or a quiet gesture of love,
-            our florists are here to guide your choice.
+            {intro.subtitle || "Whether you're planning a grand ceremony or a quiet gesture of love, our florists are here to guide your choice."}
           </p>
         </motion.div>
 
