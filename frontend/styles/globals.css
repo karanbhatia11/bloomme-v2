@@ -79,66 +79,19 @@ body {
   font-style: italic;
 }
 
-/* Petal Animation */
-@keyframes drift {
-  0% {
-    transform: translateY(-10vh) translateX(0) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.8;
-  }
-  90% {
-    opacity: 0.8;
-  }
-  100% {
-    transform: translateY(110vh) translateX(100px) rotate(360deg);
-    opacity: 0;
-  }
-}
-
-.petal {
-  position: absolute;
-  background: rgba(232, 193, 112, 0.3);
-  border-radius: 50% 0 50% 50%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.petal-1 {
-  width: 15px;
-  height: 15px;
-  left: 10%;
-  animation: drift 15s linear infinite;
-}
-
-.petal-2 {
-  width: 10px;
-  height: 10px;
-  left: 30%;
-  animation: drift 12s linear infinite 2s;
-}
-
-.petal-3 {
-  width: 12px;
-  height: 12px;
-  left: 55%;
-  animation: drift 18s linear infinite 5s;
-}
-
-.petal-4 {
-  width: 8px;
-  height: 8px;
-  left: 80%;
-  animation: drift 14s linear infinite 1s;
-}
-
-.petal-5 {
-  width: 14px;
-  height: 14px;
-  left: 95%;
-  animation: drift 16s linear infinite 8s;
-}
+/*
+ * Floating Floral Background Layer
+ * Premium ambient animation system
+ * Defined in: components/ambient/floating-flowers.css
+ * Integrated via FloatingFlowers React component
+ *
+ * Z-INDEX STRATEGY:
+ * 0   - Floating Flowers Container (behind everything)
+ * 1+  - Content (default)
+ * 30+ - Navigation
+ * 40+ - Header/Sticky elements
+ * 50+ - Modals, Dialogs
+ */
 
 /* Bloom Hover Effect */
 .bloom-hover {
