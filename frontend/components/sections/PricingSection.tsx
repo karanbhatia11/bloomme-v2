@@ -34,7 +34,7 @@ export const PricingSection: React.FC = () => {
           className="text-center mb-12 sm:mb-16"
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 sm:mb-6">
-            Subscription Plans
+            Puja Flower Subscription Plans
           </h2>
           <p className="text-xs sm:text-sm md:text-base text-on-surface-variant">
             Tailored for your daily spiritual needs

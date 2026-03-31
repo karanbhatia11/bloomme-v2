@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 interface HeroContent {
@@ -15,9 +16,9 @@ interface HeroContent {
 
 const DEFAULT_HERO: HeroContent = {
   title: "Daily Fresh Puja Flowers & Essentials Delivered at Your Doorsteps.",
-  subtitle: "Fresh puja flowers & essentials delivered before sunrise - every single day.",
-  cta_text: "YOUR DAILY DEVOTION, STARTING FROM ONLY ₹49/DAY",
-  image_url: "/images/Hero Section background.png",
+  subtitle: "India's trusted daily puja flower delivery subscription. Fresh flowers at your doorstep every morning between 5:30–7:30 AM.",
+  cta_text: "YOUR DAILY DEVOTION, STARTING FROM ONLY ₹59/DAY",
+  image_url: "/images/hero-section-background.png",
   metadata: {
     social_proof: "Join 100 families who start every morning with Bloomme"
   }
@@ -25,7 +26,6 @@ const DEFAULT_HERO: HeroContent = {
 
 export const HeroSection: React.FC = () => {
   const [hero, setHero] = useState<HeroContent>(DEFAULT_HERO);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchHeroContent = async () => {
@@ -46,28 +46,29 @@ export const HeroSection: React.FC = () => {
           });
         }
       } catch (err) {
-        console.error('Failed to fetch hero content:', err);
-      } finally {
-        setLoading(false);
+        // Keep DEFAULT_HERO on error
       }
     };
 
     fetchHeroContent();
   }, []);
 
-  if (loading) {
-    return <div className="h-screen bg-gray-900" />;
-  }
-
   return (
-    <header className="relative w-full pt-20 sm:pt-24 md:pt-32 pb-12 sm:pb-16 md:pb-20 flex items-center justify-center overflow-hidden bg-cover bg-center min-h-[calc(100vh-80px)] sm:min-h-[calc(100vh-90px)] md:min-h-[calc(100vh-100px)]"
-      style={{
-        backgroundImage: `url('${hero.image_url}')`
-      }}>
-      {/* Dark Overlay */}
-      <div className="absolute inset-0 bg-black/35"></div>
+    <header className="relative w-full pt-20 sm:pt-24 md:pt-32 pb-12 sm:pb-16 md:pb-20 flex items-center justify-center overflow-hidden min-h-[calc(100vh-80px)] sm:min-h-[calc(100vh-90px)] md:min-h-[calc(100vh-100px)]">
+      {/* Hero background image */}
+      <Image
+        src={hero.image_url}
+        alt="Fresh puja flowers arranged for morning prayer — Bloomme daily delivery"
+        fill
+        priority
+        quality={85}
+        className="object-cover object-center"
+      />
 
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 text-center relative z-10">
+      {/* Dark Overlay */}
+      <div className="absolute inset-0 bg-black/35 z-[1]"></div>
+
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 text-center relative z-[2]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -80,6 +81,10 @@ export const HeroSection: React.FC = () => {
 
           <p className="text-xs sm:text-sm md:text-base lg:text-lg text-white/90 max-w-2xl mx-auto leading-relaxed">
             {hero.subtitle}
+          </p>
+
+          <p className="text-white/75 text-xs sm:text-sm font-medium tracking-wide">
+            Now delivering in Faridabad · NIT areas · Puja flower subscription from ₹59/day
           </p>
 
           <motion.div

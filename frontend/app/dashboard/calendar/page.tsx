@@ -73,7 +73,7 @@ export default function CalendarPage() {
             <img
               alt="Bloomme Logo"
               className="h-12 w-auto object-contain"
-              src="https://lh3.googleusercontent.com/aida/ADBb0uh7ZKyDJvwqw8ovYvtb0IHQdG6Jv2KaAOnHu1AGUxaY7f5yWx8Bm8bW4DdhajWiRGZI7aDPD80yHUQvArr709jqO0Rind89sxZ8IGlrzj_y9d76cmJXkujDpYGK96y1vFLGvzNj-84QvcdHvqUDZ0V9CeBkTJn-SpYg1fdwMw49RF6jD4a2hqRJw8d1kv9dDTXF8PRjNUwzz12qcm7zXkim20_naL4SjhWp0jH2caARUwlDppLyhWakTC5HuWY9y3cjlT0VSdPZjp8"
+              src="/images/backgroundlesslogo.png"
             />
           </Link>
         </div>
@@ -216,10 +216,10 @@ export default function CalendarPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Main Calendar Section */}
-          <section className="lg:col-span-8 space-y-6">
-            <div className="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-2xl font-semibold">March 2026</h2>
+          <section className="lg:col-span-6 space-y-6">
+            <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm max-w-md">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-semibold">March 2026</h2>
                 <div className="flex gap-2">
                   <button className="p-2 rounded-lg bg-surface-container-low hover:bg-surface-container-highest transition-colors">
                     <span className="material-symbols-outlined">chevron_left</span>
@@ -309,54 +309,6 @@ export default function CalendarPage() {
 
           {/* Sidebar Actions & Lists */}
           <aside className="lg:col-span-4 space-y-8">
-            {/* Upcoming Deliveries */}
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">pending_actions</span>
-                Upcoming Deliveries
-              </h3>
-
-              {/* Card 1 */}
-              <div className="bg-surface-container-low rounded-xl p-5 space-y-4 border-l-4 border-primary shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-primary">Friday, March 20</p>
-                    <h4 className="text-lg font-semibold mt-1">'The Aurelian Dream' Bouquet</h4>
-                    <p className="text-sm text-on-surface-variant">Luxe Weekly Subscription</p>
-                  </div>
-                  <img
-                    alt="Floral bouquet"
-                    className="w-16 h-16 rounded-lg object-cover"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuD88yAUtsccFXuK1P94_XiocS4UrDulsRH_t2fxt4C1pVaaxXPFDMrh9DHkvNOylNhGrbRZ912l1WUYhuaRFDQvz5r4kdewcWSdjdkTU5C_a078knMbi5I3kW1DBiPuSnfkmNsY_JWqvEMOcFUslzCt7CEpTOv1iRvXHvzKQk1AmRj_fFBbzE8fhqxD9FSEy9gdErvxjpz9tlKrkMRlETpNwZSMvM9CN-D9bZhJwOWKQwB2BCpbot-DiZmCAlRAkSkz5osxO5O4kJNZ"
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <button className="flex-1 bg-surface-container-highest py-2 px-3 rounded-lg text-sm font-semibold hover:bg-primary hover:text-white transition-all">Reschedule</button>
-                  <button className="flex-1 border border-primary/20 py-2 px-3 rounded-lg text-sm font-semibold hover:bg-error-container hover:text-on-error-container transition-all">Skip</button>
-                </div>
-              </div>
-
-              {/* Card 2 */}
-              <div className="bg-surface-container-low rounded-xl p-5 space-y-4 border-l-4 border-primary-container shadow-sm opacity-90 hover:opacity-100 transition-opacity">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-primary-container">Friday, March 27</p>
-                    <h4 className="text-lg font-semibold mt-1">Custom Orchid Arrangement</h4>
-                    <p className="text-sm text-on-surface-variant">Office Reception Decor</p>
-                  </div>
-                  <img
-                    alt="White orchids"
-                    className="w-16 h-16 rounded-lg object-cover"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7mBz4iPdnMkvdyhhaLqSXEdFf5H98DndJEftMYryg9KijWJ_PiByEglAHYGGLtyU7EthzgVoqKMnGYFxD8PJ67k5B7H5mbsdlF-b6P_aT003MTYzWQ5RgfBsYZ-a41oXXlu4vf-_urvHppojU8HXODPQhtSYppBRkgRK_InI_ppXHiogitvLTSHoZ377deRAhBkFje5qixGYfMrLoCiQaGroiI-8h9Nu1uTjIGVueAoo-MDdJ_KoinnW-mtUG7EE-XiaY8YtrwXZs"
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <button className="flex-1 bg-surface-container-highest py-2 px-3 rounded-lg text-sm font-semibold hover:bg-primary hover:text-white transition-all">Reschedule</button>
-                  <button className="flex-1 border border-primary/20 py-2 px-3 rounded-lg text-sm font-semibold hover:bg-error-container hover:text-on-error-container transition-all">Skip</button>
-                </div>
-              </div>
-            </div>
-
             {/* Past Deliveries */}
             <div className="space-y-4">
               <h3 className="text-xl font-bold flex items-center gap-2">
@@ -393,19 +345,6 @@ export default function CalendarPage() {
               </div>
             </div>
 
-            {/* CTA */}
-            <div className="relative overflow-hidden bg-primary rounded-2xl p-6 text-white shadow-xl">
-              <div className="relative z-10">
-                <h4 className="font-editorial text-2xl mb-2">Host an event?</h4>
-                <p className="text-sm opacity-90 mb-6">Let our artisans handle the botanical styling for your next gathering.</p>
-                <button className="bg-white text-primary px-6 py-3 rounded-xl font-bold text-sm tracking-tight hover:bg-surface-container-highest transition-all transform hover:scale-105 active:scale-95 shadow-md">
-                  Book Consultant
-                </button>
-              </div>
-              {/* Decorative Circles */}
-              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full"></div>
-              <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-primary-container/20 rounded-full"></div>
-            </div>
           </aside>
         </div>
       </main>
