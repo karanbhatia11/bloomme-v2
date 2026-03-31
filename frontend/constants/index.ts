@@ -195,4 +195,4 @@ export const FOOTER_LINKS = {
   ],
 };
 
-export const LOGO_URL = "/images/logo.jpeg";
+export const LOGO_URL = "/images/BackdroundLessLogo.png";
