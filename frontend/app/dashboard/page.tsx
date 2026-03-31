@@ -8,11 +8,23 @@ interface UserData {
   id: string;
   name: string;
   email: string;
+  phone?: string;
+  role?: string;
+  referralCode?: string;
+  referralBalance?: number;
+}
+
+interface DashboardStats {
+  activeSubscriptions: number;
+  upcomingDeliveries: number;
+  totalSpentThisMonth: number;
+  referralBalance: number;
 }
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showCart, setShowCart] = useState(false);
@@ -22,30 +34,44 @@ export default function DashboardPage() {
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
 
-    if (!token && !userStr) {
-      const demoUser = {
-        id: "1",
-        name: "Demo",
-        email: "demo@bloomme.com",
-      };
-      localStorage.setItem("token", "demo_token");
-      localStorage.setItem("user", JSON.stringify(demoUser));
-      setUser(demoUser);
-      setLoading(false);
+    if (!token || !userStr) {
+      router.push("/login");
       return;
     }
 
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-        setLoading(false);
-      }
+    try {
+      const userData = JSON.parse(userStr);
+      setUser(userData);
+
+      // Fetch dashboard stats
+      fetch("/api/dashboard/stats", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to fetch stats");
+          return res.json();
+        })
+        .then((data) => {
+          setStats(data);
+        })
+        .catch((error) => {
+          console.error("Error fetching stats:", error);
+          // Set default stats if fetch fails
+          setStats({
+            activeSubscriptions: 0,
+            upcomingDeliveries: 0,
+            totalSpentThisMonth: 0,
+            referralBalance: userData.referralBalance || 0,
+          });
+        })
+        .finally(() => setLoading(false));
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      router.push("/login");
     }
-  }, []);
+  }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -53,8 +79,15 @@ export default function DashboardPage() {
     router.push("/");
   };
 
-  if (!user) {
-    return null;
+  if (!user || loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-surface">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary mx-auto mb-4"></div>
+          <p className="text-on-surface-variant">Loading dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -202,184 +235,123 @@ export default function DashboardPage() {
           <div className="bg-surface-container-low p-6 rounded-xl flex flex-col justify-between">
             <span className="text-on-surface-variant text-sm font-medium">Active Subscriptions</span>
             <div className="flex items-baseline gap-2 mt-4">
-              <span className="text-4xl font-bold text-on-surface">1</span>
-              <span className="text-secondary font-semibold text-xs px-2 py-0.5 bg-secondary-fixed rounded-full">Pro</span>
+              <span className="text-4xl font-bold text-on-surface">{stats?.activeSubscriptions || 0}</span>
             </div>
           </div>
 
           <div className="bg-surface-container-low p-6 rounded-xl flex flex-col justify-between">
-            <span className="text-on-surface-variant text-sm font-medium">Next Delivery</span>
+            <span className="text-on-surface-variant text-sm font-medium">Upcoming Deliveries</span>
             <div className="mt-4">
-              <div className="text-xl font-bold text-on-surface">Tomorrow</div>
-              <div className="text-primary font-semibold text-sm">6:15 AM</div>
+              <div className="text-4xl font-bold text-on-surface">{stats?.upcomingDeliveries || 0}</div>
+              <div className="text-primary font-semibold text-sm">Next 30 days</div>
             </div>
           </div>
 
           <div className="bg-surface-container-low p-6 rounded-xl flex flex-col justify-between">
             <span className="text-on-surface-variant text-sm font-medium">Monthly Investment</span>
             <div className="mt-4 flex flex-col">
-              <span className="text-2xl font-bold text-on-surface">₹146</span>
-              <span className="text-xs text-on-surface-variant">Estimated Spend</span>
+              <span className="text-2xl font-bold text-on-surface">₹{stats?.totalSpentThisMonth || 0}</span>
+              <span className="text-xs text-on-surface-variant">This month</span>
             </div>
           </div>
 
           <div className="bg-surface-container-low p-6 rounded-xl flex flex-col justify-between">
-            <span className="text-on-surface-variant text-sm font-medium">Active Add-ons</span>
+            <span className="text-on-surface-variant text-sm font-medium">Referral Balance</span>
             <div className="mt-4 flex items-center gap-2">
-              <span className="text-4xl font-bold text-on-surface">2</span>
-              <div className="flex -space-x-2">
-                <div className="w-8 h-8 rounded-full bg-surface-container-high border-2 border-surface-container-low flex items-center justify-center text-[10px] font-bold">
-                  L
-                </div>
-                <div className="w-8 h-8 rounded-full bg-surface-container-high border-2 border-surface-container-low flex items-center justify-center text-[10px] font-bold">
-                  G
-                </div>
-              </div>
+              <span className="text-2xl font-bold text-on-surface">₹{stats?.referralBalance || 0}</span>
             </div>
           </div>
         </section>
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* Left Column: Current Arrangement */}
+          {/* Left Column: Info */}
           <div className="lg:col-span-7 space-y-8">
             <div className="flex justify-between items-end mb-4">
-              <h2 className="text-3xl font-bold font-headline tracking-tight">Current Arrangement</h2>
-              <span className="font-editorial italic text-lg text-primary opacity-80">Divine Ritual</span>
+              <h2 className="text-3xl font-bold font-headline tracking-tight">Welcome, {user?.name}!</h2>
             </div>
 
-            {/* Arrangement Card with Image */}
-            <div className="relative overflow-hidden rounded-2xl bg-surface-container-lowest group shadow-sm">
-              <div className="h-64 relative">
-                <img
-                  alt="Beautiful bouquet of pink and white flowers"
-                  className="w-full h-full object-cover"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLe0DFrvz-LPEQFjnroX-qRLSDtdFyE87idX4RJx8OSNmbyGSHafIU2gK3IqI93-D3wLAvHf2lv6lCQV64ynWOoMfHfnseWR4Doq2Ny2jz8TjduYf9sVvXrw1jKbdSS4zwr2IGNuzULZrzsZNWQrqvymTv98F-QGtZNKBXbRmnn9AanLVTmEkjdKqq7IaY1k_uVgBgbQKGIPNFGOkMPXeoMkO_y5jhEPOBbZoVVfVvqjPJVdqonVkVD5msbQo1R7XQLZEBHtGubJZn"
-                />
-                <div className="absolute top-6 right-6 bg-emerald-500/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span className="text-xs font-bold text-emerald-900 uppercase tracking-widest">Active</span>
+            {/* User Info Card */}
+            <div className="relative overflow-hidden rounded-2xl bg-surface-container-lowest group shadow-sm p-8">
+              <h3 className="text-2xl font-bold text-on-surface mb-6">Your Account</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-3 border-b border-outline-variant/10">
+                  <span className="text-on-surface-variant">Email</span>
+                  <span className="font-medium text-on-surface">{user?.email}</span>
                 </div>
-              </div>
-
-              <div className="p-8">
-                <div className="flex justify-between items-start mb-8">
-                  <div>
-                    <h3 className="text-2xl font-bold text-on-surface mb-1">Divine Plan</h3>
-                    <p className="text-on-surface-variant text-sm">Mon - Fri • Morning Freshness</p>
+                {user?.phone && (
+                  <div className="flex justify-between items-center py-3 border-b border-outline-variant/10">
+                    <span className="text-on-surface-variant">Phone</span>
+                    <span className="font-medium text-on-surface">{user?.phone}</span>
                   </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-primary">
-                      ₹89
-                      <span className="text-sm font-medium text-on-surface-variant">/mo</span>
-                    </div>
+                )}
+                {user?.referralCode && (
+                  <div className="flex justify-between items-center py-3">
+                    <span className="text-on-surface-variant">Referral Code</span>
+                    <span className="font-mono font-medium text-primary">{user?.referralCode}</span>
                   </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <div className="flex justify-between text-xs font-bold uppercase tracking-tighter text-on-surface-variant mb-2">
-                      <span>Subscription Journey</span>
-                      <span>42 / 365 Days</span>
-                    </div>
-                    <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-primary to-primary-container w-[11.5%] shadow-[0_0_8px_rgba(196,160,82,0.4)]"></div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-4 pt-4">
-                    <button className="flex-1 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold py-3 px-6 rounded-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
-                      <span className="material-symbols-outlined text-sm">add_circle</span>
-                      Add Add-ons
-                    </button>
-                    <button className="flex-1 bg-surface-container-highest text-primary font-bold py-3 px-6 rounded-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
-                      <span className="material-symbols-outlined text-sm">pause_circle</span>
-                      Pause Plan
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Subscription Enhancements */}
-            <div className="bg-surface-container-low rounded-2xl p-8">
-              <h4 className="font-bold text-lg mb-6">Subscription Enhancements</h4>
-              <div className="flex gap-6">
-                <div className="flex-1 flex items-center gap-4 bg-surface-container-lowest p-4 rounded-xl">
-                  <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary">
-                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      eco
-                    </span>
-                  </div>
-                  <div>
-                    <div className="font-bold text-sm">Sacred Lotus</div>
-                    <div className="text-xs text-on-surface-variant">Daily (2 qty)</div>
-                  </div>
-                </div>
-
-                <div className="flex-1 flex items-center gap-4 bg-surface-container-lowest p-4 rounded-xl">
-                  <div className="w-12 h-12 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary">
-                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      oil_barrel
-                    </span>
-                  </div>
-                  <div>
-                    <div className="font-bold text-sm">Organic Ghee</div>
-                    <div className="text-xs text-on-surface-variant">Weekly (500g)</div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Right Column: Upcoming Cycles */}
+          {/* Right Column: Quick Links */}
           <div className="lg:col-span-5">
             <div className="sticky top-24">
-              <h2 className="text-3xl font-bold font-headline tracking-tight mb-8">Upcoming Cycles</h2>
+              <h2 className="text-3xl font-bold font-headline tracking-tight mb-8">Quick Actions</h2>
 
               <div className="space-y-4">
-                {/* Delivery Items */}
-                {[
-                  { date: "OCT 24", title: "Morning Ritual Bundle", time: "6:15 AM", tags: ["FLOWERS", "LOTUS", "GHEE"] },
-                  { date: "OCT 25", title: "Divine Base Arrangement", time: "6:15 AM", tags: ["FLOWERS"] },
-                  { date: "OCT 26", title: "Divine Base Arrangement", time: "6:15 AM", tags: ["FLOWERS"] },
-                  { date: "OCT 27", title: "Divine Base Arrangement", time: "6:15 AM", tags: ["FLOWERS"] },
-                  { date: "OCT 28", title: "Weekly Stock-up Delivery", time: "6:15 AM", tags: ["GHEE", "OILS"] },
-                ].map((delivery, idx) => {
-                  const [month, day] = delivery.date.split(" ");
-                  return (
-                    <div key={idx} className="bg-surface-container-low p-5 rounded-xl group hover:bg-surface-container transition-colors duration-300">
-                      <div className="flex justify-between items-start">
-                        <div className="flex gap-4">
-                          <div className="flex flex-col items-center justify-center bg-surface-container-highest w-14 h-14 rounded-lg">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{month}</span>
-                            <span className="text-lg font-extrabold text-on-surface">{day}</span>
-                          </div>
-                          <div>
-                            <div className="font-bold text-on-surface">{delivery.title}</div>
-                            <div className="text-sm text-on-surface-variant">Scheduled for {delivery.time}</div>
-                            <div className="flex gap-2 mt-2">
-                              {delivery.tags.map((tag, i) => (
-                                <span key={i} className="px-2 py-0.5 bg-surface-container-highest text-[10px] font-bold rounded text-primary">
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <span className="material-symbols-outlined text-outline opacity-40 group-hover:opacity-100 transition-opacity">
-                          chevron_right
-                        </span>
+                <Link href="/dashboard/subscriptions" className="block bg-surface-container-low p-5 rounded-xl group hover:bg-surface-container transition-colors duration-300">
+                  <div className="flex justify-between items-start">
+                    <div className="flex gap-4">
+                      <div className="flex items-center justify-center bg-surface-container-highest w-14 h-14 rounded-lg">
+                        <span className="material-symbols-outlined text-primary text-2xl">loyalty</span>
+                      </div>
+                      <div>
+                        <div className="font-bold text-on-surface">My Subscriptions</div>
+                        <div className="text-sm text-on-surface-variant">Manage your active plans</div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                    <span className="material-symbols-outlined text-outline opacity-40 group-hover:opacity-100 transition-opacity">
+                      chevron_right
+                    </span>
+                  </div>
+                </Link>
 
-              <button className="w-full mt-8 py-4 border-2 border-dashed border-outline-variant/30 rounded-xl text-on-surface-variant font-medium text-sm hover:border-primary/50 hover:text-primary transition-all flex items-center justify-center gap-2">
-                <span className="material-symbols-outlined">add</span>
-                Schedule Additional Ritual Delivery
-              </button>
+                <Link href="/dashboard/add-ons" className="block bg-surface-container-low p-5 rounded-xl group hover:bg-surface-container transition-colors duration-300">
+                  <div className="flex justify-between items-start">
+                    <div className="flex gap-4">
+                      <div className="flex items-center justify-center bg-surface-container-highest w-14 h-14 rounded-lg">
+                        <span className="material-symbols-outlined text-primary text-2xl">add_circle</span>
+                      </div>
+                      <div>
+                        <div className="font-bold text-on-surface">Add-ons</div>
+                        <div className="text-sm text-on-surface-variant">Enhance your deliveries</div>
+                      </div>
+                    </div>
+                    <span className="material-symbols-outlined text-outline opacity-40 group-hover:opacity-100 transition-opacity">
+                      chevron_right
+                    </span>
+                  </div>
+                </Link>
+
+                <Link href="/dashboard/referrals" className="block bg-surface-container-low p-5 rounded-xl group hover:bg-surface-container transition-colors duration-300">
+                  <div className="flex justify-between items-start">
+                    <div className="flex gap-4">
+                      <div className="flex items-center justify-center bg-surface-container-highest w-14 h-14 rounded-lg">
+                        <span className="material-symbols-outlined text-primary text-2xl">redeem</span>
+                      </div>
+                      <div>
+                        <div className="font-bold text-on-surface">Referrals</div>
+                        <div className="text-sm text-on-surface-variant">Earn rewards & credits</div>
+                      </div>
+                    </div>
+                    <span className="material-symbols-outlined text-outline opacity-40 group-hover:opacity-100 transition-opacity">
+                      chevron_right
+                    </span>
+                  </div>
+                </Link>
+              </div>
             </div>
           </div>
         </div>

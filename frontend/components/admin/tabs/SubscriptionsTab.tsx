@@ -32,13 +32,15 @@ export default function SubscriptionsTab({ token }: SubscriptionsTabProps) {
     const fetchSubscriptions = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/admin/subscriptions', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            console.log('Fetching subscriptions...');
+            const response = await fetch('/api/admin/subscriptions');
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
+            console.log('Subscriptions fetched:', data.length);
             setSubscriptions(Array.isArray(data) ? data : []);
         } catch (err: any) {
             console.error('Failed to fetch subscriptions:', err);
+            setSubscriptions([]);
         } finally {
             setLoading(false);
         }
@@ -59,13 +61,31 @@ export default function SubscriptionsTab({ token }: SubscriptionsTabProps) {
         }
     };
 
+    const formatDate = (dateString: string | null): string => {
+        try {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'N/A';
+            return date.toLocaleDateString();
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'N/A';
+        }
+    };
+
     const getNextDeliveryDate = (subscription: Subscription) => {
-        if (!subscription.start_date) return 'N/A';
-        const startDate = new Date(subscription.start_date);
-        const days = parseInt(subscription.delivery_days || '7');
-        const nextDate = new Date(startDate);
-        nextDate.setDate(nextDate.getDate() + days);
-        return nextDate.toISOString().split('T')[0];
+        try {
+            if (!subscription.start_date) return 'N/A';
+            const startDate = new Date(subscription.start_date);
+            if (isNaN(startDate.getTime())) return 'N/A';
+            const days = parseInt(subscription.delivery_days || '7');
+            const nextDate = new Date(startDate);
+            nextDate.setDate(nextDate.getDate() + days);
+            return nextDate.toISOString().split('T')[0];
+        } catch (error) {
+            console.error('Error calculating next delivery date:', error);
+            return 'N/A';
+        }
     };
 
     if (loading && subscriptions.length === 0) {
@@ -150,7 +170,7 @@ export default function SubscriptionsTab({ token }: SubscriptionsTabProps) {
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-600">Every {sub.delivery_days} days</td>
                                     <td className="px-6 py-4 text-sm text-gray-600">
-                                        {new Date(sub.start_date).toLocaleDateString()}
+                                        {formatDate(sub.start_date)}
                                     </td>
                                     <td className="px-6 py-4 text-sm font-semibold text-blue-600">
                                         {getNextDeliveryDate(sub)}

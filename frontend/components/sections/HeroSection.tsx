@@ -1,13 +1,68 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
+interface HeroContent {
+  title: string;
+  subtitle: string;
+  cta_text: string;
+  image_url: string;
+  metadata?: {
+    social_proof?: string;
+  };
+}
+
+const DEFAULT_HERO: HeroContent = {
+  title: "Daily Fresh Puja Flowers & Essentials Delivered at Your Doorsteps.",
+  subtitle: "Fresh puja flowers & essentials delivered before sunrise - every single day.",
+  cta_text: "YOUR DAILY DEVOTION, STARTING FROM ONLY ₹49/DAY",
+  image_url: "/images/Hero Section background.png",
+  metadata: {
+    social_proof: "Join 100 families who start every morning with Bloomme"
+  }
+};
+
 export const HeroSection: React.FC = () => {
+  const [hero, setHero] = useState<HeroContent>(DEFAULT_HERO);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHeroContent = async () => {
+      try {
+        const response = await fetch('/api/admin/page-content?page=home');
+        const content = await response.json();
+        const heroSection = Array.isArray(content)
+          ? content.find((item: any) => item.section_name === 'hero')
+          : null;
+
+        if (heroSection) {
+          setHero({
+            title: heroSection.title || DEFAULT_HERO.title,
+            subtitle: heroSection.subtitle || DEFAULT_HERO.subtitle,
+            cta_text: heroSection.cta_text || DEFAULT_HERO.cta_text,
+            image_url: heroSection.image_url || DEFAULT_HERO.image_url,
+            metadata: heroSection.metadata || DEFAULT_HERO.metadata
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch hero content:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHeroContent();
+  }, []);
+
+  if (loading) {
+    return <div className="h-screen bg-gray-900" />;
+  }
+
   return (
     <header className="relative w-full pt-20 sm:pt-24 md:pt-32 pb-12 sm:pb-16 md:pb-20 flex items-center justify-center overflow-hidden bg-cover bg-center min-h-[calc(100vh-80px)] sm:min-h-[calc(100vh-90px)] md:min-h-[calc(100vh-100px)]"
       style={{
-        backgroundImage: "url('/images/Hero Section background.png')"
+        backgroundImage: `url('${hero.image_url}')`
       }}>
       {/* Dark Overlay */}
       <div className="absolute inset-0 bg-black/35"></div>
@@ -20,11 +75,11 @@ export const HeroSection: React.FC = () => {
           className="space-y-6 sm:space-y-8"
         >
           <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight max-w-4xl mx-auto">
-            Daily Fresh Puja Flowers &amp; Essentials Delivered at Your Doorsteps.
+            {hero.title}
           </h1>
 
           <p className="text-xs sm:text-sm md:text-base lg:text-lg text-white/90 max-w-2xl mx-auto leading-relaxed">
-            Fresh puja flowers &amp; essentials delivered before sunrise - every single day.
+            {hero.subtitle}
           </p>
 
           <motion.div
@@ -32,7 +87,7 @@ export const HeroSection: React.FC = () => {
             whileTap={{ scale: 0.95 }}
           >
             <button className="bg-secondary text-on-secondary px-4 sm:px-6 md:px-10 lg:px-12 py-2.5 sm:py-3 md:py-4 lg:py-5 rounded-full font-bold text-xs sm:text-sm md:text-base lg:text-lg shadow-lg transition-all hover:shadow-xl">
-              YOUR DAILY DEVOTION, STARTING FROM ONLY ₹49/DAY
+              {hero.cta_text}
             </button>
           </motion.div>
 
@@ -44,7 +99,7 @@ export const HeroSection: React.FC = () => {
           >
             <span className="material-symbols-outlined text-secondary text-lg sm:text-xl md:text-2xl">favorite</span>
             <p className="text-white/80 text-xs sm:text-sm md:text-lg">
-              Join 100 families who start every morning with Bloomme
+              {hero.metadata?.social_proof || DEFAULT_HERO.metadata?.social_proof}
             </p>
           </motion.div>
         </motion.div>

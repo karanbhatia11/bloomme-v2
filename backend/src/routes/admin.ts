@@ -212,7 +212,7 @@ router.post('/page-content', async (req, res) => {
 router.put('/page-content/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, subtitle, description, image_url, cta_text, cta_link, display_order } = req.body;
+        const { title, subtitle, description, image_url, cta_text, cta_link, display_order, metadata } = req.body;
         const result = await pool.query(
             `UPDATE page_content
              SET title = COALESCE($1, title),
@@ -222,10 +222,11 @@ router.put('/page-content/:id', async (req, res) => {
                  cta_text = COALESCE($5, cta_text),
                  cta_link = COALESCE($6, cta_link),
                  display_order = COALESCE($7, display_order),
+                 metadata = COALESCE($8::jsonb, metadata),
                  updated_at = CURRENT_TIMESTAMP
-             WHERE id = $8
+             WHERE id = $9
              RETURNING *`,
-            [title, subtitle, description, image_url, cta_text, cta_link, display_order, id]
+            [title, subtitle, description, image_url, cta_text, cta_link, display_order, metadata ? JSON.stringify(metadata) : null, id]
         );
         res.json(result.rows[0] || { error: 'Content not found' });
     } catch (err: any) {

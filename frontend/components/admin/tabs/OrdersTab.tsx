@@ -37,13 +37,15 @@ export default function OrdersTab({ token }: OrdersTabProps) {
     const fetchOrders = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/admin/orders', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            console.log('Fetching orders...');
+            const response = await fetch('/api/admin/orders');
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
+            console.log('Orders fetched:', data.length);
             setOrders(Array.isArray(data) ? data : []);
         } catch (err: any) {
             console.error('Failed to fetch orders:', err);
+            setOrders([]);
         } finally {
             setLoading(false);
         }

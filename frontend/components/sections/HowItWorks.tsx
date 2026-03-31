@@ -1,10 +1,67 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { HOW_IT_WORKS } from "@/constants";
 
+interface Card {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+interface HowItWorksContent {
+  title: string;
+  subtitle: string;
+  metadata?: {
+    cards?: Card[];
+  };
+}
+
+const DEFAULT_CONTENT: HowItWorksContent = {
+  title: "A Ritual of Freshness",
+  subtitle: "From our garden to your sanctuary in four mindful steps.",
+  metadata: {
+    cards: HOW_IT_WORKS
+  }
+};
+
 export const HowItWorks: React.FC = () => {
+  const [content, setContent] = useState<HowItWorksContent>(DEFAULT_CONTENT);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const response = await fetch('/api/admin/page-content?page=home');
+        const data = await response.json();
+        const section = Array.isArray(data)
+          ? data.find((item: any) => item.section_name === 'how-it-works')
+          : null;
+
+        if (section && section.metadata?.cards) {
+          setContent({
+            title: section.title || DEFAULT_CONTENT.title,
+            subtitle: section.subtitle || DEFAULT_CONTENT.subtitle,
+            metadata: section.metadata
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch how-it-works content:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContent();
+  }, []);
+
+  const cards = content.metadata?.cards || DEFAULT_CONTENT.metadata?.cards || HOW_IT_WORKS;
+
+  if (loading) {
+    return <div className="py-32 bg-surface-container-low" />;
+  }
+
   return (
     <section className="py-32 bg-surface-container-low overflow-hidden relative" id="how-it-works">
       {/* Decorative Flower Background */}
@@ -26,10 +83,10 @@ export const HowItWorks: React.FC = () => {
           className="mb-12 sm:mb-16 md:mb-20"
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4">
-            A Ritual of Freshness
+            {content.title}
           </h2>
           <p className="text-xs sm:text-sm md:text-base lg:text-lg text-on-surface-variant italic font-display mb-12 sm:mb-20 max-w-xl mx-auto">
-            From our garden to your sanctuary in four mindful steps.
+            {content.subtitle}
           </p>
         </motion.div>
 
@@ -37,7 +94,7 @@ export const HowItWorks: React.FC = () => {
           {/* Connector Line (Hidden on Mobile) */}
           <div className="hidden md:block absolute top-12 left-20 right-20 h-0.5 border-t-2 border-dashed border-primary-container/30"></div>
 
-          {HOW_IT_WORKS.map((step, index) => (
+          {cards.map((step, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}

@@ -18,20 +18,31 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
         setLoading(true);
 
         try {
+            // Try to login with email/username as email
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({
+                    email: username,
+                    password: password
+                })
             });
 
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Invalid credentials');
+            }
+
             const data = await response.json();
-            if (data.success) {
+
+            // Check if user is admin
+            if (data.user?.role === 'admin' || data.user?.role?.toLowerCase() === 'admin') {
                 onLogin(data.token);
             } else {
-                setError(data.error || 'Login failed');
+                setError('Admin access required');
             }
         } catch (err: any) {
-            setError('Connection error: ' + err.message);
+            setError(err.message || 'Login failed');
         } finally {
             setLoading(false);
         }

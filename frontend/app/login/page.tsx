@@ -21,42 +21,35 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Demo login - test user
-      if (email === "demo@bloomme.com" && password === "Demo@123") {
-        localStorage.setItem("token", "demo_token_" + Date.now());
-        localStorage.setItem("user", JSON.stringify({
-          id: "1",
-          name: "Demo User",
-          email: "demo@bloomme.com",
-        }));
-        if (typeof window !== "undefined") {
-          window.location.href = "/dashboard";
-        }
-        return;
-      }
-
-      // Real login attempt
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      console.log("Attempting login with email:", email);
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
+      console.log("Response status:", response.status);
+
       if (!response.ok) {
-        throw new Error("Invalid credentials");
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Login error response:", errorData);
+        throw new Error(errorData.message || errorData.error || "Invalid credentials");
       }
 
       const data = await response.json();
+      console.log("Login successful, storing token and user data");
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      if (typeof window !== "undefined") {
-        window.location.href = "/dashboard";
-      }
+      console.log("Redirecting to dashboard");
+      router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      const errorMessage = err instanceof Error ? err.message : "Login failed";
+      console.error("Login error:", errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -88,16 +81,6 @@ export default function LoginPage() {
                 <p className="text-sm text-error">{error}</p>
               </div>
             )}
-
-            {/* Demo Login Info */}
-            <div className="mb-6 p-3 bg-primary/10 border border-primary/20 rounded-lg">
-              <p className="text-xs text-primary font-semibold mb-2">🧪 Demo Account</p>
-              <p className="text-xs text-on-surface-variant">
-                Email: <span className="font-mono">demo@bloomme.com</span>
-                <br />
-                Password: <span className="font-mono">Demo@123</span>
-              </p>
-            </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
@@ -183,6 +166,14 @@ export default function LoginPage() {
                 className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-4 rounded-lg font-headline font-bold text-sm tracking-wide shadow-lg shadow-primary/20 hover:shadow-xl active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 type="submit"
                 disabled={loading}
+                onClick={(e) => {
+                  console.log("Button clicked");
+                  if (!email || !password) {
+                    e.preventDefault();
+                    setError("Please enter email and password");
+                    return;
+                  }
+                }}
               >
                 {loading ? "Signing in..." : "Sign In"}
               </button>

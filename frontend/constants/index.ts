@@ -195,5 +195,4 @@ export const FOOTER_LINKS = {
   ],
 };
 
-export const LOGO_URL =
-  "https://lh3.googleusercontent.com/aida/ADBb0ujUHG6czBrRSmuyCg32EW_5RU3pk8vVBEGB82pTUrMzc0gveElAXQFnGBcRYNkDyqBgTDQ5L_5wHp8JKqr6uAcPQn5ysFaj34osRMtEkLUme4bgn7fxsfc05TDYEBcyubxEYBjLtQzfEEfeicKyYgxzEnGasWC1kBkhnhnn6OJQiEGs_xerzMHR6DmBvE5veLMdSWNFWTkP1Hs9q5J_0kTU97-0OyJLWRxSLN1A6hSgOA_mDrWj-sbmWSgGbqaD3tRmpWroOHFWmN8";
+export const LOGO_URL = "/images/logo.jpeg";
