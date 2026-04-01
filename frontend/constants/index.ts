@@ -1,6 +1,6 @@
 export const NAV_LINKS = [
   { href: "/#how-it-works", label: "How It Works" },
-  { href: "/plans", label: "Plans" },
+  { href: "/#plans", label: "Plans" },
   { href: "/#festivals", label: "Festivals" },
   { href: "/#add-ons", label: "Add Ons" },
   { href: "/#delivery", label: "Delivery" },
@@ -69,7 +69,7 @@ export const HOW_IT_WORKS = [
   {
     icon: "inventory_2",
     title: "Eco-Packaging",
-    description: "Wrapped in biodegradable banana leaf and paper layers.",
+    description: "Clean packaging to maintain freshness.",
   },
   {
     icon: "electric_moped",
@@ -88,42 +88,43 @@ export const SUBSCRIPTION_PLANS = [
     id: 1,
     name: "Traditional",
     price: 59,
+    originalPrice: 69,
     period: "/day",
     description: "Daily essentials for a simple puja",
     features: [
-      "Loose Marigolds & Jasmine",
-      "Daily Freshness Guarantee",
+      "80-100 gms Fresh Devotional Mix",
+      "3 Rotational Variety Flower Mix*",
     ],
-    disabled: ["A2 Ghee Refills"],
-    cta: "Select Plan",
+    disabled: [],
+    cta: "Add to Cart",
     highlighted: false,
   },
   {
     id: 2,
     name: "Divine",
     price: 89,
+    originalPrice: 99,
     period: "/day",
     description: "Comprehensive ritual coverage",
     features: [
-      "Premium Seasonal Mix",
-      "Incense Sticks (weekly)",
-      "Festival Upgrades",
+      "120-150 gms Premium Devotional Mix",
+      "3 Premium Rotational Variety Flower Mix*",
     ],
-    cta: "Start Divine Journey",
+    cta: "Add to Cart",
     highlighted: true,
   },
   {
     id: 3,
     name: "Celestial",
     price: 179,
+    originalPrice: 199,
     period: "/day",
     description: "The complete florist's atelier",
     features: [
-      "Exotic Floral Arrangements",
-      "Full Ritual Essentials Box",
-      "Concierge Ritual Support",
+      "200gms Exotic Offerings",
+      "4 Exotic Rotational Flower Mix*",
     ],
-    cta: "Go Celestial",
+    cta: "Add to Cart",
     highlighted: false,
   },
 ];
@@ -152,9 +153,8 @@ export const TESTIMONIALS = [
     role: "Greenfield, Faridabad",
     quote:
       "The assorted spiritual box is a lifesaver for festival weeks. Everything I need for a complete puja arrives in one beautiful package.",
-    rating: 5,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAa9_r7zV-yunM1rBMIk_o6Dvh10lzZX1CCv5JcDFKhBW61--gNw3R-WAhi1XvVAcVlUIDPSRX6fpSv2_vc1pD_v19YV5MeG1IGTRKdEt2U7jtasj-c6KqoMPR_GxyxOHj8tyhQxw0yTO7HVusyG4otbvusMRi7xpa0FdwS5ZBinEEpN35oyzOV9GnjlFmxQGNbBt8VzQDBDoYRBKmreGHPJRyx0KPFnz8lHUPZyEuK6hC9-qaWPc-eut0QgK-caSCdtVRwG1gs9QA4",
+    rating: 4,
+    image: "",
   },
 ];
 

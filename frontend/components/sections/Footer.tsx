@@ -130,7 +130,7 @@ export const Footer: React.FC = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-3 text-sm rounded-full bg-primary-fixed text-on-primary font-bold hover:bg-primary-fixed-dim transition-colors"
+                className="px-6 py-3 text-sm rounded-full bg-primary text-on-primary font-bold hover:bg-primary/90 transition-colors"
               >
                 JOIN
               </motion.button>

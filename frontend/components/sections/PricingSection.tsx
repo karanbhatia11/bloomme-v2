@@ -89,11 +89,16 @@ export const PricingSection: React.FC = () => {
                     {plan.description}
                   </p>
 
-                  <div className="mb-8">
+                  <div className="mb-8 flex items-baseline gap-1 justify-center">
                     <span className="text-4xl font-bold">₹{plan.price}</span>
                     <span className={plan.highlighted ? "opacity-70" : ""}>
                       {plan.period}
                     </span>
+                    {plan.originalPrice && (
+                      <span className={`text-2xl font-semibold line-through leading-none ${plan.highlighted ? "opacity-50" : "text-on-surface-variant opacity-60"}`}>
+                        ₹{plan.originalPrice}
+                      </span>
+                    )}
                   </div>
 
                   <ul className="space-y-4 mb-10 flex-grow">
@@ -122,10 +127,10 @@ export const PricingSection: React.FC = () => {
                   </ul>
 
                   <Button
-                    variant={plan.highlighted ? "ghost" : "outline"}
+                    variant="outline"
                     size="lg"
-                    className={`w-full ${
-                      plan.highlighted ? "bg-on-primary text-primary hover:bg-on-primary/90" : ""
+                    className={`w-full text-center justify-center ${
+                      plan.highlighted ? "border-white text-white hover:bg-white/20" : ""
                     }`}
                   >
                     {plan.cta}
@@ -135,6 +140,10 @@ export const PricingSection: React.FC = () => {
             );
           })}
         </div>
+
+        <p className="text-center text-xs text-on-surface-variant mt-8 opacity-60">
+          *Flower rotations vary based on seasonal availability
+        </p>
       </div>
     </section>
   );

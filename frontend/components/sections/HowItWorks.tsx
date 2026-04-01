@@ -19,8 +19,8 @@ interface HowItWorksContent {
 }
 
 const DEFAULT_CONTENT: HowItWorksContent = {
-  title: "How Our Flower Delivery Works",
-  subtitle: "From our garden to your sanctuary in four mindful steps.",
+  title: "A Simple Daily Ritual",
+  subtitle: "From sourcing to delivery, everything designed for your daily pooja.",
   metadata: {
     cards: HOW_IT_WORKS
   }

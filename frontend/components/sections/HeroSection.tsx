@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 interface HeroContent {
@@ -25,6 +26,7 @@ const DEFAULT_HERO: HeroContent = {
 };
 
 export const HeroSection: React.FC = () => {
+  const router = useRouter();
   const [hero, setHero] = useState<HeroContent>(DEFAULT_HERO);
 
   useEffect(() => {
@@ -84,14 +86,17 @@ export const HeroSection: React.FC = () => {
           </p>
 
           <p className="text-white/75 text-xs sm:text-sm font-medium tracking-wide">
-            Now delivering in Faridabad · NIT areas · Puja flower subscription from ₹59/day
+            Now delivering in Faridabad
           </p>
 
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <button className="bg-secondary text-on-secondary px-4 sm:px-6 md:px-10 lg:px-12 py-2.5 sm:py-3 md:py-4 lg:py-5 rounded-full font-bold text-xs sm:text-sm md:text-base lg:text-lg shadow-lg transition-all hover:shadow-xl">
+            <button
+              onClick={() => router.push('/plans')}
+              className="bg-secondary text-on-secondary px-4 sm:px-6 md:px-10 lg:px-12 py-2.5 sm:py-3 md:py-4 lg:py-5 rounded-full font-bold text-xs sm:text-sm md:text-base lg:text-lg shadow-lg transition-all hover:shadow-xl cursor-pointer"
+            >
               {hero.cta_text}
             </button>
           </motion.div>

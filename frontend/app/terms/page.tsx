@@ -68,7 +68,7 @@ export default function TermsPage() {
           </p>
           <div className="mt-8 flex justify-center gap-4">
             <span className="px-4 py-1 bg-surface-container-high text-on-surface-variant rounded-full text-xs font-semibold uppercase tracking-widest">
-              Effective Date: June 2024
+              Effective Date: March 2026
             </span>
           </div>
         </motion.header>
