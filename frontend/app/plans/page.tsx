@@ -243,9 +243,9 @@ export default function PlansPage() {
                   <td className="p-6 text-sm text-on-surface-variant">
                     Flower Count
                   </td>
-                  <td className="p-6 text-sm">12 Stems</td>
-                  <td className="p-6 text-sm font-semibold">24 Stems</td>
-                  <td className="p-6 text-sm">40+ Stems</td>
+                  <td className="p-6 text-sm">80-100 gms</td>
+                  <td className="p-6 text-sm font-semibold">120-150 gms</td>
+                  <td className="p-6 text-sm">200 gms</td>
                 </tr>
                 <tr>
                   <td className="p-6 text-sm text-on-surface-variant">
@@ -269,12 +269,7 @@ export default function PlansPage() {
                 </tr>
                 <tr>
                   <td className="p-6 text-sm text-on-surface-variant">
-                    Priority Logistics
-                  </td>
-                  <td className="p-6 text-sm">
-                    <span className="material-symbols-outlined text-error/30">
-                      close
-                    </span>
+                    Rotational Variety
                   </td>
                   <td className="p-6 text-sm">
                     <span className="material-symbols-outlined text-primary">
@@ -286,22 +281,11 @@ export default function PlansPage() {
                       done
                     </span>
                   </td>
-                </tr>
-                <tr>
-                  <td className="p-6 text-sm text-on-surface-variant">
-                    Atelier Vessel
+                  <td className="p-6 text-sm">
+                    <span className="material-symbols-outlined text-primary">
+                      done
+                    </span>
                   </td>
-                  <td className="p-6 text-sm">Basic Cardboard</td>
-                  <td className="p-6 text-sm font-semibold">Glass Vase</td>
-                  <td className="p-6 text-sm">Signature Ceramic</td>
-                </tr>
-                <tr>
-                  <td className="p-6 text-sm text-on-surface-variant">
-                    Subscription Pause
-                  </td>
-                  <td className="p-6 text-sm">Once/month</td>
-                  <td className="p-6 text-sm font-semibold">Unlimited</td>
-                  <td className="p-6 text-sm">Unlimited</td>
                 </tr>
               </tbody>
             </table>
@@ -309,52 +293,53 @@ export default function PlansPage() {
         </section>
 
         {/* Social Proof / Bento Grid Style */}
-        <section className="max-w-screen-xl mx-auto px-8 py-24 grid grid-cols-1 md:grid-cols-4 gap-6">
+        <section className="max-w-screen-xl mx-auto px-8 py-24 grid grid-cols-1 md:grid-cols-2 gap-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="md:col-span-2 bg-surface-container-low p-10 rounded-xl relative overflow-hidden group"
+            className="bg-surface-container-low p-10 rounded-xl relative overflow-hidden group flex flex-col gap-6"
           >
-            <div className="relative z-10">
-              <span className="material-symbols-outlined text-4xl text-primary mb-4 block">
-                eco
-              </span>
-              <h3 className="text-2xl font-bold mb-4">Sustainably Crafted</h3>
-              <p className="text-on-surface-variant leading-relaxed">
-                Every bloom is sourced from ethical farms that prioritize soil
-                health and water conservation. Luxury without compromise.
+            <div className="relative z-10 flex flex-col gap-6">
+              <span className="material-symbols-outlined text-4xl text-primary">eco</span>
+              <div>
+                <h3 className="text-5xl font-black mb-2">100%</h3>
+                <p className="text-lg font-semibold text-on-surface mb-1">Sustainably Crafted</p>
+              </div>
+              <p className="text-on-surface-variant text-sm leading-relaxed">
+                Every bloom is sourced from ethical local farms that prioritise soil health and water conservation. Fresh flowers, delivered with purpose — no compromises.
               </p>
+              <div className="flex gap-2 flex-wrap">
+                {["Eco Packaging", "Local Sourcing", "Zero Waste"].map((tag) => (
+                  <span key={tag} className="text-xs font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full">{tag}</span>
+                ))}
+              </div>
             </div>
             <div className="absolute right-[-20%] bottom-[-20%] opacity-10 group-hover:scale-110 transition-transform duration-700">
               <span className="material-symbols-outlined text-[200px]">spa</span>
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="bg-primary p-10 rounded-xl text-on-primary flex flex-col justify-between"
-          >
-            <p className="text-3xl font-bold leading-tight">150k+</p>
-            <p className="text-on-primary/80 text-sm">
-              Arrangements delivered to premium homes across the globe.
-            </p>
-          </motion.div>
-
-          <motion.div
+<motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="bg-tertiary p-10 rounded-xl text-on-tertiary flex flex-col justify-between"
+            className="bg-tertiary p-10 rounded-xl text-on-tertiary flex flex-col gap-6"
           >
-            <p className="text-3xl font-bold leading-tight">4.9/5</p>
-            <p className="text-on-tertiary/80 text-sm">
-              Member satisfaction rate for our Divine and Celestial plans.
+            <span className="material-symbols-outlined text-4xl">favorite</span>
+            <div>
+              <p className="text-5xl font-black leading-tight mb-2">4.9/5</p>
+              <p className="text-on-tertiary/90 text-base font-semibold">Loved by our subscribers</p>
+            </div>
+            <p className="text-on-tertiary/70 text-sm leading-relaxed">
+              Families across Faridabad rate us highly for freshness, punctuality, and the joy our flowers bring to their morning puja.
             </p>
+            <div className="flex gap-1">
+              {[...Array(5)].map((_, i) => (
+                <span key={i} className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+              ))}
+            </div>
           </motion.div>
         </section>
       </main>

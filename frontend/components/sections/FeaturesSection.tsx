@@ -7,15 +7,15 @@ const CARDS = [
     img: "/images/designed-for-devotion-1.png",
     alt: "Fresh puja flowers delivered before morning prayer — Bloomme",
     title: "Delivered Before The First Prayer",
-    description: "Flowers arrive between 5:30 AM – 7:30 AM daily, ensuring your altar is ready before your day begins.",
+    description: "Delivered early morning before your day begins.",
     label: "Reliable Mornings",
     icon: "schedule",
   },
   {
     img: "/images/serene-prayer-and-modern-connection.png",
     alt: "Serene home prayer setup with fresh flowers — Bloomme flexible subscription",
-    title: "Pause Anytime",
-    description: "Travelling? Skip deliveries in one tap. Your subscription adapts to your life, not the other way around.",
+    title: "Non Monotonic",
+    description: "Fresh and different flowers everyday in every package so your puja never feels monotonous.",
     label: "Effortless Flexibility",
     icon: "pause_circle",
   },
@@ -24,7 +24,7 @@ const CARDS = [
     alt: "Personalized puja ritual management with Bloomme dashboard",
     title: "Full Control",
     description: "Manage plan, calendar & preferences easily through your digital atelier dashboard.",
-    label: "Personalized Care",
+    label: "Personalised Care",
     icon: "tune",
   },
 ];
@@ -50,7 +50,7 @@ export const FeaturesSection: React.FC = () => {
         {CARDS.map((card) => (
           <div
             key={card.title}
-            className="group bg-white rounded-[1.25rem] overflow-hidden transition-all duration-500 hover:-translate-y-2"
+            className="group bg-white rounded-[1.25rem] overflow-hidden transition-all duration-500 hover:-translate-y-2 flex flex-col"
             style={{ boxShadow: "0 20px 40px rgba(47, 21, 0, 0.06)" }}
           >
             <div className="aspect-[4/5] overflow-hidden relative">
@@ -61,10 +61,10 @@ export const FeaturesSection: React.FC = () => {
                 className="object-cover transition-transform duration-700 group-hover:scale-105"
               />
             </div>
-            <div className="p-8">
+            <div className="p-8 flex flex-col flex-1">
               <h3 className="font-bold text-xl text-on-surface mb-3">{card.title}</h3>
               <p className="text-on-surface-variant leading-relaxed">{card.description}</p>
-              <div className="mt-6 flex items-center text-primary font-semibold text-sm tracking-wide uppercase">
+              <div className="mt-auto pt-6 flex items-center text-primary font-semibold text-sm tracking-wide uppercase">
                 <span>{card.label}</span>
                 <span className="material-symbols-outlined ml-2 text-sm">{card.icon}</span>
               </div>

@@ -4,29 +4,55 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { PRODUCTS } from "@/constants";
 
+// Triplicate items so infinite scroll feels seamless
+const INFINITE_PRODUCTS = [...PRODUCTS, ...PRODUCTS, ...PRODUCTS];
+
 export const ProductShowcase: React.FC = () => {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(PRODUCTS.length); // start at middle copy
   const carouselRef = useRef<HTMLDivElement>(null);
+  const isScrolling = useRef(false);
 
-  const handleNext = () => {
-    setActiveIndex((prev) => (prev + 1) % PRODUCTS.length);
-  };
-
-  const handlePrev = () => {
-    setActiveIndex((prev) => (prev - 1 + PRODUCTS.length) % PRODUCTS.length);
-  };
-
-  useEffect(() => {
+  const scrollToIndex = (index: number, smooth = true) => {
     if (carouselRef.current) {
       const cardWidth = window.innerWidth < 768 ? 320 : 400;
       const gap = 32;
-      const scrollPosition = activeIndex * (cardWidth + gap);
       carouselRef.current.scrollTo({
-        left: scrollPosition,
-        behavior: "smooth",
+        left: index * (cardWidth + gap),
+        behavior: smooth ? "smooth" : "instant",
       });
     }
+  };
+
+  const handleNext = () => {
+    const next = activeIndex + 1;
+    setActiveIndex(next);
+    scrollToIndex(next);
+  };
+
+  const handlePrev = () => {
+    const prev = activeIndex - 1;
+    setActiveIndex(prev);
+    scrollToIndex(prev);
+  };
+
+  // After reaching edges of the tripled array, silently jump to middle copy
+  useEffect(() => {
+    if (activeIndex <= 0) {
+      setTimeout(() => {
+        setActiveIndex(PRODUCTS.length);
+        scrollToIndex(PRODUCTS.length, false);
+      }, 300);
+    } else if (activeIndex >= PRODUCTS.length * 2) {
+      setTimeout(() => {
+        setActiveIndex(PRODUCTS.length);
+        scrollToIndex(PRODUCTS.length, false);
+      }, 300);
+    }
   }, [activeIndex]);
+
+  useEffect(() => {
+    scrollToIndex(activeIndex, false);
+  }, []);
 
   return (
     <section className="py-32 bg-surface relative overflow-hidden" id="add-ons">
@@ -64,15 +90,11 @@ export const ProductShowcase: React.FC = () => {
           </div>
         </div>
 
-        <div ref={carouselRef} className="flex overflow-x-auto gap-4 sm:gap-8 no-scrollbar pb-8 sm:pb-10">
-          {PRODUCTS.map((product, index) => (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="min-w-[320px] md:min-w-[400px] bg-surface-container-low rounded-[40px] overflow-hidden shadow-bloom transition-all group"
+        <div ref={carouselRef} className="flex overflow-x-hidden gap-4 sm:gap-8 no-scrollbar pb-8 sm:pb-10">
+          {INFINITE_PRODUCTS.map((product, index) => (
+            <div
+              key={index}
+              className="min-w-[320px] md:min-w-[400px] bg-surface-container-low rounded-[40px] overflow-hidden shadow-bloom transition-all group flex-shrink-0"
             >
               <div className="h-96 overflow-hidden">
                 <div
@@ -85,9 +107,6 @@ export const ProductShowcase: React.FC = () => {
                   {product.category}
                 </span>
                 <h4 className="text-2xl font-black mt-2 mb-4">{product.title}</h4>
-                <p className="text-on-surface-variant text-sm mb-6">
-                  {product.description}
-                </p>
                 <div className="flex justify-between items-center">
                   <span className="text-xl font-bold">₹{product.price}</span>
                   <motion.button
@@ -99,7 +118,7 @@ export const ProductShowcase: React.FC = () => {
                   </motion.button>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

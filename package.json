@@ -1,0 +1,10 @@
+{
+  "name": "bloomme",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix frontend & npm run dev --prefix backend &",
+    "clear-cache": "rm -rf frontend/.next",
+    "fresh": "npm run clear-cache && npm run dev"
+  }
+}

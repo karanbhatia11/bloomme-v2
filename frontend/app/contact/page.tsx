@@ -260,27 +260,6 @@ export default function ContactPage() {
                   Visit the Atelier
                 </h3>
                 <div className="space-y-8">
-                  {/* Location */}
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-surface-container-highest rounded-xl text-primary flex-shrink-0">
-                      <span className="material-symbols-outlined">
-                        location_on
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-bold text-on-surface">
-                        The Bloomme House
-                      </p>
-                      <p className="text-on-surface-variant leading-relaxed">
-                        Studio 42, Sector 15
-                        <br />
-                        Faridabad, Haryana 121007
-                        <br />
-                        India
-                      </p>
-                    </div>
-                  </div>
-
                   {/* Email */}
                   <div className="flex items-start gap-4">
                     <div className="p-3 bg-surface-container-highest rounded-xl text-primary flex-shrink-0">

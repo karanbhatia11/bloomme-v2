@@ -26,7 +26,7 @@ const seedHomeContent = async () => {
             {
                 page_name: 'home',
                 section_name: 'how-it-works',
-                title: 'A Ritual of Freshness',
+                title: 'A Simple Daily Ritual',
                 subtitle: 'From our garden to your sanctuary in four mindful steps.',
                 description: '',
                 image_url: '',

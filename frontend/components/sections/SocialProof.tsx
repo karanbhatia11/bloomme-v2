@@ -27,7 +27,7 @@ export const SocialProof: React.FC = () => {
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-6">Voices of Devotion</h2>
           <p className="text-xs sm:text-sm md:text-base text-on-surface-variant max-w-2xl mx-auto">
-            Join over 2,000 families in Faridabad who have transformed their morning rituals with Bloomme.
+            Trusted by families across Faridabad to transform their morning with Bloomme.
           </p>
         </motion.div>
 
@@ -55,17 +55,11 @@ export const SocialProof: React.FC = () => {
               <p className="text-sm sm:text-base md:text-lg leading-relaxed italic font-display">
                 &ldquo;{testimonial.quote}&rdquo;
               </p>
-              <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mt-2 sm:mt-4">
-                <div
-                  className="w-12 h-12 rounded-full bg-cover bg-center"
-                  style={{ backgroundImage: `url('${testimonial.image}')` }}
-                />
-                <div>
-                  <h5 className="font-bold">{testimonial.name}</h5>
-                  <p className="text-xs text-on-surface-variant">
-                    {testimonial.role}
-                  </p>
-                </div>
+              <div className="mt-2 sm:mt-4 text-center">
+                <h5 className="font-bold">{testimonial.name}</h5>
+                <p className="text-xs text-on-surface-variant">
+                  {testimonial.role}
+                </p>
               </div>
             </motion.div>
           ))}
