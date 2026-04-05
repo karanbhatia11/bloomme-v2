@@ -279,7 +279,10 @@ export default function CheckoutPayPage() {
       const { orderId, razorpayOrderId, amount, currency } = await orderRes.json();
 
       // Get Razorpay key from environment (this should be set in your NEXT_PUBLIC_ env var)
-      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_SZjDqPrkeZAUct";
+      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      if (!razorpayKey) {
+        throw new Error('Razorpay key not configured. Please set NEXT_PUBLIC_RAZORPAY_KEY_ID in your environment.');
+      }
 
       if (!(window as any).Razorpay) {
         await new Promise<void>((resolve, reject) => {
@@ -298,7 +301,7 @@ export default function CheckoutPayPage() {
         order_id: razorpayOrderId,
         name: "Bloomme",
         description: `${cart.planName || "Add-ons"} Order`,
-        image: "/images/backgroundlesslogo.png",
+        image: `${typeof window !== 'undefined' ? window.location.origin : ''}/images/backgroundlesslogo.png`,
         prefill: {
           name:    cart.customer?.name || "",
           email:   cart.customer?.email || "",
@@ -341,6 +344,12 @@ export default function CheckoutPayPage() {
           }
         },
         modal: { ondismiss: () => setLoading(false) },
+      });
+
+      // Add error handler
+      rzp.on('payment.failed', function(response: any) {
+        setError(`Payment failed: ${response.error.reason || 'Unknown error'}`);
+        setLoading(false);
       });
 
       rzp.open();

@@ -165,6 +165,17 @@ router.post('/verify', async (req, res) => {
 
         // If subscription, create subscription record
         if (order.order_type === 'subscription') {
+            // Skip subscription creation for guest users - they need to log in first
+            if (!user_id) {
+                return res.json({
+                    success: true,
+                    orderId: orderId.toString(),
+                    status: 'paid',
+                    isGuest: true,
+                    message: 'Payment successful. Please create an account to activate your subscription.'
+                });
+            }
+
             const items = await pool.query(
                 'SELECT item_id FROM order_items WHERE order_id = $1 AND item_type = $2',
                 [orderId, 'subscription']
@@ -198,6 +209,91 @@ router.post('/verify', async (req, res) => {
     } catch (err: any) {
         console.error('Payment verify error:', err);
         res.status(400).json({ error: err.message });
+    }
+});
+
+// POST /api/payments/webhook
+// Razorpay webhook to handle payment completion notifications
+router.post('/webhook', async (req, res) => {
+    try {
+        const { event, payload } = req.body;
+
+        if (event === 'payment.authorized' || event === 'payment.captured') {
+            const payment = payload.payment.entity;
+            const order_id = payment.order_id;
+
+            // Extract order ID from Razorpay order_id format
+            const orderResult = await pool.query(
+                'SELECT id FROM orders WHERE razorpay_order_id = $1',
+                [order_id]
+            );
+
+            if (orderResult.rows.length > 0) {
+                const orderId = orderResult.rows[0].id;
+
+                // Update order with payment details
+                await pool.query(
+                    `UPDATE orders
+                     SET status = $1,
+                         razorpay_payment_id = $2,
+                         razorpay_signature = $3,
+                         paid_at = CURRENT_TIMESTAMP
+                     WHERE id = $4`,
+                    ['paid', payment.id, payment.signature || 'webhook_verified', orderId]
+                );
+            }
+        }
+
+        // Always return 200 to acknowledge webhook receipt
+        res.json({ status: 'ok' });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/payments/test
+// Test Razorpay credentials and connection (dev only)
+router.get('/test', async (req, res) => {
+    const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+    const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+        return res.status(400).json({
+            error: 'Razorpay credentials not configured',
+            hasKeyId: !!RAZORPAY_KEY_ID,
+            hasKeySecret: !!RAZORPAY_KEY_SECRET
+        });
+    }
+
+    try {
+        const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
+        const response = await fetch('https://api.razorpay.com/v1/orders', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Basic ${auth}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            return res.status(response.status).json({
+                error: 'Razorpay API error',
+                status: response.status,
+                details: error
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: 'Razorpay credentials are valid',
+            keyIdPrefix: RAZORPAY_KEY_ID.substring(0, 15) + '...'
+        });
+    } catch (err: any) {
+        return res.status(500).json({
+            error: 'Connection test failed',
+            message: err.message
+        });
     }
 });
 
