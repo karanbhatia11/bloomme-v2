@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Navigation } from "@/components/common/Navigation";
@@ -9,6 +9,8 @@ import { Footer } from "@/components/sections/Footer";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,8 +46,8 @@ export default function LoginPage() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      console.log("Redirecting to dashboard");
-      router.push("/dashboard");
+      console.log("Redirecting to:", redirect || "/dashboard");
+      router.push(redirect || "/dashboard");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Login failed";
       console.error("Login error:", errorMessage);

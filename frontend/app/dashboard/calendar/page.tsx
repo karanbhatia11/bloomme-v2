@@ -10,12 +10,24 @@ interface UserData {
   email: string;
 }
 
+interface DeliveryItem {
+  type: "subscription" | "addon";
+  id: string;
+}
+
 export default function CalendarPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
+  const [preview, setPreview] = useState<Record<string, DeliveryItem[]>>({});
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -43,6 +55,45 @@ export default function CalendarPage() {
     }
   }, []);
 
+  // Fetch subscription ID on mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    fetch("/api/subs/my-subscriptions", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        const active = data.subscriptions?.find((s: any) => s.status === "active") ?? data.subscriptions?.[0];
+        if (active) setSubscriptionId(active.id);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Fetch preview when subscriptionId or currentMonth changes
+  useEffect(() => {
+    if (!subscriptionId) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const from = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const to = `${year}-${String(month + 1).padStart(2, "0")}-${lastDay}`;
+
+    setLoading(true);
+    fetch(`/api/preview/subscription/${subscriptionId}?from=${from}&to=${to}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => setPreview(data.queue ?? {}))
+      .catch(() => setPreview({}))
+      .finally(() => setLoading(false));
+  }, [subscriptionId, currentMonth]);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -53,11 +104,36 @@ export default function CalendarPage() {
     return null;
   }
 
-  const daysInMonth = 31;
-  const firstDayOfWeek = 6; // March 1, 2026 is Saturday
-  const deliveryDays = [6, 20, 27];
-  const skippedDay = 10;
-  const todayDay = 13;
+  // Compute calendar values dynamically
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
+
+  // Build delivery/addon sets from preview queue
+  const deliveryDateSet = new Set(
+    Object.entries(preview)
+      .filter(([_, items]) => items.some((i) => i.type === "subscription"))
+      .map(([date]) => date)
+  );
+  const addonDateSet = new Set(
+    Object.entries(preview)
+      .filter(([_, items]) => items.some((i) => i.type === "addon"))
+      .map(([date]) => date)
+  );
+
+  const dayToDateStr = (day: number) =>
+    `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+  // Past deliveries for sidebar
+  const pastDeliveries = [...deliveryDateSet]
+    .filter((d) => d < todayStr)
+    .sort()
+    .reverse()
+    .slice(0, 5);
 
   const calendarDays = [];
   for (let i = 1; i <= daysInMonth; i++) {
@@ -211,20 +287,44 @@ export default function CalendarPage() {
         <header className="mb-12">
           <span className="font-editorial italic text-xl text-primary mb-2 block">Your Floral Journey</span>
           <h1 className="text-4xl font-bold tracking-tight text-on-surface mb-4">Delivery Calendar</h1>
-          <p className="text-on-surface-variant max-w-xl leading-relaxed">Manage your recurring arrangements and ceremonial blooms. March 2026 is looking vibrant.</p>
+          <p className="text-on-surface-variant max-w-xl leading-relaxed">
+            {subscriptionId
+              ? `Manage your recurring arrangements and ceremonial blooms. ${currentMonth.toLocaleDateString("en-IN", { month: "long", year: "numeric" })} is looking vibrant.`
+              : "No active subscription found. Start one to view your delivery schedule."}
+          </p>
         </header>
 
+        {!subscriptionId && !loading ? (
+          <div className="text-center py-16">
+            <p className="text-on-surface-variant mb-6">No active subscription found.</p>
+            <Link href="/checkout/plan" className="inline-block px-8 py-3 bg-primary text-white rounded-full font-semibold hover:opacity-90 transition-opacity">
+              Start Your Subscription →
+            </Link>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Main Calendar Section */}
           <section className="lg:col-span-6 space-y-6">
-            <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm max-w-md">
+            <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm max-w-md relative">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-semibold">March 2026</h2>
+                <h2 className="text-lg font-semibold">
+                  {currentMonth.toLocaleDateString("en-IN", { month: "long", year: "numeric" })}
+                </h2>
                 <div className="flex gap-2">
-                  <button className="p-2 rounded-lg bg-surface-container-low hover:bg-surface-container-highest transition-colors">
+                  <button
+                    onClick={() =>
+                      setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
+                    }
+                    className="p-2 rounded-lg bg-surface-container-low hover:bg-surface-container-highest transition-colors"
+                  >
                     <span className="material-symbols-outlined">chevron_left</span>
                   </button>
-                  <button className="p-2 rounded-lg bg-surface-container-low hover:bg-surface-container-highest transition-colors">
+                  <button
+                    onClick={() =>
+                      setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
+                    }
+                    className="p-2 rounded-lg bg-surface-container-low hover:bg-surface-container-highest transition-colors"
+                  >
                     <span className="material-symbols-outlined">chevron_right</span>
                   </button>
                 </div>
@@ -240,53 +340,69 @@ export default function CalendarPage() {
               </div>
 
               {/* Calendar Days Grid */}
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-2 relative">
                 {/* Previous month days */}
-                {[22, 23, 24, 25, 26, 27, 28].slice(0, firstDayOfWeek).map((day) => (
-                  <div key={`prev-${day}`} className="aspect-square p-2 rounded-lg opacity-20 flex items-center justify-center text-sm">
-                    {day}
+                {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                  <div key={`empty-${i}`} className="aspect-square p-2 rounded-lg opacity-20 flex items-center justify-center text-sm">
+                    {new Date(year, month, -(firstDayOfWeek - i - 1)).getDate()}
                   </div>
                 ))}
 
                 {/* Current month days */}
                 {calendarDays.map((day) => {
-                  const isDelivery = deliveryDays.includes(day);
-                  const isSkipped = day === skippedDay;
-                  const isToday = day === todayDay;
+                  const dateStr = dayToDateStr(day);
+                  const isToday = dateStr === todayStr;
+                  const hasDelivery = deliveryDateSet.has(dateStr);
+                  const hasAddon = addonDateSet.has(dateStr);
 
                   if (isToday) {
                     return (
-                      <div key={day} className="aspect-square p-2 rounded-full border-2 border-primary text-primary flex items-center justify-center text-sm font-extrabold bg-surface-container-lowest">
+                      <div
+                        key={day}
+                        className="aspect-square p-2 rounded-full border-2 border-primary text-primary flex items-center justify-center text-sm font-extrabold bg-surface-container-lowest"
+                      >
                         {day}
                       </div>
                     );
                   }
 
-                  if (isDelivery) {
+                  if (hasDelivery || hasAddon) {
                     return (
-                      <div key={day} className="aspect-square p-2 rounded-lg bg-primary-container text-on-primary-container flex flex-col items-center justify-center text-sm font-bold shadow-md">
+                      <div
+                        key={day}
+                        className={`aspect-square p-2 rounded-lg flex flex-col items-center justify-center text-sm font-bold shadow-md ${
+                          hasDelivery ? "bg-primary-container text-on-primary-container" : "bg-surface-container-high"
+                        }`}
+                      >
                         <span>{day}</span>
-                        <span className="material-symbols-outlined text-xs mt-1" style={{ fontVariationSettings: "'FILL' 1" }}>
-                          local_florist
-                        </span>
-                      </div>
-                    );
-                  }
-
-                  if (isSkipped) {
-                    return (
-                      <div key={day} className="aspect-square p-2 rounded-lg bg-stone-200 text-on-surface-variant flex flex-col items-center justify-center text-sm line-through opacity-60">
-                        <span>{day}</span>
+                        {hasDelivery && (
+                          <span className="material-symbols-outlined text-xs mt-1" style={{ fontVariationSettings: "'FILL' 1" }}>
+                            local_florist
+                          </span>
+                        )}
+                        {hasAddon && (
+                          <span className="material-symbols-outlined text-xs mt-1">redeem</span>
+                        )}
                       </div>
                     );
                   }
 
                   return (
-                    <div key={day} className="aspect-square p-2 rounded-lg bg-surface-container flex flex-col items-center justify-center text-sm hover:bg-surface-container-highest transition-colors cursor-pointer">
+                    <div
+                      key={day}
+                      className="aspect-square p-2 rounded-lg bg-surface-container flex flex-col items-center justify-center text-sm hover:bg-surface-container-highest transition-colors cursor-pointer"
+                    >
                       <span>{day}</span>
                     </div>
                   );
                 })}
+
+                {/* Loading overlay */}
+                {loading && (
+                  <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-xl">
+                    <span className="w-6 h-6 rounded-full border-2 border-[#d1c5b3] border-t-[#775a11] animate-spin" />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -315,38 +431,40 @@ export default function CalendarPage() {
                 <span className="material-symbols-outlined text-on-surface-variant opacity-60">history</span>
                 Past Deliveries
               </h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/10 shadow-sm group hover:bg-surface-container-low transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
-                      <span className="material-symbols-outlined">task_alt</span>
-                    </div>
-                    <div>
-                      <p className="font-semibold">March 06, 2026</p>
-                      <p className="text-xs text-on-surface-variant">'Meadow Whisper' Set</p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                    Delivered <span className="material-symbols-outlined text-sm">check</span>
-                  </span>
+              {pastDeliveries.length === 0 ? (
+                <p className="text-sm text-on-surface-variant">No past deliveries yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {pastDeliveries.map((dateStr) => {
+                    const date = new Date(dateStr + "T00:00:00");
+                    const formattedDate = date.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+                    return (
+                      <div
+                        key={dateStr}
+                        className="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/10 shadow-sm group hover:bg-surface-container-low transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+                            <span className="material-symbols-outlined">task_alt</span>
+                          </div>
+                          <div>
+                            <p className="font-semibold">{formattedDate}</p>
+                            <p className="text-xs text-on-surface-variant">Subscription Delivery</p>
+                          </div>
+                        </div>
+                        <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                          Delivered <span className="material-symbols-outlined text-sm">check</span>
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/10 shadow-sm opacity-60">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-400">
-                      <span className="material-symbols-outlined">block</span>
-                    </div>
-                    <div>
-                      <p className="font-semibold">Feb 27, 2026</p>
-                      <p className="text-xs">Weekly Subscription</p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold text-stone-500">Skipped</span>
-                </div>
-              </div>
+              )}
             </div>
 
           </aside>
         </div>
+        )}
       </main>
 
       {/* Footer */}

@@ -13,6 +13,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Silences the "inferred workspace root" warning caused by a package-lock.json
+  // existing above this project directory.
+  outputFileTracingRoot: "/Users/karanbhatia/Desktop/Bloomme/frontend",
   async rewrites() {
     return [
       {
