@@ -1,16 +1,47 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { SUBSCRIPTION_PLANS } from "@/constants";
 import { Button } from "../common/Button";
+import { useCart } from "@/context/CartContext";
+
+const PLAN_ID_MAP: Record<string, string> = {
+  Traditional: "TRADITIONAL",
+  Divine: "DIVINE",
+  Celestial: "CELESTIAL",
+};
 
 export const PricingSection: React.FC = () => {
+  const router = useRouter();
+  const { setPlan } = useCart();
+  const [expandedPlans, setExpandedPlans] = useState<Set<number>>(new Set());
+
+  const handleSelectPlan = (plan: typeof SUBSCRIPTION_PLANS[0]) => {
+    const planId = PLAN_ID_MAP[plan.name] || "TRADITIONAL";
+    setPlan(planId, plan.name, plan.price);
+    localStorage.setItem("checkout_plan", planId);
+    router.push("/checkout/plan");
+  };
+
+  const toggleExpandPlan = (planId: number) => {
+    setExpandedPlans((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(planId)) {
+        newSet.delete(planId);
+      } else {
+        newSet.add(planId);
+      }
+      return newSet;
+    });
+  };
+
   const planImages = {
-    traditional: "/images/traditional.png",
-    divine: "/images/divine.png",
-    celestial: "/images/celestial.png",
+    traditional: "/images/Traditional_Updated.jpg",
+    divine: "/images/Divine_Updated.jpg",
+    celestial: "/images/Celestial_Updated.jpg",
   };
 
   return (
@@ -41,7 +72,7 @@ export const PricingSection: React.FC = () => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-start">
           {SUBSCRIPTION_PLANS.map((plan, index) => {
             const imageKey = (plan.name.toLowerCase() as keyof typeof planImages) || "traditional";
             const imageSrc = planImages[imageKey] || planImages.traditional;
@@ -75,7 +106,7 @@ export const PricingSection: React.FC = () => {
                     alt={plan.name}
                     width={400}
                     height={256}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain object-center"
                   />
                 </div>
 
@@ -101,30 +132,37 @@ export const PricingSection: React.FC = () => {
                     )}
                   </div>
 
-                  <ul className="space-y-4 mb-10 flex-grow">
-                    {plan.features.map((feature, idx) => (
-                      <li
-                        key={idx}
-                        className="flex items-center gap-3 text-sm"
-                      >
-                        <span
-                          className="material-symbols-outlined text-sm"
-                          style={{ fontSize: "20px" }}
+                  {expandedPlans.has(plan.id) && (
+                    <motion.ul
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-4 mb-8 overflow-hidden"
+                    >
+                      {plan.features.map((feature, idx) => (
+                        <li
+                          key={idx}
+                          className="flex items-center gap-3 text-sm"
                         >
-                          check_circle
-                        </span>
-                        {feature}
-                      </li>
-                    ))}
-                    {plan.disabled?.map((feature, idx) => (
-                      <li key={idx} className="flex items-center gap-3 text-sm opacity-40">
-                        <span className="material-symbols-outlined text-sm" style={{ fontSize: "20px" }}>
-                          cancel
-                        </span>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
+                          <span
+                            className="material-symbols-outlined text-sm"
+                            style={{ fontSize: "20px" }}
+                          >
+                            check_circle
+                          </span>
+                          {feature}
+                        </li>
+                      ))}
+                      {plan.disabled?.map((feature, idx) => (
+                        <li key={idx} className="flex items-center gap-3 text-sm opacity-40">
+                          <span className="material-symbols-outlined text-sm" style={{ fontSize: "20px" }}>
+                            cancel
+                          </span>
+                          {feature}
+                        </li>
+                      ))}
+                    </motion.ul>
+                  )}
 
                   <Button
                     variant="outline"
@@ -132,8 +170,9 @@ export const PricingSection: React.FC = () => {
                     className={`w-full text-center justify-center ${
                       plan.highlighted ? "border-white text-white hover:bg-white/20" : ""
                     }`}
+                    onClick={() => toggleExpandPlan(plan.id)}
                   >
-                    {plan.cta}
+                    {expandedPlans.has(plan.id) ? "Show Less" : "Show More Details"}
                   </Button>
                 </div>
               </motion.div>
@@ -144,6 +183,17 @@ export const PricingSection: React.FC = () => {
         <p className="text-center text-xs text-on-surface-variant mt-8 opacity-60">
           *Flower rotations vary based on seasonal availability
         </p>
+
+        <div className="flex justify-center mt-12">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => router.push('/checkout/plan')}
+            className="px-8 py-3 bg-primary text-on-primary font-semibold rounded-lg hover:opacity-90 transition-all shadow-lg"
+          >
+            Start Your Ritual Today
+          </motion.button>
+        </div>
       </div>
     </section>
   );

@@ -33,6 +33,10 @@ export const HeroSection: React.FC = () => {
     const fetchHeroContent = async () => {
       try {
         const response = await fetch('/api/admin/page-content?page=home');
+        if (!response.ok) {
+          console.warn('Failed to fetch hero content:', response.status);
+          return;
+        }
         const content = await response.json();
         const heroSection = Array.isArray(content)
           ? content.find((item: any) => item.section_name === 'hero')

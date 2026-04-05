@@ -3,11 +3,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { PRODUCTS } from "@/constants";
+import { useCart } from "@/context/CartContext";
 
 // Triplicate items so infinite scroll feels seamless
 const INFINITE_PRODUCTS = [...PRODUCTS, ...PRODUCTS, ...PRODUCTS];
 
 export const ProductShowcase: React.FC = () => {
+  const { addAddon, cart } = useCart();
   const [activeIndex, setActiveIndex] = useState(PRODUCTS.length); // start at middle copy
   const carouselRef = useRef<HTMLDivElement>(null);
   const isScrolling = useRef(false);
@@ -112,9 +114,15 @@ export const ProductShowcase: React.FC = () => {
                   <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
-                    className="w-10 h-10 bg-primary text-on-primary rounded-full flex items-center justify-center"
+                    onClick={() => addAddon({ id: product.id, title: product.title, price: product.price, image: product.image })}
+                    className="w-10 h-10 bg-primary text-on-primary rounded-full flex items-center justify-center relative"
                   >
                     <span className="material-symbols-outlined">add</span>
+                    {cart.addons.find((a) => a.id === product.id) && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-secondary text-on-secondary text-[9px] font-bold flex items-center justify-center">
+                        {cart.addons.find((a) => a.id === product.id)?.quantity}
+                      </span>
+                    )}
                   </motion.button>
                 </div>
               </div>

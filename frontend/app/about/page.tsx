@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { Navigation } from "@/components/common/Navigation";
 import { Footer } from "@/components/sections/Footer";
 
@@ -19,6 +20,10 @@ export default function AboutPage() {
     const fetchContent = async () => {
       try {
         const response = await fetch('/api/admin/page-content?page=about');
+        if (!response.ok) {
+          console.warn('Failed to fetch about content:', response.status);
+          return;
+        }
         const data = await response.json();
 
         if (Array.isArray(data)) {
@@ -56,21 +61,21 @@ export default function AboutPage() {
             transition={{ duration: 0.6 }}
           >
             <span className="text-secondary font-semibold tracking-[0.2em] text-xs uppercase mb-4 block">
-              {hero.subtitle || "Crafting Devotion"}
+              {hero.subtitle || "Our Story"}
             </span>
             <h1 className="font-display font-bold text-5xl md:text-7xl tracking-tighter text-on-background leading-[1.1] mb-6">
-              {hero.title || "About Bloomme"} <br />{" "}
+              {hero.title || "About Bloomme"}{" "}
               <span className="font-accent italic font-normal text-primary">
-                arrangements.
+                {hero.accent || "Puja Flower Delivery in Faridabad"}
               </span>
             </h1>
             <p className="text-on-surface-variant text-lg md:text-xl max-w-xl leading-relaxed mb-8">
-              {hero.description || "At Bloomme, we believe flowers are a silent language of the soul. We curate botanical experiences that bridge tradition and modern elegance."}
+              {hero.description || "Bloomme is a daily puja flower delivery subscription service based in Faridabad, Haryana. We deliver fresh, hand-picked marigolds, jasmine, and seasonal flowers to your doorstep every morning between 5:30 and 7:30 AM so your altar is ready before your first prayer."}
             </p>
             <div className="flex items-center gap-8">
               <div className="h-px w-16 bg-outline-variant/30"></div>
               <p className="font-accent italic text-tertiary text-xl">
-                {hero.metadata?.since || "Since 2012"}
+                {hero.metadata?.since || "Founded 2026"}
               </p>
             </div>
           </motion.div>
@@ -92,7 +97,7 @@ export default function AboutPage() {
             <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-xl overflow-hidden shadow-xl hidden md:block">
               <img
                 className="w-full h-full object-cover"
-                alt="Fresh marigold and jasmine puja flowers — Bloomme daily delivery"
+                alt="Fresh marigold and jasmine puja flowers for daily worship in Faridabad"
                 src={hero.metadata?.secondary_image || "https://lh3.googleusercontent.com/aida-public/AB6AXuAmuJSsl2nCgozTNhhHsVC5LzpWPUKYE6-N8YueZ6UqZ4o1Tp5aJ_RIrWiFAenOfHSnClcmWl2ng4f8JWBXNdIvSMkEIeERC2wMk0mbCsXR-7CxUQ_6ftXYsIhTe_qMNwmtehPtuyP_447nqz6NgPNf4WWKqXRqOUBegDm7YadNHGRvmj8YQ48xX6J9KjJavx1GnVHA325IXb3umto_of8MIvML_-S9Zc9Ce-p3mG5mpmB2OTykw9flXflvf3vgylPysvZh4TAuDC-M"}
               />
             </div>
@@ -123,13 +128,13 @@ export default function AboutPage() {
                 </h2>
                 <div className="space-y-6 text-on-surface-variant leading-relaxed">
                   <p>
-                    {story.description || "It began in a small backyard in the outskirts, with nothing but a handful of heirloom seeds and a vision to bring meaningful beauty back into the daily ritual of gifting."}
+                    {story.description || "Bloomme was born in Faridabad when our founder faced the same frustration every devotee knows. Waking up early for puja only to find the local vendor had skipped delivery again, or worse, brought yesterday's wilted flowers. We built a system to fix that."}
                   </p>
                   <p className="font-accent italic text-xl text-primary-container leading-relaxed">
-                    &ldquo;{story.metadata?.quote || "We don't just sell flowers; we facilitate moments of connection that transcend words."}&rdquo;
+                    &ldquo;{story.metadata?.quote || "A reliable, subscription-based puja flower delivery service that puts fresh flowers at your door before sunrise, every single day."}&rdquo;
                   </p>
                   <p>
-                    Today, Bloomme has grown into a premier floral atelier, yet our heart remains in that garden. We hand-pick every stem, ensuring that the devotion we put into our craft is felt in every delivery.
+                    {story.metadata?.closing || "Today Bloomme serves devotees across Faridabad with hand-picked marigolds, jasmine, and seasonal flowers sourced fresh every morning. We are not just a flower delivery service. We are your daily ritual, made reliable."}
                   </p>
                 </div>
               </div>
@@ -146,7 +151,7 @@ export default function AboutPage() {
                 Our Mission
               </h3>
               <p className="text-2xl font-light text-on-background leading-relaxed">
-                {story.metadata?.mission || "To nurture the bond between nature and human emotion through conscious, artistic floristry."}
+                {story.metadata?.mission || "To make fresh puja flower delivery so reliable and effortless that every devotee in India can start their morning with intention, not inconvenience."}
               </p>
               <div className="grid grid-cols-2 gap-4">
                 {story.metadata?.stats?.map((stat: any, idx: number) => (
@@ -160,7 +165,34 @@ export default function AboutPage() {
                       </p>
                     </div>
                   </div>
-                ))}
+                )) || (
+                  <>
+                    <div className="aspect-square bg-surface-container-highest rounded-xl flex items-center justify-center p-8 text-center hover:shadow-lg transition-shadow">
+                      <div>
+                        <p className="text-4xl font-bold text-primary mb-2">100+</p>
+                        <p className="text-sm font-semibold text-on-surface-variant uppercase tracking-widest">Families Served</p>
+                      </div>
+                    </div>
+                    <div className="aspect-square bg-surface-container-highest rounded-xl flex items-center justify-center p-8 text-center hover:shadow-lg transition-shadow">
+                      <div>
+                        <p className="text-4xl font-bold text-primary mb-2">5:30 AM</p>
+                        <p className="text-sm font-semibold text-on-surface-variant uppercase tracking-widest">Daily Delivery</p>
+                      </div>
+                    </div>
+                    <div className="aspect-square bg-surface-container-highest rounded-xl flex items-center justify-center p-8 text-center hover:shadow-lg transition-shadow">
+                      <div>
+                        <p className="text-4xl font-bold text-primary mb-2">4.9★</p>
+                        <p className="text-sm font-semibold text-on-surface-variant uppercase tracking-widest">Customer Rating</p>
+                      </div>
+                    </div>
+                    <div className="aspect-square bg-surface-container-highest rounded-xl flex items-center justify-center p-8 text-center hover:shadow-lg transition-shadow">
+                      <div>
+                        <p className="text-4xl font-bold text-primary mb-2">2026</p>
+                        <p className="text-sm font-semibold text-on-surface-variant uppercase tracking-widest">Founded in Faridabad</p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </motion.div>
           </div>
@@ -178,10 +210,10 @@ export default function AboutPage() {
             transition={{ duration: 0.6 }}
           >
             <h2 className="font-display font-bold text-4xl mb-4">
-              {values.title || "Rooted in Purpose"}
+              {values.title || "What We Stand For"}
             </h2>
             <p className="font-accent italic text-xl text-on-surface-variant">
-              {values.subtitle || "The pillars that define the Bloomme experience."}
+              {values.subtitle || "The principles behind every puja flower delivery we make."}
             </p>
           </motion.div>
 
@@ -197,11 +229,11 @@ export default function AboutPage() {
                 <span className="text-4xl mb-6 block group-hover:text-on-primary-container transition-colors">
                   🌿
                 </span>
-                <h4 className="text-2xl font-bold mb-4 group-hover:text-on-primary-container transition-colors">
-                  Purity
-                </h4>
+                <h3 className="text-2xl font-bold mb-4 group-hover:text-on-primary-container transition-colors">
+                  Freshness
+                </h3>
                 <p className="text-on-surface-variant group-hover:text-on-primary-container/80 transition-colors">
-                  Every bloom is sourced from organic growers, ensuring that what enters your home is as clean as nature intended. No harsh chemicals, just pure botanical life.
+                  Every flower is sourced the same morning it is delivered. No cold storage, no day-old blooms. What arrives at your door was picked before sunrise to be offered at sunrise.
                 </p>
               </div>
             </motion.div>
@@ -214,9 +246,9 @@ export default function AboutPage() {
               transition={{ duration: 0.6, delay: 0.1 }}
             >
               <span className="text-4xl mb-4 mx-auto">🛕</span>
-              <h4 className="text-xl font-bold mb-2">Tradition</h4>
+              <h3 className="text-xl font-bold mb-2">Devotion</h3>
               <p className="text-sm text-on-surface-variant">
-                Honoring ceremonial practices with specialized arrangements for sacred rituals.
+                Honoring the spiritual tradition behind every puja with flowers chosen for their ritual significance.
               </p>
             </motion.div>
 
@@ -228,9 +260,9 @@ export default function AboutPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <span className="text-4xl mb-4 mx-auto">♻️</span>
-              <h4 className="text-xl font-bold mb-2">Sustainability</h4>
+              <h3 className="text-xl font-bold mb-2">Sustainability</h3>
               <p className="text-sm text-on-surface-variant">
-                100% plastic-free packaging and zero-waste studio operations.
+                Eco-friendly banana leaf and paper packaging. Zero plastic in every delivery.
               </p>
             </motion.div>
 
@@ -242,11 +274,11 @@ export default function AboutPage() {
               transition={{ duration: 0.6, delay: 0.3 }}
             >
               <div className="flex-1 z-10">
-                <h4 className="text-3xl font-bold mb-4 text-primary-fixed">
+                <h3 className="text-3xl font-bold mb-4 text-primary-fixed">
                   Community
-                </h4>
+                </h3>
                 <p className="text-surface-variant/80 text-lg leading-relaxed">
-                  We support local artisanal growers and donate 5% of all proceeds to urban greening projects. We are part of the earth we inhabit.
+                  We source from local growers in and around Faridabad, keeping the supply chain short and the flowers fresh. Every subscription directly supports small-scale farmers in Haryana.
                 </p>
               </div>
               <div className="flex-1 w-full h-48 md:h-full relative overflow-hidden rounded-2xl">
@@ -273,24 +305,29 @@ export default function AboutPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent"></div>
           <div className="relative z-10">
             <h2 className="font-display font-extrabold text-4xl md:text-6xl text-on-primary-container mb-8 tracking-tighter">
-              {cta.title || "Bring the Atelier Home"}
+              {cta.title || "Start Your Daily Puja Flower Subscription"}
             </h2>
             <p className="text-on-primary-container/80 text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-              {cta.subtitle || "Join our circle of flower enthusiasts and receive weekly botanical inspiration and exclusive seasonal drops."}
+              {cta.subtitle || "Join over 100 families in Faridabad who receive fresh puja flowers at their doorstep every morning. Plans starting from ₹59 per day."}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-on-primary-container text-surface px-10 py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all active:scale-95">
-                {cta.cta_text || "Start Subscription"}
-              </button>
-              <button className="bg-surface-container-highest text-primary px-10 py-4 rounded-xl font-bold text-lg hover:bg-surface-container transition-all active:scale-95">
-                Explore Collections
-              </button>
+              <Link
+                href="/plans"
+                className="bg-on-primary-container text-surface px-10 py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all active:scale-95"
+              >
+                {cta.cta_text || "View Subscription Plans"}
+              </Link>
+              <Link
+                href="/faq"
+                className="bg-surface-container-highest text-primary px-10 py-4 rounded-xl font-bold text-lg hover:bg-surface-container transition-all active:scale-95"
+              >
+                Read FAQ
+              </Link>
             </div>
           </div>
 
-          {/* Decorative Icon */}
           <div className="absolute -bottom-10 -right-10 opacity-10 text-8xl">
-            💭
+            🌸
           </div>
         </motion.div>
       </section>

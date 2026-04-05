@@ -34,6 +34,10 @@ export default function ContactPage() {
     const fetchContent = async () => {
       try {
         const response = await fetch('/api/admin/page-content?page=contact');
+        if (!response.ok) {
+          console.warn('Failed to fetch contact content:', response.status);
+          return;
+        }
         const data = await response.json();
         if (Array.isArray(data)) {
           const pageContent: PageContent = {};

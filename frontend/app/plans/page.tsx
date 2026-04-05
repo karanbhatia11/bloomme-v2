@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -9,25 +9,27 @@ import { Footer } from "@/components/sections/Footer";
 import { SUBSCRIPTION_PLANS } from "@/constants";
 import { Button } from "@/components/common/Button";
 
-const PLAN_ID_MAP: Record<string, string> = {
-  Traditional: "TRADITIONAL",
-  Divine: "DIVINE",
-  Celestial: "CELESTIAL",
-};
-
 export default function PlansPage() {
   const router = useRouter();
+  const [expandedPlans, setExpandedPlans] = useState<Set<number>>(new Set());
 
-  const handleSelectPlan = (planName: string) => {
-    const planId = PLAN_ID_MAP[planName] || "TRADITIONAL";
-    localStorage.setItem("checkout_plan", planId);
-    router.push("/checkout/plan");
+  const toggleExpandPlan = (planId: number) => {
+    setExpandedPlans((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(planId)) {
+        newSet.delete(planId);
+      } else {
+        newSet.add(planId);
+      }
+      return newSet;
+    });
   };
 
+
   const planImages = {
-    traditional: "/images/traditional.png",
-    divine: "/images/divine.png",
-    celestial: "/images/celestial.png",
+    traditional: "/images/Traditional_Updated.jpg",
+    divine: "/images/Divine_Updated.jpg",
+    celestial: "/images/Celestial_Updated.jpg",
   };
 
   return (
@@ -117,7 +119,7 @@ export default function PlansPage() {
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
               {SUBSCRIPTION_PLANS.map((plan, index) => {
                 const imageKey = (plan.name.toLowerCase() as keyof typeof planImages) || "traditional";
                 const imageSrc = planImages[imageKey] || planImages.traditional;
@@ -154,7 +156,7 @@ export default function PlansPage() {
                         alt={`${plan.name} puja flower arrangement — Bloomme daily subscription plan`}
                         width={400}
                         height={256}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain object-center"
                       />
                     </div>
 
@@ -175,33 +177,40 @@ export default function PlansPage() {
                         </span>
                       </div>
 
-                      <ul className="space-y-4 mb-10 flex-grow">
-                        {plan.features.map((feature, idx) => (
-                          <li key={idx} className="flex items-center gap-3 text-sm">
-                            <span
-                              className="material-symbols-outlined text-sm"
-                              style={{ fontSize: "20px" }}
+                      {expandedPlans.has(plan.id) && (
+                        <motion.ul
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="space-y-4 mb-8 overflow-hidden"
+                        >
+                          {plan.features.map((feature, idx) => (
+                            <li key={idx} className="flex items-center gap-3 text-sm">
+                              <span
+                                className="material-symbols-outlined text-sm"
+                                style={{ fontSize: "20px" }}
+                              >
+                                check_circle
+                              </span>
+                              {feature}
+                            </li>
+                          ))}
+                          {plan.disabled?.map((feature, idx) => (
+                            <li
+                              key={idx}
+                              className="flex items-center gap-3 text-sm opacity-40"
                             >
-                              check_circle
-                            </span>
-                            {feature}
-                          </li>
-                        ))}
-                        {plan.disabled?.map((feature, idx) => (
-                          <li
-                            key={idx}
-                            className="flex items-center gap-3 text-sm opacity-40"
-                          >
-                            <span
-                              className="material-symbols-outlined text-sm"
-                              style={{ fontSize: "20px" }}
-                            >
-                              cancel
-                            </span>
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
+                              <span
+                                className="material-symbols-outlined text-sm"
+                                style={{ fontSize: "20px" }}
+                              >
+                                cancel
+                              </span>
+                              {feature}
+                            </li>
+                          ))}
+                        </motion.ul>
+                      )}
 
                       <Button
                         variant={plan.highlighted ? "ghost" : "outline"}
@@ -209,9 +218,9 @@ export default function PlansPage() {
                         className={`w-full ${
                           plan.highlighted ? "bg-on-primary text-primary hover:bg-on-primary/90" : ""
                         }`}
-                        onClick={() => handleSelectPlan(plan.name)}
+                        onClick={() => toggleExpandPlan(plan.id)}
                       >
-                        {plan.cta}
+                        {expandedPlans.has(plan.id) ? "Show Less" : "Show More Details"}
                       </Button>
                     </div>
                   </motion.div>
@@ -219,10 +228,25 @@ export default function PlansPage() {
               })}
             </div>
           </div>
+
+          <p className="text-center text-xs text-on-surface-variant mt-12 opacity-60">
+            *Flower rotations vary based on seasonal availability
+          </p>
+
+          <div className="flex justify-center mt-8">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => router.push('/checkout/plan')}
+              className="px-8 py-3 bg-primary text-on-primary font-semibold rounded-lg hover:opacity-90 transition-all shadow-lg"
+            >
+              Start Your Ritual Today
+            </motion.button>
+          </div>
         </section>
 
         {/* Comparison Table */}
-        <section className="max-w-screen-lg mx-auto px-8 py-24">
+        <section className="max-w-screen-lg mx-auto px-8 py-6">
           <h2 className="text-3xl font-bold text-center mb-16 font-headline">
             Compare our rituals
           </h2>
@@ -233,9 +257,9 @@ export default function PlansPage() {
                   <th className="p-6 font-semibold text-on-surface-variant text-sm">
                     Features
                   </th>
-                  <th className="p-6 font-bold text-on-surface cursor-pointer hover:text-primary transition-colors" onClick={() => handleSelectPlan("Traditional")}>Traditional</th>
-                  <th className="p-6 font-bold text-primary cursor-pointer hover:text-primary/80 transition-colors" onClick={() => handleSelectPlan("Divine")}>Divine</th>
-                  <th className="p-6 font-bold text-on-surface cursor-pointer hover:text-primary transition-colors" onClick={() => handleSelectPlan("Celestial")}>Celestial</th>
+                  <th className="p-6 font-bold text-on-surface">Traditional</th>
+                  <th className="p-6 font-bold text-primary">Divine</th>
+                  <th className="p-6 font-bold text-on-surface">Celestial</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-container">

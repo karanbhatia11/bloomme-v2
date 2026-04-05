@@ -5,10 +5,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { NAV_LINKS, LOGO_URL } from "@/constants";
+import { useCart } from "@/context/CartContext";
+import StickyCart from "@/components/checkout/StickyCart";
 
 export const Navigation: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const { cart } = useCart();
+  const cartCount = cart.addons.reduce((s, a) => s + a.quantity, 0) + (cart.planId ? 1 : 0);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -41,8 +46,13 @@ export const Navigation: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3 sm:gap-6">
-          <button className="hidden md:block text-on-background opacity-70 hover:text-primary transition-colors">
-            <span className="material-symbols-outlined">shopping_bag</span>
+          <button onClick={() => setIsCartOpen(!isCartOpen)} className="hidden md:block text-on-background opacity-70 hover:text-primary transition-colors relative">
+            <span className="material-symbols-outlined">shopping_basket</span>
+            {cartCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-on-primary text-[9px] font-bold flex items-center justify-center">
+                {cartCount}
+              </span>
+            )}
           </button>
           {isLoggedIn ? (
             <Link href="/dashboard" className="hidden md:block text-sm font-medium text-on-background opacity-80 hover:text-primary transition-colors">
@@ -103,6 +113,7 @@ export const Navigation: React.FC = () => {
           </div>
         </motion.div>
       )}
+      <StickyCart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </nav>
   );
 };

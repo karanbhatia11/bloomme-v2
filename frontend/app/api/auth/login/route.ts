@@ -13,8 +13,16 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify(body)
         });
 
-        const data = await response.json();
-        return NextResponse.json(data, { status: response.status });
+        const text = await response.text();
+        try {
+            const data = JSON.parse(text);
+            return NextResponse.json(data, { status: response.status });
+        } catch {
+            return NextResponse.json(
+                { error: `Backend returned non-JSON response: ${text.substring(0, 100)}` },
+                { status: response.status || 500 }
+            );
+        }
     } catch (error: any) {
         return NextResponse.json(
             { error: error.message },
