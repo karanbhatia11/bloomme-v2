@@ -133,6 +133,18 @@ export default function CheckoutPayPage() {
       addon_start_date:      item.startDate ?? null,
     }));
 
+    // Extract delivery dates from preview for custom_schedule
+    let custom_schedule: string[] | null = null;
+    if (preview && cart.planId) {
+      const datesWithSubscription = Object.entries(preview.queue)
+        .filter(([_, items]) => items.some(item => item.type === "subscription"))
+        .map(([date]) => date)
+        .sort();
+      if (datesWithSubscription.length > 0) {
+        custom_schedule = datesWithSubscription;
+      }
+    }
+
     try {
       const res = await fetch("/api/subs/subscribe", {
         method: "POST",
@@ -141,11 +153,12 @@ export default function CheckoutPayPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          plan_type:     cart.planId,
+          plan_id:       cart.planId === "TRADITIONAL" ? 1 : cart.planId === "DIVINE" ? 2 : cart.planId === "CELESTIAL" ? 3 : null,
           price:         cart.planPrice,
           frequency:     cart.frequency,
           start_date:    cart.startDate,
           delivery_days: cart.frequency === "weekly" ? cart.deliveryDays : [],
+          custom_schedule: custom_schedule,
           addon_configs: addon_configs.length > 0 ? addon_configs : undefined,
         }),
       });
@@ -164,6 +177,8 @@ export default function CheckoutPayPage() {
     setError("");
 
     try {
+      console.log('Dev payment initiated. preview:', !!preview, 'cart.planId:', cart.planId);
+
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 
       // Map plan type string to a numeric plan ID for testing
@@ -181,13 +196,40 @@ export default function CheckoutPayPage() {
         headers["Authorization"] = `Bearer ${token}`;
       }
 
+      // Extract delivery dates from preview for dev payment
+      let customScheduleForDev: string[] = [];
+      if (preview && cart.planId) {
+        const datesWithSubscription = Object.entries(preview.queue)
+          .filter(([_, items]) => items.some(item => item.type === "subscription"))
+          .map(([date]) => date)
+          .sort();
+        customScheduleForDev = datesWithSubscription;
+        console.log('customScheduleForDev extracted:', customScheduleForDev);
+      } else {
+        console.log('Skipping schedule extraction: preview=', preview, 'planId=', cart.planId);
+      }
+
       const createOrderRes = await fetch("/api/payments/create", {
         method: "POST",
         headers,
         body: JSON.stringify({
           planId: cart.planId ? planIdMap[cart.planId] || null : null,
+          deliveryDays: cart.frequency === "weekly" ? cart.deliveryDays : [],
+          addOns: cart.addons.map(a => ({
+            id: a.id,
+            quantity: a.quantity,
+            price: a.price,
+            schedule: cart.addonSchedules[a.id] || null,
+          })),
+          promoCode: null,
+          referralCode: null,
+          customer: cart.customer,
+          subtotal: cart.planPrice || 0,
+          tax: 0,
+          promoDiscount: 0,
+          referralDiscount: 0,
           total: getTotal(),
-          customer: cart.customer, // Add guest customer info
+          customSchedule: customScheduleForDev.length > 0 ? customScheduleForDev : null,
         }),
       });
 
@@ -221,7 +263,12 @@ export default function CheckoutPayPage() {
       });
 
       if (verifyRes.ok) {
-        await createSubscription();
+        const verifyData = await verifyRes.json();
+        // Only create subscription for logged-in users
+        // Guests will create account after payment
+        if (!verifyData.isGuest) {
+          await createSubscription();
+        }
         clearCart();
         router.push("/checkout/confirmed");
       } else {
@@ -257,13 +304,29 @@ export default function CheckoutPayPage() {
         headers["Authorization"] = `Bearer ${token}`;
       }
 
+      // Extract delivery dates from preview if available
+      let customSchedule: string[] = [];
+      if (preview && cart.planId) {
+        const datesWithSubscription = Object.entries(preview.queue)
+          .filter(([_, items]) => items.some(item => item.type === "subscription"))
+          .map(([date]) => date)
+          .sort();
+        customSchedule = datesWithSubscription;
+        console.log('customSchedule extracted:', customSchedule, 'type:', typeof customSchedule, 'isArray:', Array.isArray(customSchedule));
+      }
+
       const orderRes = await fetch("/api/payments/create", {
         method: "POST",
         headers,
         body: JSON.stringify({
           planId: cart.planId ? planIdMap[cart.planId] || null : null,
           deliveryDays: cart.frequency === "weekly" ? cart.deliveryDays : [],
-          addOns: cart.addons.map(a => ({ id: a.id, quantity: a.quantity, price: a.price })),
+          addOns: cart.addons.map(a => ({
+            id: a.id,
+            quantity: a.quantity,
+            price: a.price,
+            schedule: cart.addonSchedules[a.id] || null,
+          })),
           promoCode: null,
           referralCode: null,
           customer: cart.customer,
@@ -272,6 +335,7 @@ export default function CheckoutPayPage() {
           promoDiscount: 0,
           referralDiscount: 0,
           total: getTotal(),
+          customSchedule: customSchedule.length > 0 ? customSchedule : null,
         }),
       });
 
@@ -329,8 +393,12 @@ export default function CheckoutPayPage() {
             });
 
             if (verifyRes.ok) {
-              // Payment verified — create subscription and generate delivery schedule
-              await createSubscription();
+              const verifyData = await verifyRes.json();
+              // Payment verified — create subscription for logged-in users
+              // Guests will create account after payment
+              if (!verifyData.isGuest) {
+                await createSubscription();
+              }
               clearCart();
               router.push("/checkout/confirmed");
             } else {

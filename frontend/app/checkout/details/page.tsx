@@ -18,10 +18,14 @@ export default function CheckoutDetailsPage() {
   const [form, setForm] = useState({
     name: cart.customer?.name ?? "",
     phone: cart.customer?.phone ?? "",
-    address: cart.customer?.address ?? "",
-    landmark: cart.customer?.landmark ?? "",
-    city: cart.customer?.city ?? "Faridabad",
     email: cart.customer?.email ?? "",
+    addressLine1: cart.customer?.addressLine1 ?? "",
+    addressLine2: cart.customer?.addressLine2 ?? "",
+    suburb: cart.customer?.suburb ?? "",
+    postcode: cart.customer?.postcode ?? "",
+    deliveryNotes: cart.customer?.deliveryNotes ?? "",
+    timeSlot: cart.customer?.timeSlot ?? "5:30 to 6:30",
+    buildingType: cart.customer?.buildingType ?? "house",
     createAccount: cart.customer?.createAccount ?? false,
   });
 
@@ -60,8 +64,9 @@ export default function CheckoutDetailsPage() {
     if (!form.name.trim()) errs.name = "Name is required";
     if (!form.phone.trim() || !/^\d{10}$/.test(form.phone.replace(/\s/g, "")))
       errs.phone = "Enter a valid 10-digit mobile number";
-    if (!form.address.trim()) errs.address = "Delivery address is required";
-    if (!form.city.trim()) errs.city = "City is required";
+    if (!form.addressLine1.trim()) errs.addressLine1 = "Address is required";
+    if (!form.suburb.trim()) errs.suburb = "Suburb is required";
+    if (!form.postcode.trim()) errs.postcode = "Postcode is required";
     if (!form.email.trim()) errs.email = "Email is required";
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       errs.email = "Enter a valid email";
@@ -135,21 +140,6 @@ export default function CheckoutDetailsPage() {
             {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
           </div>
 
-          {/* City */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#4d4638]/60 mb-2">City *</label>
-            <input
-              name="city"
-              value={form.city}
-              onChange={handleChange}
-              placeholder="Faridabad"
-              className={`w-full px-5 py-4 rounded-2xl border-2 bg-[#fff1e9] text-[#2f1500] placeholder-[#4d4638]/40 focus:outline-none transition-colors ${
-                errors.city ? "border-red-400" : "border-[#d1c5b3]/40 focus:border-[#775a11]"
-              }`}
-            />
-            {errors.city && <p className="text-red-400 text-xs mt-1">{errors.city}</p>}
-          </div>
-
           {/* Email */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-[#4d4638]/60 mb-2">
@@ -168,37 +158,120 @@ export default function CheckoutDetailsPage() {
             {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
           </div>
 
-          {/* Address */}
+          {/* Address Line 1 */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#4d4638]/60 mb-2">Delivery Address *</label>
-            <textarea
-              name="address"
-              value={form.address}
+            <label className="block text-xs font-bold uppercase tracking-widest text-[#4d4638]/60 mb-2">Address *</label>
+            <input
+              name="addressLine1"
+              value={form.addressLine1}
               onChange={handleChange}
-              placeholder="House/Flat no., Street, Colony, Sector..."
-              rows={3}
-              className={`w-full px-5 py-4 rounded-2xl border-2 bg-[#fff1e9] text-[#2f1500] placeholder-[#4d4638]/40 focus:outline-none transition-colors resize-none ${
-                errors.address ? "border-red-400" : "border-[#d1c5b3]/40 focus:border-[#775a11]"
+              placeholder="House/Flat no., Street, Colony..."
+              className={`w-full px-5 py-4 rounded-2xl border-2 bg-[#fff1e9] text-[#2f1500] placeholder-[#4d4638]/40 focus:outline-none transition-colors ${
+                errors.addressLine1 ? "border-red-400" : "border-[#d1c5b3]/40 focus:border-[#775a11]"
               }`}
             />
-            {errors.address && <p className="text-red-400 text-xs mt-1">{errors.address}</p>}
+            {errors.addressLine1 && <p className="text-red-400 text-xs mt-1">{errors.addressLine1}</p>}
           </div>
 
-          {/* Landmark */}
+          {/* Address Line 2 */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-[#4d4638]/60 mb-2">
-              Landmark <span className="font-normal normal-case text-[#4d4638]/40">(optional)</span>
+              Address Line 2 <span className="font-normal normal-case text-[#4d4638]/40">(optional)</span>
             </label>
             <input
-              name="landmark"
-              value={form.landmark}
+              name="addressLine2"
+              value={form.addressLine2}
               onChange={handleChange}
-              placeholder="Nearby landmark or location details..."
+              placeholder="Apartment, building details..."
               className={`w-full px-5 py-4 rounded-2xl border-2 bg-[#fff1e9] text-[#2f1500] placeholder-[#4d4638]/40 focus:outline-none transition-colors ${
-                errors.landmark ? "border-red-400" : "border-[#d1c5b3]/40 focus:border-[#775a11]"
+                errors.addressLine2 ? "border-red-400" : "border-[#d1c5b3]/40 focus:border-[#775a11]"
               }`}
             />
-            {errors.landmark && <p className="text-red-400 text-xs mt-1">{errors.landmark}</p>}
+            {errors.addressLine2 && <p className="text-red-400 text-xs mt-1">{errors.addressLine2}</p>}
+          </div>
+
+          {/* Suburb */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[#4d4638]/60 mb-2">Suburb *</label>
+            <input
+              name="suburb"
+              value={form.suburb}
+              onChange={handleChange}
+              placeholder="Suburb or locality..."
+              className={`w-full px-5 py-4 rounded-2xl border-2 bg-[#fff1e9] text-[#2f1500] placeholder-[#4d4638]/40 focus:outline-none transition-colors ${
+                errors.suburb ? "border-red-400" : "border-[#d1c5b3]/40 focus:border-[#775a11]"
+              }`}
+            />
+            {errors.suburb && <p className="text-red-400 text-xs mt-1">{errors.suburb}</p>}
+          </div>
+
+          {/* Postcode */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[#4d4638]/60 mb-2">Postcode *</label>
+            <input
+              name="postcode"
+              value={form.postcode}
+              onChange={handleChange}
+              placeholder="PIN/Postcode..."
+              className={`w-full px-5 py-4 rounded-2xl border-2 bg-[#fff1e9] text-[#2f1500] placeholder-[#4d4638]/40 focus:outline-none transition-colors ${
+                errors.postcode ? "border-red-400" : "border-[#d1c5b3]/40 focus:border-[#775a11]"
+              }`}
+            />
+            {errors.postcode && <p className="text-red-400 text-xs mt-1">{errors.postcode}</p>}
+          </div>
+
+          {/* Delivery Notes */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[#4d4638]/60 mb-2">
+              Delivery Notes <span className="font-normal normal-case text-[#4d4638]/40">(optional)</span>
+            </label>
+            <textarea
+              name="deliveryNotes"
+              value={form.deliveryNotes}
+              onChange={handleChange}
+              placeholder="Landmark, gate number, special instructions..."
+              rows={2}
+              className={`w-full px-5 py-4 rounded-2xl border-2 bg-[#fff1e9] text-[#2f1500] placeholder-[#4d4638]/40 focus:outline-none transition-colors resize-none ${
+                errors.deliveryNotes ? "border-red-400" : "border-[#d1c5b3]/40 focus:border-[#775a11]"
+              }`}
+            />
+            {errors.deliveryNotes && <p className="text-red-400 text-xs mt-1">{errors.deliveryNotes}</p>}
+          </div>
+
+          {/* Time Slot */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[#4d4638]/60 mb-2">Preferred Delivery Time *</label>
+            <select
+              name="timeSlot"
+              value={form.timeSlot}
+              onChange={handleChange}
+              className={`w-full px-5 py-4 rounded-2xl border-2 bg-[#fff1e9] text-[#2f1500] focus:outline-none transition-colors cursor-pointer ${
+                errors.timeSlot ? "border-red-400" : "border-[#d1c5b3]/40 focus:border-[#775a11]"
+              }`}
+            >
+              <option value="5:30 to 6:30">5:30 AM - 6:30 AM</option>
+              <option value="6:30 to 7:30">6:30 AM - 7:30 AM</option>
+              <option value="7:30 to 8:30">7:30 AM - 8:30 AM</option>
+              <option value="8:30 to 9:30">8:30 AM - 9:30 AM</option>
+            </select>
+            {errors.timeSlot && <p className="text-red-400 text-xs mt-1">{errors.timeSlot}</p>}
+          </div>
+
+          {/* Building Type */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-[#4d4638]/60 mb-2">Building Type *</label>
+            <select
+              name="buildingType"
+              value={form.buildingType}
+              onChange={handleChange}
+              className={`w-full px-5 py-4 rounded-2xl border-2 bg-[#fff1e9] text-[#2f1500] focus:outline-none transition-colors cursor-pointer ${
+                errors.buildingType ? "border-red-400" : "border-[#d1c5b3]/40 focus:border-[#775a11]"
+              }`}
+            >
+              <option value="house">House</option>
+              <option value="office">Office</option>
+            </select>
+            {errors.buildingType && <p className="text-red-400 text-xs mt-1">{errors.buildingType}</p>}
           </div>
 
           {/* Create Account — only show for guest checkout */}
