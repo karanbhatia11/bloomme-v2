@@ -11,10 +11,11 @@ const generateRazorpayOrderId = (): string => {
 };
 
 // POST /api/payments/create
-// Create a payment order (Razorpay order) - requires authentication
-router.post('/create', authenticateToken as any, async (req, res) => {
+// Create a payment order (Razorpay order) - supports both authenticated and guest users
+router.post('/create', async (req, res) => {
     try {
-        const user_id = (req as any).user.id; // Get from authenticated request
+        // Get user_id from auth token if authenticated, otherwise null for guest
+        const user_id = (req as any).user?.id || null;
         const { planId, deliveryDays, addOns, promoCode, referralCode, customer, subtotal, tax, promoDiscount, referralDiscount, total } = req.body;
 
         // Validate required fields
@@ -78,10 +79,11 @@ router.post('/create', authenticateToken as any, async (req, res) => {
 });
 
 // POST /api/payments/verify
-// Verify payment and mark order as paid - requires authentication
-router.post('/verify', authenticateToken as any, async (req, res) => {
+// Verify payment and mark order as paid - supports both authenticated and guest users
+router.post('/verify', async (req, res) => {
     try {
-        const user_id = (req as any).user.id; // Get from authenticated request
+        // Get user_id from auth token if authenticated, otherwise null for guest
+        const user_id = (req as any).user?.id || null;
         const { orderId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
 
         // Validate required fields

@@ -158,7 +158,7 @@ export default function CheckoutPayPage() {
     }
   };
 
-  // ── Dev test payment (skip Razorpay) ──────────────────────────────────────
+  // ── Dev test payment (skip Razorpay, guest or authenticated) ─────────────
   const handleDevPay = async () => {
     setLoading(true);
     setError("");
@@ -167,14 +167,13 @@ export default function CheckoutPayPage() {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 
       // Map plan type string to a numeric plan ID for testing
-      // In production, this would be the actual plan ID
       const planIdMap: Record<string, number> = {
         "TRADITIONAL": 1,
         "DIVINE": 2,
         "CELESTIAL": 3,
       };
 
-      // Step 1: Create order
+      // Step 1: Create order (works for both guest and authenticated users)
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
