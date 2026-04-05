@@ -16,6 +16,8 @@ import addonsRoutes from './routes/addons';
 import referralsRoutes from './routes/referrals';
 import promoRoutes from './routes/promo';
 import calendarRoutes from './routes/calendar';
+import previewRoutes from './routes/preview';
+import { startDeliveryJob } from './jobs/generateDeliveries';
 import path from 'path';
 
 dotenv.config();
@@ -26,9 +28,19 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({
     origin: (origin, callback) => {
         const allowedOrigins = [
-            process.env.FRONTEND_URL || 'http://localhost:5173',
+            process.env.FRONTEND_URL || 'http://localhost:3000',
+            'http://localhost:3000',
+            'http://127.0.0.1:3000',
             'http://localhost:5173',
             'http://127.0.0.1:5173',
+            'http://localhost:3003',
+            'http://127.0.0.1:3003',
+            'http://localhost:3004',
+            'http://127.0.0.1:3004',
+            'http://localhost:3006',
+            'http://127.0.0.1:3006',
+            'http://localhost:3007',
+            'http://127.0.0.1:3007',
             'https://bloomme.co.in',
             'https://www.bloomme.co.in'
         ];
@@ -56,6 +68,7 @@ app.use('/api/addons', addonsRoutes);
 app.use('/api/referrals', referralsRoutes);
 app.use('/api/promo', promoRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/preview', previewRoutes);
 
 // Serving uploaded files (using /api/uploads so it works seamlessly behind Nginx)
 app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -70,4 +83,5 @@ app.get('/health', (req: Request, res: Response) => {
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
+    startDeliveryJob();
 });

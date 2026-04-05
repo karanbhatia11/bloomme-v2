@@ -3,21 +3,16 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSubscriptions } from "@/hooks/useSubscriptions";
+import PauseModal from "@/components/dashboard/modals/PauseModal";
+import SkipDatesModal from "@/components/dashboard/modals/SkipDatesModal";
+import ChangeScheduleModal from "@/components/dashboard/modals/ChangeScheduleModal";
+import ChangePlanModal from "@/components/dashboard/modals/ChangePlanModal";
 
 interface UserData {
   id: string;
   name: string;
   email: string;
-}
-
-interface Subscription {
-  id: string;
-  planType: string;
-  status: string;
-  price: number;
-  deliveryDays: string[];
-  startDate: string | null;
-  createdAt: string;
 }
 
 const PLAN_LABELS: Record<string, string> = {
@@ -32,21 +27,26 @@ const PLAN_DESCRIPTIONS: Record<string, string> = {
   ELITE: "200g exotic flowers, luxury box",
 };
 
+type ModalType = "pause" | "skip" | "schedule" | "plan" | null;
+
 export default function SubscriptionsPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [subLoading, setSubLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
+  const [cancelConfirm, setCancelConfirm] = useState(false);
+
+  const subs = useSubscriptions(token);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const savedToken = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
 
-    if (!token || !userStr) {
+    if (!savedToken || !userStr) {
       router.push("/login");
       return;
     }
@@ -54,47 +54,19 @@ export default function SubscriptionsPage() {
     try {
       const userData = JSON.parse(userStr);
       setUser(userData);
-      fetchSubscriptions(token);
+      setToken(savedToken);
+      // Fetch subscriptions will be called by useSubscriptions hook
     } catch {
       router.push("/login");
     }
   }, []);
 
-  const fetchSubscriptions = async (token: string) => {
-    setSubLoading(true);
-    try {
-      const res = await fetch("/api/subs/my-subscriptions", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSubscriptions(data.subscriptions || []);
-      }
-    } catch (err) {
-      console.error("Failed to fetch subscriptions:", err);
-    } finally {
-      setSubLoading(false);
+  // Fetch subscriptions when token is set
+  useEffect(() => {
+    if (token) {
+      subs.fetch();
     }
-  };
-
-  const handleAction = async (subId: string, action: "pause" | "resume" | "cancel") => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-    setActionLoading(subId + action);
-    try {
-      const res = await fetch(`/api/subs/${subId}/${action}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        fetchSubscriptions(token);
-      }
-    } catch (err) {
-      console.error(`Failed to ${action} subscription:`, err);
-    } finally {
-      setActionLoading(null);
-    }
-  };
+  }, [token]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -102,10 +74,52 @@ export default function SubscriptionsPage() {
     router.push("/");
   };
 
+  const openModal = (modalType: ModalType, subId: string) => {
+    setSelectedSubId(subId);
+    setActiveModal(modalType);
+  };
+
+  const closeModal = () => {
+    setActiveModal(null);
+    setSelectedSubId(null);
+    setCancelConfirm(false);
+  };
+
+  const handlePauseSubmit = async (startDate: string, endDate: string) => {
+    if (!selectedSubId) return false;
+    const success = await subs.pause(selectedSubId, { startDate, endDate });
+    return success;
+  };
+
+  const handleSkipSubmit = async (dates: string[]) => {
+    if (!selectedSubId) return false;
+    const success = await subs.skip(selectedSubId, { dates });
+    return success;
+  };
+
+  const handleScheduleSubmit = async (frequency: string, deliveryDays: string[]) => {
+    if (!selectedSubId) return false;
+    const success = await subs.changeSchedule(selectedSubId, { frequency, deliveryDays });
+    return success;
+  };
+
+  const handlePlanSubmit = async (planType: string) => {
+    if (!selectedSubId) return false;
+    const success = await subs.changePlan(selectedSubId, { planType });
+    return success;
+  };
+
+  const handleCancelSubmit = async () => {
+    if (!selectedSubId) return false;
+    const success = await subs.cancel(selectedSubId);
+    if (success) closeModal();
+    return success;
+  };
+
   if (!user) return null;
 
-  const activeSubscriptions = subscriptions.filter((s) => s.status === "active");
-  const pausedSubscriptions = subscriptions.filter((s) => s.status === "paused");
+  const activeSubscriptions = subs.subscriptions.filter((s) => s.status === "active");
+  const pausedSubscriptions = subs.subscriptions.filter((s) => s.status === "paused");
 
   return (
     <div className="bg-surface text-on-surface font-body">
@@ -215,17 +229,39 @@ export default function SubscriptionsPage() {
           <h1 className="text-4xl font-bold text-on-surface tracking-tight">Active Subscriptions</h1>
         </header>
 
-        {subLoading ? (
+        {/* Error Toast */}
+        {subs.error && (
+          <div className="mb-8 bg-error/10 border border-error/30 rounded-lg px-6 py-4 flex items-center justify-between">
+            <p className="text-sm font-semibold text-error">{subs.error}</p>
+            <button
+              onClick={() => subs.clearError()}
+              className="text-error hover:opacity-70 transition-opacity"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {subs.loading ? (
           <div className="flex items-center justify-center py-24">
             <div className="text-on-surface-variant">Loading subscriptions...</div>
           </div>
-        ) : subscriptions.length === 0 ? (
+        ) : subs.subscriptions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <span className="material-symbols-outlined text-6xl text-outline mb-4">local_florist</span>
             <h2 className="text-2xl font-bold text-on-surface mb-2">No subscriptions yet</h2>
             <p className="text-on-surface-variant mb-8">Start your floral journey with a subscription plan.</p>
             <Link href="/plans" className="bg-primary text-on-primary px-8 py-3 rounded-lg font-bold hover:scale-[1.02] transition-all">
               View Plans
+            </Link>
+          </div>
+        ) : activeSubscriptions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <span className="material-symbols-outlined text-6xl text-outline mb-4">local_florist</span>
+            <h2 className="text-2xl font-bold text-on-surface mb-2">No active subscriptions</h2>
+            <p className="text-on-surface-variant mb-8">Your subscriptions are currently paused. Start a new subscription or resume an existing one.</p>
+            <Link href="/plans" className="bg-primary text-on-primary px-8 py-3 rounded-lg font-bold hover:scale-[1.02] transition-all">
+              Start Now
             </Link>
           </div>
         ) : (
@@ -259,7 +295,14 @@ export default function SubscriptionsPage() {
                       <div className="grid grid-cols-2 gap-6 mt-8">
                         <div className="bg-surface-container-low p-4 rounded-lg">
                           <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">Pricing</p>
-                          <p className="text-xl font-bold text-on-surface">₹{sub.price.toLocaleString()}<span className="text-sm font-normal text-on-surface-variant">/month</span></p>
+                          <div>
+                            <p className="text-xl font-bold text-on-surface">₹{(sub.totalPrice || sub.price).toLocaleString()}<span className="text-sm font-normal text-on-surface-variant">/month</span></p>
+                            {sub.addOnsPrice && sub.addOnsPrice > 0 && (
+                              <p className="text-xs text-on-surface-variant mt-1">
+                                Plan: ₹{sub.price.toLocaleString()} + Add-ons: ₹{sub.addOnsPrice.toLocaleString()}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <div className="bg-surface-container-low p-4 rounded-lg">
                           <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">Since</p>
@@ -273,31 +316,84 @@ export default function SubscriptionsPage() {
                             <p className="text-base font-semibold text-on-surface">{Array.isArray(sub.deliveryDays) ? sub.deliveryDays.join(", ") : sub.deliveryDays}</p>
                           </div>
                         )}
+
+                        {sub.addOns && sub.addOns.length > 0 && (
+                          <div className="bg-surface-container-low p-4 rounded-lg col-span-2">
+                            <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-3">Active Add-ons</p>
+                            <div className="space-y-2">
+                              {sub.addOns.map((addon) => (
+                                <div key={addon.id} className="flex items-center justify-between p-2 bg-primary/10 rounded">
+                                  <div>
+                                    <p className="text-sm font-semibold text-on-surface">{addon.name}</p>
+                                    {addon.oneOffDate && (
+                                      <p className="text-xs text-on-surface-variant">
+                                        {new Date(addon.oneOffDate + "T00:00:00").toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <p className="text-sm font-bold text-primary">₹{addon.price.toLocaleString()}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="mt-10 flex flex-wrap gap-3">
-                      <button
-                        onClick={() => handleAction(sub.id, "pause")}
-                        disabled={actionLoading === sub.id + "pause"}
-                        className="flex-1 bg-surface-container-highest text-on-surface py-3 px-6 rounded-lg font-bold text-sm hover:bg-surface-variant transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                      >
-                        <span className="material-symbols-outlined text-sm">pause_circle</span>
-                        {actionLoading === sub.id + "pause" ? "Pausing..." : "Pause"}
-                      </button>
-                      <Link href="/dashboard/add-ons" className="flex-1 bg-primary text-on-primary py-3 px-6 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2">
-                        <span className="material-symbols-outlined text-sm">add_circle</span>
-                        Add Add-ons
-                      </Link>
-                      <div className="w-full flex gap-3 mt-2">
+                    <div className="mt-10 space-y-3">
+                      {/* Primary Actions Row */}
+                      <div className="flex flex-col md:flex-row gap-3">
                         <button
-                          onClick={() => handleAction(sub.id, "cancel")}
-                          disabled={actionLoading === sub.id + "cancel"}
-                          className="flex-1 border-b-2 border-transparent hover:border-error text-error/60 py-2 font-semibold text-xs transition-all uppercase tracking-widest disabled:opacity-50"
+                          onClick={() => openModal("pause", sub.id)}
+                          disabled={subs.actionLoading === sub.id + ":pause"}
+                          className="flex-1 bg-surface-container-highest text-on-surface py-3 px-6 rounded-lg font-bold text-sm hover:bg-surface-variant transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                         >
-                          {actionLoading === sub.id + "cancel" ? "Cancelling..." : "Cancel Plan"}
+                          <span className="material-symbols-outlined text-sm">pause_circle</span>
+                          {subs.actionLoading === sub.id + ":pause" ? "Loading..." : "Pause"}
+                        </button>
+                        <button
+                          onClick={() => openModal("skip", sub.id)}
+                          disabled={subs.actionLoading === sub.id + ":skip"}
+                          className="flex-1 bg-surface-container-highest text-on-surface py-3 px-6 rounded-lg font-bold text-sm hover:bg-surface-variant transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          <span className="material-symbols-outlined text-sm">calendar_today</span>
+                          {subs.actionLoading === sub.id + ":skip" ? "Loading..." : "Skip Dates"}
+                        </button>
+                        <Link href="/dashboard/add-ons" className="flex-1 bg-primary text-on-primary py-3 px-6 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2">
+                          <span className="material-symbols-outlined text-sm">add_circle</span>
+                          Add Add-ons
+                        </Link>
+                      </div>
+
+                      {/* Secondary Actions Row */}
+                      <div className="flex flex-col md:flex-row gap-3">
+                        <button
+                          onClick={() => openModal("schedule", sub.id)}
+                          disabled={subs.actionLoading === sub.id + ":schedule"}
+                          className="flex-1 bg-surface-container-high text-on-surface py-2 px-4 rounded-lg font-semibold text-xs hover:bg-surface-variant transition-colors disabled:opacity-50 uppercase tracking-tight"
+                        >
+                          {subs.actionLoading === sub.id + ":schedule" ? "Loading..." : "Change Schedule"}
+                        </button>
+                        <button
+                          onClick={() => openModal("plan", sub.id)}
+                          disabled={subs.actionLoading === sub.id + ":plan"}
+                          className="flex-1 bg-surface-container-high text-on-surface py-2 px-4 rounded-lg font-semibold text-xs hover:bg-surface-variant transition-colors disabled:opacity-50 uppercase tracking-tight"
+                        >
+                          {subs.actionLoading === sub.id + ":plan" ? "Loading..." : "Change Plan"}
                         </button>
                       </div>
+
+                      {/* Cancel Button */}
+                      <button
+                        onClick={() => {
+                          setSelectedSubId(sub.id);
+                          setCancelConfirm(true);
+                        }}
+                        disabled={subs.actionLoading === sub.id + ":cancel"}
+                        className="w-full border-b-2 border-transparent hover:border-error text-error/60 py-2 font-semibold text-xs transition-all uppercase tracking-widest disabled:opacity-50"
+                      >
+                        {subs.actionLoading === sub.id + ":cancel" ? "Cancelling..." : "Cancel Plan"}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -359,15 +455,18 @@ export default function SubscriptionsPage() {
                           Paused
                         </span>
                       </div>
-                      <p className="text-sm text-on-surface-variant">₹{sub.price.toLocaleString()}/month</p>
+                      <p className="text-sm text-on-surface-variant">₹{(sub.totalPrice || sub.price).toLocaleString()}/month</p>
                     </div>
                   </div>
                   <button
-                    onClick={() => handleAction(sub.id, "resume")}
-                    disabled={actionLoading === sub.id + "resume"}
+                    disabled={subs.actionLoading === sub.id + ":resume"}
                     className="bg-on-surface text-surface py-3 px-8 rounded-lg font-bold text-sm hover:scale-[1.02] transition-transform disabled:opacity-50"
+                    onClick={() => {
+                      setSelectedSubId(sub.id);
+                      subs.resume(sub.id);
+                    }}
                   >
-                    {actionLoading === sub.id + "resume" ? "Resuming..." : "Resume Now"}
+                    {subs.actionLoading === sub.id + ":resume" ? "Resuming..." : "Resume Now"}
                   </button>
                 </div>
               </div>
@@ -375,6 +474,94 @@ export default function SubscriptionsPage() {
           </div>
         )}
       </main>
+
+      {/* Modals */}
+      {selectedSubId && (
+        <>
+          <PauseModal
+            isOpen={activeModal === "pause"}
+            subscriptionId={selectedSubId}
+            subscriptionStartDate={
+              subs.subscriptions.find((s) => s.id === selectedSubId)?.startDate || undefined
+            }
+            subscriptionEndDate={
+              subs.subscriptions.find((s) => s.id === selectedSubId)?.endDate || undefined
+            }
+            isLoading={subs.actionLoading === selectedSubId + ":pause"}
+            onClose={closeModal}
+            onSubmit={handlePauseSubmit}
+          />
+
+          <SkipDatesModal
+            isOpen={activeModal === "skip"}
+            subscriptionId={selectedSubId}
+            deliveryDays={
+              subs.subscriptions.find((s) => s.id === selectedSubId)?.deliveryDays || []
+            }
+            isLoading={subs.actionLoading === selectedSubId + ":skip"}
+            onClose={closeModal}
+            onSubmit={handleSkipSubmit}
+          />
+
+          <ChangeScheduleModal
+            isOpen={activeModal === "schedule"}
+            subscriptionId={selectedSubId}
+            currentDays={
+              subs.subscriptions.find((s) => s.id === selectedSubId)?.deliveryDays || []
+            }
+            isLoading={subs.actionLoading === selectedSubId + ":schedule"}
+            onClose={closeModal}
+            onSubmit={handleScheduleSubmit}
+          />
+
+          <ChangePlanModal
+            isOpen={activeModal === "plan"}
+            subscriptionId={selectedSubId}
+            currentPlan={
+              subs.subscriptions.find((s) => s.id === selectedSubId)?.planType || ""
+            }
+            isLoading={subs.actionLoading === selectedSubId + ":plan"}
+            onClose={closeModal}
+            onSubmit={handlePlanSubmit}
+          />
+
+          {/* Cancel Confirmation Modal */}
+          {cancelConfirm && (
+            <>
+              <div
+                className="fixed inset-0 z-40 bg-black/20"
+                onClick={closeModal}
+              />
+              <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-96 bg-white rounded-3xl border-2 border-[#d1c5b3]/30 shadow-2xl p-8 space-y-6">
+                <div className="space-y-3 text-center">
+                  <h3 className="text-2xl font-bold text-[#2f1500] tracking-tight">
+                    Cancel Subscription?
+                  </h3>
+                  <p className="font-['Playfair_Display'] italic text-[#775a11] text-sm">
+                    This action cannot be undone.
+                  </p>
+                </div>
+
+                <div className="flex gap-4">
+                  <button
+                    onClick={closeModal}
+                    className="flex-1 px-6 py-3 rounded-full bg-gradient-to-r from-[#775a11] to-[#c4a052] text-white font-bold text-sm tracking-tight hover:scale-[1.02] active:scale-95 transition-all"
+                  >
+                    Keep Plan
+                  </button>
+                  <button
+                    onClick={handleCancelSubmit}
+                    disabled={subs.actionLoading === selectedSubId + ":cancel"}
+                    className="flex-1 px-6 py-3 rounded-full border-2 border-[#d1c5b3] text-[#775a11] font-bold text-sm tracking-tight hover:bg-[#fff1e9] transition-colors disabled:opacity-50"
+                  >
+                    {subs.actionLoading === selectedSubId + ":cancel" ? "Cancelling..." : "Cancel Plan"}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }
