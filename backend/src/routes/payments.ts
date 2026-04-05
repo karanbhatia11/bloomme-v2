@@ -139,7 +139,7 @@ router.post('/create', optionalAuth as any, async (req, res) => {
                 await pool.query(
                     `INSERT INTO order_items (order_id, item_type, item_id, quantity, price, schedule)
                      VALUES ($1, $2, $3, $4, $5, $6)`,
-                    [orderId, 'addon', addon.id, addon.quantity || 1, addon.price || 0, addon.schedule ? JSON.stringify(addon.schedule) : null]
+                    [orderId, 'addon', addon.id, addon.quantity || 1, Math.round((addon.price || 0) * 100), addon.schedule ? JSON.stringify(addon.schedule) : null]
                 );
             }
         }
