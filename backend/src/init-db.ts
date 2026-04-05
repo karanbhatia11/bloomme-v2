@@ -128,6 +128,7 @@ const initDb = async () => {
                 promo_code TEXT,
                 promo_discount DECIMAL DEFAULT 0,
                 referral_discount DECIMAL DEFAULT 0,
+                customer_details JSONB DEFAULT '{}',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 paid_at TIMESTAMP
             );
