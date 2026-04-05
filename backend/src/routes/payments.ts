@@ -103,17 +103,21 @@ router.post('/verify', authenticateToken as any, async (req, res) => {
 
         const order = orderCheck.rows[0];
 
-        // TODO: In production, verify signature with Razorpay's public key
-        // const message = razorpayOrderId + '|' + razorpayPaymentId;
-        // const expectedSignature = crypto
-        //     .createHmac('sha256', RAZORPAY_SECRET)
-        //     .update(message)
-        //     .digest('hex');
-        // if (expectedSignature !== razorpaySignature) {
-        //     return res.status(400).json({ error: 'Invalid payment signature' });
-        // }
+        // Verify Razorpay signature with secret key
+        const RAZORPAY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+        if (!RAZORPAY_SECRET) {
+            return res.status(500).json({ error: 'Razorpay secret key not configured' });
+        }
 
-        // For now, accept the signature (mock verification)
+        const message = razorpayOrderId + '|' + razorpayPaymentId;
+        const expectedSignature = crypto
+            .createHmac('sha256', RAZORPAY_SECRET)
+            .update(message)
+            .digest('hex');
+
+        if (expectedSignature !== razorpaySignature) {
+            return res.status(400).json({ error: 'Invalid payment signature - signature verification failed' });
+        }
         // Mark order as paid
         await pool.query(
             "UPDATE orders SET status = $1, razorpay_payment_id = $2, razorpay_signature = $3, paid_at = CURRENT_TIMESTAMP WHERE id = $4",
