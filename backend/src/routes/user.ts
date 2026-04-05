@@ -15,11 +15,37 @@ router.get('/config/add-ons', async (req, res) => {
 
 router.post('/address', authenticateToken as any, async (req, res) => {
     try {
-        const { full_name, phone, house_number, street, area, city, pin_code, instructions } = req.body;
+        const { address_line1, address_line2, suburb, postcode, delivery_notes, time_slot, building_type } = req.body;
         const user_id = (req as any).user.id;
+
+        // Get user data
+        const userResult = await pool.query('SELECT name, email, phone FROM users WHERE id = $1', [user_id]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const user = userResult.rows[0];
+
+        // Ensure customer record exists for this user
+        const customerResult = await pool.query(
+            'SELECT id FROM customers WHERE email = $1 AND name = $2 LIMIT 1',
+            [user.email, user.name]
+        );
+
+        let customerId;
+        if (customerResult.rows.length > 0) {
+            customerId = customerResult.rows[0].id;
+        } else {
+            const newCustomer = await pool.query(
+                'INSERT INTO customers (name, phone, email, time_slot, building_type) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+                [user.name, user.phone, user.email, time_slot || '5:30 to 6:30', building_type || 'house']
+            );
+            customerId = newCustomer.rows[0].id;
+        }
+
         const result = await pool.query(
-            'INSERT INTO addresses (user_id, full_name, phone, house_number, street, area, city, pin_code, instructions) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-            [user_id, full_name, phone, house_number, street, area, city, pin_code, instructions]
+            'INSERT INTO addresses (customer_id, address_line1, address_line2, suburb, postcode, delivery_notes, time_slot, building_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            [customerId, address_line1, address_line2 || null, suburb, postcode, delivery_notes || null, time_slot || '5:30 to 6:30', building_type || 'house']
         );
         res.status(201).json(result.rows[0]);
     } catch (err: any) {
@@ -90,22 +116,24 @@ router.get('/settings', authenticateToken as any, async (req, res) => {
 
         const user = userResult.rows[0];
 
-        // Get user's primary address
+        // Get user's primary address via customer record
         const addressResult = await pool.query(
-            'SELECT id, full_name, phone, house_number, street, area, city, pin_code, instructions FROM addresses WHERE user_id = $1 LIMIT 1',
-            [user_id]
+            `SELECT a.id, a.address_line1, a.address_line2, a.suburb, a.postcode, a.delivery_notes, a.time_slot, a.building_type
+             FROM addresses a
+             JOIN customers c ON a.customer_id = c.id
+             WHERE c.email = $1 LIMIT 1`,
+            [user.email]
         );
 
         const address = addressResult.rows.length > 0 ? {
             id: addressResult.rows[0].id,
-            fullName: addressResult.rows[0].full_name,
-            phone: addressResult.rows[0].phone,
-            houseNumber: addressResult.rows[0].house_number,
-            street: addressResult.rows[0].street,
-            area: addressResult.rows[0].area,
-            city: addressResult.rows[0].city,
-            pinCode: addressResult.rows[0].pin_code,
-            instructions: addressResult.rows[0].instructions
+            addressLine1: addressResult.rows[0].address_line1,
+            addressLine2: addressResult.rows[0].address_line2,
+            suburb: addressResult.rows[0].suburb,
+            postcode: addressResult.rows[0].postcode,
+            deliveryNotes: addressResult.rows[0].delivery_notes,
+            timeSlot: addressResult.rows[0].time_slot,
+            buildingType: addressResult.rows[0].building_type
         } : null;
 
         res.json({
@@ -164,18 +192,43 @@ router.post('/profile/update', authenticateToken as any, async (req, res) => {
 router.post('/address/update', authenticateToken as any, async (req, res) => {
     try {
         const user_id = (req as any).user.id;
-        const { id, fullName, phone, houseNumber, street, area, city, pinCode, instructions } = req.body;
+        const { id, addressLine1, addressLine2, suburb, postcode, deliveryNotes, timeSlot, buildingType } = req.body;
 
-        if (!fullName || !phone || !houseNumber || !street || !area || !city || !pinCode) {
-            return res.status(400).json({ error: 'All address fields are required' });
+        if (!addressLine1 || !suburb || !postcode) {
+            return res.status(400).json({ error: 'Address line 1, suburb, and postcode are required' });
+        }
+
+        // Get user data
+        const userResult = await pool.query('SELECT name, email, phone FROM users WHERE id = $1', [user_id]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const user = userResult.rows[0];
+
+        // Ensure customer record exists
+        const customerResult = await pool.query(
+            'SELECT id FROM customers WHERE email = $1 AND name = $2 LIMIT 1',
+            [user.email, user.name]
+        );
+
+        let customerId;
+        if (customerResult.rows.length > 0) {
+            customerId = customerResult.rows[0].id;
+        } else {
+            const newCustomer = await pool.query(
+                'INSERT INTO customers (name, phone, email, time_slot, building_type) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+                [user.name, user.phone, user.email, timeSlot || '5:30 to 6:30', buildingType || 'house']
+            );
+            customerId = newCustomer.rows[0].id;
         }
 
         let result;
         if (id) {
             // Update existing address
             result = await pool.query(
-                'UPDATE addresses SET full_name = $1, phone = $2, house_number = $3, street = $4, area = $5, city = $6, pin_code = $7, instructions = $8 WHERE id = $9 AND user_id = $10 RETURNING id',
-                [fullName, phone, houseNumber, street, area, city, pinCode, instructions, id, user_id]
+                'UPDATE addresses SET address_line1 = $1, address_line2 = $2, suburb = $3, postcode = $4, delivery_notes = $5, time_slot = $6, building_type = $7, updated_at = CURRENT_TIMESTAMP WHERE id = $8 AND customer_id = $9 RETURNING id',
+                [addressLine1, addressLine2 || null, suburb, postcode, deliveryNotes || null, timeSlot || '5:30 to 6:30', buildingType || 'house', id, customerId]
             );
             if (result.rows.length === 0) {
                 return res.status(404).json({ error: 'Address not found' });
@@ -183,8 +236,8 @@ router.post('/address/update', authenticateToken as any, async (req, res) => {
         } else {
             // Create new address
             result = await pool.query(
-                'INSERT INTO addresses (user_id, full_name, phone, house_number, street, area, city, pin_code, instructions) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
-                [user_id, fullName, phone, houseNumber, street, area, city, pinCode, instructions]
+                'INSERT INTO addresses (customer_id, address_line1, address_line2, suburb, postcode, delivery_notes, time_slot, building_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
+                [customerId, addressLine1, addressLine2 || null, suburb, postcode, deliveryNotes || null, timeSlot || '5:30 to 6:30', buildingType || 'house']
             );
         }
 

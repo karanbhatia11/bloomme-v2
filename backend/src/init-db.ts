@@ -18,27 +18,35 @@ const initDb = async () => {
 
             CREATE TABLE IF NOT EXISTS addresses (
                 id SERIAL PRIMARY KEY,
-                user_id INTEGER REFERENCES users(id),
-                full_name TEXT NOT NULL,
-                phone TEXT NOT NULL,
-                house_number TEXT NOT NULL,
-                street TEXT NOT NULL,
-                area TEXT NOT NULL,
-                city TEXT NOT NULL,
-                pin_code TEXT NOT NULL,
-                instructions TEXT
+                customer_id INTEGER NOT NULL REFERENCES customers(id),
+                address_line1 TEXT NOT NULL,
+                address_line2 TEXT,
+                suburb TEXT NOT NULL,
+                postcode TEXT NOT NULL,
+                delivery_notes TEXT,
+                time_slot TEXT DEFAULT '5:30 to 6:30',
+                building_type TEXT DEFAULT 'house',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
             CREATE TABLE IF NOT EXISTS subscriptions (
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER REFERENCES users(id),
-                plan_type TEXT NOT NULL,
+                customer_id INTEGER REFERENCES customers(id),
+                plan_id INTEGER REFERENCES plans(id),
+                address_id INTEGER REFERENCES addresses(id),
                 price DECIMAL NOT NULL,
                 status TEXT DEFAULT 'active',
                 delivery_days TEXT NOT NULL,
                 custom_schedule JSONB,
                 start_date DATE DEFAULT CURRENT_DATE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                end_date DATE,
+                pause_start_date DATE,
+                pause_end_date DATE,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
             CREATE TABLE IF NOT EXISTS add_ons (
@@ -54,12 +62,49 @@ const initDb = async () => {
                 one_off_date DATE
             );
 
+            CREATE TABLE IF NOT EXISTS subscription_days (
+                id SERIAL PRIMARY KEY,
+                subscription_id INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+                day_of_week TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS subscription_delivery_dates (
+                id SERIAL PRIMARY KEY,
+                subscription_id INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+                delivery_date DATE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(subscription_id, delivery_date)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_subscription_delivery_dates_subscription_id ON subscription_delivery_dates(subscription_id);
+            CREATE INDEX IF NOT EXISTS idx_subscription_delivery_dates_date ON subscription_delivery_dates(delivery_date);
+
             CREATE TABLE IF NOT EXISTS deliveries (
                 id SERIAL PRIMARY KEY,
                 subscription_id INTEGER REFERENCES subscriptions(id),
                 delivery_date DATE NOT NULL,
                 status TEXT DEFAULT 'pending'
             );
+
+            CREATE TABLE IF NOT EXISTS delivery_addons (
+                id SERIAL PRIMARY KEY,
+                delivery_id INTEGER NOT NULL REFERENCES deliveries(id) ON DELETE CASCADE,
+                addon_name TEXT NOT NULL,
+                quantity INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS addon_delivery_dates (
+                id SERIAL PRIMARY KEY,
+                subscription_addon_id INTEGER NOT NULL REFERENCES subscription_add_ons(id) ON DELETE CASCADE,
+                delivery_date DATE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(subscription_addon_id, delivery_date)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_addon_delivery_dates_subscription_addon_id ON addon_delivery_dates(subscription_addon_id);
+            CREATE INDEX IF NOT EXISTS idx_addon_delivery_dates_date ON addon_delivery_dates(delivery_date);
 
             CREATE TABLE IF NOT EXISTS newsletter_subscribers (
                 id SERIAL PRIMARY KEY,
@@ -73,6 +118,7 @@ const initDb = async () => {
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
                 tagline TEXT,
+                description TEXT,
                 price DECIMAL NOT NULL,
                 image_url TEXT,
                 features JSONB DEFAULT '[]',
@@ -115,9 +161,24 @@ const initDb = async () => {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
+            CREATE TABLE IF NOT EXISTS customers (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                email TEXT NOT NULL,
+                address TEXT,
+                city TEXT,
+                landmark TEXT,
+                notes TEXT,
+                time_slot TEXT DEFAULT '5:30 to 6:30',
+                building_type TEXT DEFAULT 'house',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
             CREATE TABLE IF NOT EXISTS orders (
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER REFERENCES users(id),
+                customer_id INTEGER NOT NULL REFERENCES customers(id),
                 razorpay_order_id TEXT UNIQUE,
                 razorpay_payment_id TEXT,
                 razorpay_signature TEXT,
@@ -128,7 +189,6 @@ const initDb = async () => {
                 promo_code TEXT,
                 promo_discount DECIMAL DEFAULT 0,
                 referral_discount DECIMAL DEFAULT 0,
-                customer_details JSONB DEFAULT '{}',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 paid_at TIMESTAMP
             );
@@ -140,6 +200,7 @@ const initDb = async () => {
                 item_id INTEGER,
                 quantity INTEGER DEFAULT 1,
                 price DECIMAL,
+                schedule JSONB,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 

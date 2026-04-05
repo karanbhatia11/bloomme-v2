@@ -18,7 +18,7 @@ router.get('/plans', (req, res) => {
 router.post('/subscribe', authenticateToken as any, async (req, res) => {
     try {
         const {
-            plan_type,
+            plan_id,
             price,
             delivery_days,
             custom_schedule,
@@ -27,36 +27,111 @@ router.post('/subscribe', authenticateToken as any, async (req, res) => {
             frequency = 'daily',
             start_date,
             end_date,
-            skip_dates,
-            pause_dates,
+            pause_start_date,
+            pause_end_date,
+            notes,
+            address_id,
             // Addon scheduling config: array of { add_on_id, addon_type, addon_frequency, addon_delivery_days, addon_start_date, addon_end_date, one_off_date }
             addon_configs,
         } = req.body;
         const user_id = (req as any).user.id;
 
+        // Get customer_id from user
+        const userResult = await pool.query(
+            'SELECT name, email, phone FROM users WHERE id = $1',
+            [user_id]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Ensure customer record exists
+        const customerResult = await pool.query(
+            'SELECT id FROM customers WHERE email = $1 LIMIT 1',
+            [userResult.rows[0].email]
+        );
+
+        let customerId;
+        if (customerResult.rows.length > 0) {
+            customerId = customerResult.rows[0].id;
+        } else {
+            const newCustomer = await pool.query(
+                'INSERT INTO customers (name, phone, email) VALUES ($1, $2, $3) RETURNING id',
+                [userResult.rows[0].name, userResult.rows[0].phone, userResult.rows[0].email]
+            );
+            customerId = newCustomer.rows[0].id;
+        }
+
+        // Calculate end_date from custom_schedule if provided
+        let calculatedEndDate = end_date ?? null;
+        if (custom_schedule && Array.isArray(custom_schedule) && custom_schedule.length > 0) {
+            calculatedEndDate = custom_schedule[custom_schedule.length - 1];
+        }
+
         const sub = await pool.query(
             `INSERT INTO subscriptions
-               (user_id, plan_type, price, delivery_days, custom_schedule,
-                frequency, start_date, end_date, skip_dates, pause_dates)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+               (user_id, customer_id, plan_id, address_id, price, delivery_days, custom_schedule,
+                start_date, end_date, pause_start_date, pause_end_date, notes, status, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP)
              RETURNING id, start_date`,
             [
                 user_id,
-                plan_type,
+                customerId,
+                plan_id,
+                address_id || null,
                 price,
                 typeof delivery_days === 'object'
                     ? JSON.stringify(delivery_days)
                     : (delivery_days ?? '[]'),
                 custom_schedule ? JSON.stringify(custom_schedule) : null,
-                frequency,
                 start_date ?? new Date().toISOString().slice(0, 10),
-                end_date ?? null,
-                JSON.stringify(skip_dates ?? []),
-                JSON.stringify(pause_dates ?? []),
+                calculatedEndDate,
+                pause_start_date ?? null,
+                pause_end_date ?? null,
+                notes ?? null,
+                'active'
             ]
         );
 
         const subscription_id: number = sub.rows[0].id;
+
+        // Save delivery days - extract from custom_schedule if available, otherwise from delivery_days
+        let daysToInsert: string[] = [];
+
+        if (Array.isArray(custom_schedule) && custom_schedule.length > 0) {
+            // Extract day of week from each date in custom_schedule
+            const uniqueDays = new Set<string>();
+            for (const dateStr of custom_schedule) {
+                const date = new Date(dateStr + 'T00:00:00');
+                const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' });
+                uniqueDays.add(dayOfWeek);
+            }
+            daysToInsert = Array.from(uniqueDays);
+        } else if (Array.isArray(delivery_days) && delivery_days.length > 0) {
+            // Fallback to delivery_days if custom_schedule not provided
+            daysToInsert = delivery_days;
+        }
+
+        if (daysToInsert.length > 0) {
+            for (const day of daysToInsert) {
+                await pool.query(
+                    `INSERT INTO subscription_days (subscription_id, day_of_week) VALUES ($1, $2)`,
+                    [subscription_id, day]
+                );
+            }
+        }
+
+        // Save delivery dates from custom_schedule
+        if (Array.isArray(custom_schedule) && custom_schedule.length > 0) {
+            for (const dateStr of custom_schedule) {
+                await pool.query(
+                    `INSERT INTO subscription_delivery_dates (subscription_id, delivery_date) VALUES ($1, $2)
+                     ON CONFLICT (subscription_id, delivery_date) DO NOTHING`,
+                    [subscription_id, dateStr]
+                );
+            }
+        }
 
         // Save selected add-ons
         if (Array.isArray(addon_configs) && addon_configs.length > 0) {
@@ -129,7 +204,7 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
     try {
         const user_id = (req as any).user.id;
         const result = await pool.query(
-            `SELECT id, plan_type, status, price, delivery_days, start_date, end_date, custom_schedule, created_at
+            `SELECT id, plan_id, status, price, delivery_days, start_date, end_date, custom_schedule, created_at
              FROM subscriptions
              WHERE user_id = $1
              ORDER BY created_at DESC`,
@@ -181,7 +256,7 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
 
             return {
                 id: row.id.toString(),
-                planType: row.plan_type,
+                planId: row.plan_id,
                 status: row.status,
                 price: basePrice,
                 addOnsPrice: addOnsPrice,
