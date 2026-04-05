@@ -44,7 +44,10 @@ app.use(cors({
             'https://bloomme.co.in',
             'https://www.bloomme.co.in'
         ];
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow no origin (same-site requests) or from allowed list
+        // In development, allow localhost with any port
+        const isLocalhost = origin && /^http:\/\/(localhost|127\.0\.0\.1)/.test(origin);
+        if (!origin || allowedOrigins.includes(origin) || (process.env.NODE_ENV === 'development' && isLocalhost)) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));

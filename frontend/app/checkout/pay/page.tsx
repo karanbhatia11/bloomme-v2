@@ -158,7 +158,7 @@ export default function CheckoutPayPage() {
     }
   };
 
-  // ── Dev test payment (skip Razorpay) ──────────────────────────────────────
+  // ── Dev test payment (skip Razorpay, guest or authenticated) ─────────────
   const handleDevPay = async () => {
     setLoading(true);
     setError("");
@@ -167,14 +167,13 @@ export default function CheckoutPayPage() {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 
       // Map plan type string to a numeric plan ID for testing
-      // In production, this would be the actual plan ID
       const planIdMap: Record<string, number> = {
         "TRADITIONAL": 1,
         "DIVINE": 2,
         "CELESTIAL": 3,
       };
 
-      // Step 1: Create order
+      // Step 1: Create order (works for both guest and authenticated users)
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
@@ -242,14 +241,48 @@ export default function CheckoutPayPage() {
     setError("");
 
     try {
-      const orderRes = await fetch("/api/payment/create-order", {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+      // Map plan type string to a numeric plan ID
+      const planIdMap: Record<string, number> = {
+        "TRADITIONAL": 1,
+        "DIVINE": 2,
+        "CELESTIAL": 3,
+      };
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const orderRes = await fetch("/api/payments/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: getTotal(), planId: cart.planId, customer: cart.customer }),
+        headers,
+        body: JSON.stringify({
+          planId: cart.planId ? planIdMap[cart.planId] || null : null,
+          deliveryDays: cart.frequency === "weekly" ? cart.deliveryDays : [],
+          addOns: cart.addons.map(a => ({ id: a.id, quantity: a.quantity, price: a.price })),
+          promoCode: null,
+          referralCode: null,
+          customer: cart.customer,
+          subtotal: cart.planPrice || 0,
+          tax: 0,
+          promoDiscount: 0,
+          referralDiscount: 0,
+          total: getTotal(),
+        }),
       });
 
       if (!orderRes.ok) throw new Error("Failed to create order");
-      const { orderId, amount, currency, key } = await orderRes.json();
+      const { orderId, razorpayOrderId, amount, currency } = await orderRes.json();
+
+      // Get Razorpay key from environment (this should be set in your NEXT_PUBLIC_ env var)
+      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      if (!razorpayKey) {
+        throw new Error('Razorpay key not configured. Please set NEXT_PUBLIC_RAZORPAY_KEY_ID in your environment.');
+      }
 
       if (!(window as any).Razorpay) {
         await new Promise<void>((resolve, reject) => {
@@ -262,29 +295,36 @@ export default function CheckoutPayPage() {
       }
 
       const rzp = new (window as any).Razorpay({
-        key,
+        key: razorpayKey,
         amount,
         currency,
-        order_id: orderId,
+        order_id: razorpayOrderId,
         name: "Bloomme",
-        description: `${cart.planName} Flower Subscription`,
-        image: "/images/logo.png",
+        description: `${cart.planName || "Add-ons"} Order`,
+        image: `${typeof window !== 'undefined' ? window.location.origin : ''}/images/backgroundlesslogo.png`,
         prefill: {
-          name:    cart.customer?.name,
-          email:   cart.customer?.email,
-          contact: `+91${cart.customer?.phone}`,
+          name:    cart.customer?.name || "",
+          email:   cart.customer?.email || "",
+          contact: cart.customer?.phone ? `+91${cart.customer.phone}` : "",
         },
         theme: { color: "#775a11" },
         handler: async (response: any) => {
           try {
-            const verifyRes = await fetch("/api/payment/verify", {
+            const verifyHeaders: Record<string, string> = {
+              "Content-Type": "application/json",
+            };
+            if (token) {
+              verifyHeaders["Authorization"] = `Bearer ${token}`;
+            }
+
+            const verifyRes = await fetch("/api/payments/verify", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: verifyHeaders,
               body: JSON.stringify({
-                razorpay_order_id:   response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature:  response.razorpay_signature,
-                cart,
+                orderId,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
               }),
             });
 
@@ -294,15 +334,22 @@ export default function CheckoutPayPage() {
               clearCart();
               router.push("/checkout/confirmed");
             } else {
-              setError("Payment verification failed. Please contact support.");
+              const errData = await verifyRes.json();
+              setError(errData.error || "Payment verification failed. Please contact support.");
             }
-          } catch {
-            setError("Payment verification failed. Please contact support.");
+          } catch (err: any) {
+            setError(err.message || "Payment verification failed. Please contact support.");
           } finally {
             setLoading(false);
           }
         },
         modal: { ondismiss: () => setLoading(false) },
+      });
+
+      // Add error handler
+      rzp.on('payment.failed', function(response: any) {
+        setError(`Payment failed: ${response.error.reason || 'Unknown error'}`);
+        setLoading(false);
       });
 
       rzp.open();
