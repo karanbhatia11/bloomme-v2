@@ -65,8 +65,8 @@ router.post('/create', async (req, res) => {
 
         // Create order record in DB
         const orderResult = await pool.query(
-            `INSERT INTO orders (user_id, razorpay_order_id, amount, currency, status, order_type, promo_code, promo_discount, referral_discount, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
+            `INSERT INTO orders (user_id, razorpay_order_id, amount, currency, status, order_type, promo_code, promo_discount, referral_discount, customer_details, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP)
              RETURNING id`,
             [
                 user_id,
@@ -77,7 +77,8 @@ router.post('/create', async (req, res) => {
                 planId ? 'subscription' : 'addon',
                 promoCode || null,
                 promoDiscount || 0,
-                referralDiscount || 0
+                referralDiscount || 0,
+                customer ? JSON.stringify(customer) : null
             ]
         );
 
