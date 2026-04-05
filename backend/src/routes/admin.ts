@@ -248,9 +248,23 @@ router.delete('/page-content/:id', async (req, res) => {
 router.get('/orders', async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT o.*, u.name as user_name, u.email as user_email, u.phone as user_phone
+            SELECT
+                o.*,
+                u.name as user_name,
+                u.email as user_email,
+                u.phone as user_phone,
+                c.name as customer_name,
+                c.phone as customer_phone,
+                c.email as customer_email,
+                a.address_line1,
+                a.address_line2,
+                a.suburb,
+                a.postcode,
+                a.delivery_notes
             FROM orders o
-            JOIN users u ON o.user_id = u.id
+            LEFT JOIN users u ON o.user_id = u.id
+            LEFT JOIN customers c ON o.customer_id = c.id
+            LEFT JOIN addresses a ON c.id = a.customer_id
             ORDER BY o.created_at DESC
         `);
         res.json(result.rows);

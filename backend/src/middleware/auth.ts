@@ -24,6 +24,24 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
     });
 };
 
+export const optionalAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        // No token provided, continue as guest
+        return next();
+    }
+
+    jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+        if (!err && user) {
+            req.user = user;
+        }
+        // Continue regardless of verification result
+        next();
+    });
+};
+
 export const authorizeAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
     if (req.user?.role !== 'admin') {
         return res.status(403).json({ message: 'Admin access required' });
