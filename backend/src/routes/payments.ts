@@ -5,9 +5,41 @@ import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
-// Helper: Generate mock Razorpay Order ID (in production, call Razorpay API)
-const generateRazorpayOrderId = (): string => {
-    return `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+// Helper: Create real Razorpay order via API
+const createRazorpayOrder = async (amount: number): Promise<string> => {
+    const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+    const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+        throw new Error('Razorpay credentials not configured');
+    }
+
+    try {
+        const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
+
+        const response = await fetch('https://api.razorpay.com/v1/orders', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Basic ${auth}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                amount: Math.round(amount * 100), // Convert to paise
+                currency: 'INR',
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.description || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.id;
+    } catch (error: any) {
+        console.error('Razorpay order creation error:', error.message);
+        throw new Error('Failed to create Razorpay order: ' + error.message);
+    }
 };
 
 // POST /api/payments/create
@@ -23,8 +55,13 @@ router.post('/create', async (req, res) => {
             return res.status(400).json({ error: 'Invalid order amount' });
         }
 
-        // Generate Razorpay Order ID (mock)
-        const razorpayOrderId = generateRazorpayOrderId();
+        // Create real Razorpay order
+        let razorpayOrderId: string;
+        try {
+            razorpayOrderId = await createRazorpayOrder(total);
+        } catch (err: any) {
+            return res.status(400).json({ error: err.message });
+        }
 
         // Create order record in DB
         const orderResult = await pool.query(
