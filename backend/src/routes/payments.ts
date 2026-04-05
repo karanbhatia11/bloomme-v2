@@ -11,11 +11,11 @@ const generateRazorpayOrderId = (): string => {
 };
 
 // POST /api/payments/create
-// Create a payment order (Razorpay order)
+// Create a payment order (Razorpay order) - requires authentication
 router.post('/create', authenticateToken as any, async (req, res) => {
     try {
-        const user_id = (req as any).user.id;
-        const { planId, deliveryDays, addOns, promoCode, referralCode, guestEmail, guestPhone, subtotal, tax, promoDiscount, referralDiscount, total } = req.body;
+        const user_id = (req as any).user.id; // Get from authenticated request
+        const { planId, deliveryDays, addOns, promoCode, referralCode, customer, subtotal, tax, promoDiscount, referralDiscount, total } = req.body;
 
         // Validate required fields
         if (!total || total <= 0) {
@@ -78,10 +78,10 @@ router.post('/create', authenticateToken as any, async (req, res) => {
 });
 
 // POST /api/payments/verify
-// Verify payment and mark order as paid
+// Verify payment and mark order as paid - requires authentication
 router.post('/verify', authenticateToken as any, async (req, res) => {
     try {
-        const user_id = (req as any).user.id;
+        const user_id = (req as any).user.id; // Get from authenticated request
         const { orderId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
 
         // Validate required fields
@@ -90,10 +90,12 @@ router.post('/verify', authenticateToken as any, async (req, res) => {
         }
 
         // Get order from DB
-        const orderCheck = await pool.query(
-            'SELECT * FROM orders WHERE id = $1 AND user_id = $2',
-            [orderId, user_id]
-        );
+        const orderQuery = user_id
+            ? 'SELECT * FROM orders WHERE id = $1 AND user_id = $2'
+            : 'SELECT * FROM orders WHERE id = $1';
+        const orderParams = user_id ? [orderId, user_id] : [orderId];
+
+        const orderCheck = await pool.query(orderQuery, orderParams);
 
         if (orderCheck.rows.length === 0) {
             return res.status(404).json({ error: 'Order not found' });

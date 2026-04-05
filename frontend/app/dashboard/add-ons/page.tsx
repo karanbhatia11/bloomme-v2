@@ -11,38 +11,72 @@ interface UserData {
   email: string;
 }
 
+interface ActiveAddOn {
+  id: string;
+  name: string;
+  price: number;
+  image?: string;
+  description?: string;
+}
+
 export default function AddOnsPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [activeAddOns, setActiveAddOns] = useState<ActiveAddOn[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const savedToken = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
 
-    if (!token && !userStr) {
-      const demoUser = {
-        id: "1",
-        name: "Demo",
-        email: "demo@bloomme.com",
-      };
-      localStorage.setItem("token", "demo_token");
-      localStorage.setItem("user", JSON.stringify(demoUser));
-      setUser(demoUser);
+    if (!savedToken || !userStr) {
+      router.push("/login");
       return;
     }
 
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-      }
+    try {
+      const userData = JSON.parse(userStr);
+      setUser(userData);
+      setToken(savedToken);
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      router.push("/login");
     }
   }, []);
+
+  // Fetch active add-ons when token is set
+  useEffect(() => {
+    if (token) {
+      fetchActiveAddOns();
+    }
+  }, [token]);
+
+  const fetchActiveAddOns = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/addons/active", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      console.log('[AddOns Page] API Response:', data);
+      console.log('[AddOns Page] Response Status:', response.status);
+
+      if (response.ok) {
+        setActiveAddOns(data.activeAddOns || []);
+      }
+    } catch (error) {
+      console.error("Error fetching active add-ons:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -204,54 +238,79 @@ export default function AddOnsPage() {
           <p className="font-accent italic text-on-surface-variant text-lg">Curate your daily rituals with our artisanal essentials.</p>
         </header>
 
+        {loading ? (
+          <div className="flex items-center justify-center py-24">
+            <div className="text-on-surface-variant">Loading add-ons...</div>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Current Add-ons & Browse Column */}
           <div className="lg:col-span-8 flex flex-col gap-8">
             {/* Current Add-ons Section */}
-            <section className="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-headline font-semibold flex items-center gap-2">
-                  <span className="material-symbols-outlined text-secondary">auto_awesome</span>
-                  Current Ritual Add-ons
-                </h2>
-                <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/60">{PRODUCTS.slice(0, 2).length} Items Active</span>
-              </div>
+            {activeAddOns.length > 0 ? (
+              <section className="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-headline font-semibold flex items-center gap-2">
+                    <span className="material-symbols-outlined text-secondary">auto_awesome</span>
+                    Current Ritual Add-ons
+                  </h2>
+                  <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/60">{activeAddOns.length} Items Active</span>
+                </div>
 
-              <div className="flex flex-col gap-4">
-                {PRODUCTS.slice(0, 2).map((product) => (
-                  <div key={product.id} className="flex items-center justify-between p-4 rounded-lg bg-surface-container-low group hover:bg-surface-container-high transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                        <img
-                          alt={product.title}
-                          className="w-full h-full object-cover"
-                          src={product.image}
-                        />
+                <div className="flex flex-col gap-4">
+                  {activeAddOns.map((addon) => (
+                    <div key={addon.id} className="flex items-center justify-between p-4 rounded-lg bg-surface-container-low group hover:bg-surface-container-high transition-colors">
+                      <div className="flex items-center gap-4">
+                        {addon.image && (
+                          <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                            <img
+                              alt={addon.name}
+                              className="w-full h-full object-cover"
+                              src={addon.image}
+                            />
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-headline font-bold text-on-surface">{addon.name}</h3>
+                          {addon.description && (
+                            <p className="text-sm text-on-surface-variant">{addon.description}</p>
+                          )}
+                          <p className="text-primary font-bold mt-1">₹{addon.price}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-headline font-bold text-on-surface">{product.title}</h3>
-                        <p className="text-sm text-on-surface-variant">{product.description}</p>
-                        <p className="text-primary font-bold mt-1">₹{product.price}</p>
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center bg-surface-container-lowest rounded-full p-1 border border-outline-variant/30">
+                          <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors">
+                            <span className="material-symbols-outlined text-sm">remove</span>
+                          </button>
+                          <span className="px-4 font-bold text-sm">1</span>
+                          <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors">
+                            <span className="material-symbols-outlined text-sm">add</span>
+                          </button>
+                        </div>
+                        <button className="text-on-surface-variant hover:text-error transition-colors p-2">
+                          <span className="material-symbols-outlined">delete</span>
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-6">
-                      <div className="flex items-center bg-surface-container-lowest rounded-full p-1 border border-outline-variant/30">
-                        <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors">
-                          <span className="material-symbols-outlined text-sm">remove</span>
-                        </button>
-                        <span className="px-4 font-bold text-sm">1</span>
-                        <button className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors">
-                          <span className="material-symbols-outlined text-sm">add</span>
-                        </button>
-                      </div>
-                      <button className="text-on-surface-variant hover:text-error transition-colors p-2">
-                        <span className="material-symbols-outlined">delete</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            ) : (
+              <section className="bg-surface-container-lowest rounded-xl p-12 shadow-sm text-center">
+                <span className="material-symbols-outlined text-6xl text-outline mb-4 block">local_florist</span>
+                <h2 className="text-2xl font-bold text-on-surface mb-2">No active add-ons</h2>
+                <p className="text-on-surface-variant mb-8">Start your add-ons journey with a subscription plan</p>
+                <div className="flex flex-col md:flex-row gap-4 justify-center">
+                  <Link href="/checkout/plan" className="bg-primary text-on-primary px-8 py-3 rounded-lg font-bold hover:scale-[1.02] transition-all">
+                    Start Subscription Plan
+                  </Link>
+                  <Link href="/checkout/addons" className="border-2 border-primary text-primary px-8 py-3 rounded-lg font-bold hover:bg-primary/10 transition-all">
+                    Add-ons Only
+                  </Link>
+                </div>
+              </section>
+            )}
 
             {/* Browse Section */}
             <section>
@@ -265,10 +324,10 @@ export default function AddOnsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {PRODUCTS.map((product) => (
                   <div key={product.id} className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm group">
-                    <div className="h-40 overflow-hidden relative">
+                    <div className="h-40 overflow-hidden relative bg-surface-container-low flex items-center justify-center">
                       <img
                         alt={product.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-contain transition-transform duration-500"
                         src={product.image}
                       />
                     </div>
@@ -290,61 +349,9 @@ export default function AddOnsPage() {
 
           {/* Sidebar Column */}
           <div className="lg:col-span-4 flex flex-col gap-6">
-            {/* Pricing Summary Card */}
-            <div className="bg-on-surface text-surface rounded-xl p-8 shadow-xl sticky top-24">
-              <h2 className="text-2xl font-headline font-bold mb-8">Billing Summary</h2>
-              <div className="space-y-4 mb-8">
-                <div className="flex justify-between items-center text-surface/70">
-                  <span>Monthly Subscription</span>
-                  <span className="font-medium">₹89</span>
-                </div>
-                <div className="flex justify-between items-center text-surface/70">
-                  <span>Add-ons Subtotal</span>
-                  <span className="font-medium">₹130</span>
-                </div>
-                <div className="h-px bg-surface/10 my-4"></div>
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-headline font-semibold">Next Payment</span>
-                  <span className="text-2xl font-headline font-bold text-[#C4A052]">
-                    ₹219<span className="text-sm font-normal text-surface/50">/month</span>
-                  </span>
-                </div>
-                <p className="text-[10px] uppercase tracking-widest text-surface/40 pt-2">Next billing cycle: Oct 12, 2023</p>
-              </div>
-              <button className="w-full py-4 bg-primary-container text-on-primary-container font-bold rounded-lg hover:bg-[#ffdcc3] transition-colors mb-4 flex items-center justify-center gap-2">
-                Update All Selections
-              </button>
-              <p className="text-center text-xs text-surface/40">Changes will be reflected in your next delivery</p>
-            </div>
-
-            {/* Loyalty Chip */}
-            <div className="bg-surface-container-high rounded-xl p-6 border-l-4 border-secondary">
-              <div className="flex items-start gap-3">
-                <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  stars
-                </span>
-                <div>
-                  <h4 className="font-bold text-on-surface text-sm">Sacred Traditions Tier</h4>
-                  <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                    You've reached the Gold Tier. Enjoy 10% off on all specialty floral add-ons this month.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Delivery Readiness */}
-            <div className="bg-surface-container-low rounded-xl p-6">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70 mb-4">Delivery Readiness</h4>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Add-on Preparation</span>
-                <span className="text-sm font-bold text-emerald-600">Freshly Sourced</span>
-              </div>
-              <div className="w-full h-1.5 bg-outline-variant/20 rounded-full overflow-hidden">
-                <div className="w-3/4 h-full bg-emerald-600 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
-              </div>
-            </div>
           </div>
         </div>
+        )}
       </main>
     </div>
   );

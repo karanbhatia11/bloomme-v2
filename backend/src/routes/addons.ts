@@ -4,6 +4,69 @@ import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
+// GET /api/addons/active
+// Get user's active add-ons from subscriptions and standalone addon orders
+router.get('/active', authenticateToken as any, async (req, res) => {
+    try {
+        const user_id = (req as any).user.id;
+        console.log('[Addons Active] Fetching for user:', user_id);
+
+        // Get add-ons from subscriptions
+        const subResult = await pool.query(
+            `SELECT DISTINCT sao.add_on_id, ao.name, ao.price
+             FROM subscription_add_ons sao
+             JOIN add_ons ao ON sao.add_on_id = ao.id
+             WHERE sao.subscription_id IN (
+               SELECT id FROM subscriptions WHERE user_id = $1 AND status = 'active'
+             )`,
+            [user_id]
+        );
+        console.log('[Addons Active] From subscriptions:', subResult.rows);
+
+        // Debug: Check all addon orders for this user
+        const debugOrders = await pool.query(
+            `SELECT id, order_type, status FROM orders WHERE user_id = $1 AND order_type = 'addon'`,
+            [user_id]
+        );
+        console.log('[Addons Active] Debug - All addon orders:', debugOrders.rows);
+
+        // Get add-ons from standalone addon orders (any status)
+        const addonResult = await pool.query(
+            `SELECT DISTINCT oi.item_id as add_on_id, ao.name, ao.price, o.status as order_status
+             FROM orders o
+             JOIN order_items oi ON o.id = oi.order_id
+             JOIN add_ons ao ON oi.item_id = ao.id
+             WHERE o.user_id = $1
+             AND o.order_type = 'addon'
+             AND oi.item_type = 'addon'`,
+            [user_id]
+        );
+        console.log('[Addons Active] From addon orders (all statuses):', addonResult.rows);
+
+        // Combine results, removing duplicates
+        const addOnMap = new Map();
+
+        [...subResult.rows, ...addonResult.rows].forEach((row) => {
+            const key = row.add_on_id.toString();
+            if (!addOnMap.has(key)) {
+                addOnMap.set(key, {
+                    id: key,
+                    name: row.name,
+                    price: parseFloat(row.price),
+                });
+            }
+        });
+
+        const activeAddOns = Array.from(addOnMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        console.log('[Addons Active] Final result:', activeAddOns);
+
+        res.json({ activeAddOns });
+    } catch (err: any) {
+        console.error('Get active add-ons error:', err);
+        res.status(400).json({ error: err.message, activeAddOns: [] });
+    }
+});
+
 // GET /api/addons/my-addons
 // Get user's active add-ons
 router.get('/my-addons', authenticateToken as any, async (req, res) => {
