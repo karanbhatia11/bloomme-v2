@@ -18,7 +18,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -77,8 +77,7 @@
         }
 
         .btn {
-            width: 100%;
-            padding: 12px;
+            padding: 12px 20px;
             background: #667eea;
             color: white;
             border: none;
@@ -91,6 +90,11 @@
 
         .btn:hover {
             background: #5568d3;
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 13px;
         }
 
         .error {
@@ -113,7 +117,7 @@
             background: white;
             padding: 20px;
             border-radius: 10px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: space-between;
@@ -138,70 +142,164 @@
             background: #c0392b;
         }
 
-        .sections {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
+        /* Tabs */
+        .tabs {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
         }
 
-        .section-card {
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            flex: 1;
+            text-align: center;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-btn:hover {
+            background: #f9f9f9;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        thead {
+            background: #f5f5f5;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #fafafa;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-paid {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-paused {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
             background: white;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .section-card h2 {
-            color: #667eea;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        .section-card .form-group {
-            margin-bottom: 15px;
-        }
-
-        .section-card label {
-            font-size: 13px;
-            color: #666;
-        }
-
-        .section-card input,
-        .section-card textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 13px;
-            font-family: inherit;
-        }
-
-        .section-card textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .section-card .btn {
-            width: 100%;
-            padding: 10px;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-
-        .success {
-            background: #d4edda;
-            color: #155724;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-            font-size: 13px;
             text-align: center;
+        }
+
+        .stat-card-label {
+            color: #666;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .stat-card-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
         }
 
         .loading {
             text-align: center;
             color: #667eea;
-            padding: 20px;
+            padding: 40px;
+            font-size: 16px;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-size: 14px;
+        }
+
+        select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -229,11 +327,49 @@
     <div class="dashboard" id="dashboard">
         <div class="container">
             <div class="header">
-                <h1>Bloomme Admin Dashboard</h1>
+                <h1>🌸 Bloomme Admin Dashboard</h1>
                 <button class="logout-btn" onclick="logout()">Logout</button>
             </div>
 
-            <div id="contentArea"></div>
+            <div class="tabs">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+                    <button class="tab-btn" onclick="switchTab('content')">📝 Content Manager</button>
+                    <button class="tab-btn" onclick="switchTab('users')">👥 Users</button>
+                    <button class="tab-btn" onclick="switchTab('orders')">📦 Orders</button>
+                    <button class="tab-btn" onclick="switchTab('subscriptions')">💳 Subscriptions</button>
+                </div>
+
+                <!-- Dashboard Tab -->
+                <div id="dashboard-tab" class="tab-content active">
+                    <h2>Dashboard Overview</h2>
+                    <div id="dashboardStats"></div>
+                </div>
+
+                <!-- Content Manager Tab -->
+                <div id="content-tab" class="tab-content">
+                    <h2>Content Manager</h2>
+                    <div id="contentManager"></div>
+                </div>
+
+                <!-- Users Tab -->
+                <div id="users-tab" class="tab-content">
+                    <h2>Users Management</h2>
+                    <div id="usersTable"></div>
+                </div>
+
+                <!-- Orders Tab -->
+                <div id="orders-tab" class="tab-content">
+                    <h2>Orders Management</h2>
+                    <div id="ordersTable"></div>
+                </div>
+
+                <!-- Subscriptions Tab -->
+                <div id="subscriptions-tab" class="tab-content">
+                    <h2>Subscriptions Management</h2>
+                    <div id="subscriptionsTable"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -274,95 +410,569 @@
         async function showDashboard() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('dashboard').classList.add('active');
-            await loadContent();
+            await loadDashboard();
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            event.target.classList.add('active');
+
+            // Load tab content
+            if (tabName === 'dashboard') loadDashboard();
+            if (tabName === 'content') loadContent();
+            if (tabName === 'users') loadUsers();
+            if (tabName === 'orders') loadOrders();
+            if (tabName === 'subscriptions') loadSubscriptions();
+        }
+
+        async function loadDashboard() {
+            // TODO: Implement dashboard stats
         }
 
         async function loadContent() {
-            const contentArea = document.getElementById('contentArea');
-            contentArea.innerHTML = '<div class="loading">Loading content...</div>';
+            // TODO: Implement content manager
+        }
+
+        let usersData = [];
+        let usersSortField = null;
+        let usersSortAsc = true;
+
+        async function loadUsers() {
+            const usersDiv = document.getElementById('usersTable');
+            usersDiv.innerHTML = '<div class="loading">Loading subscriptions...</div>';
 
             try {
-                const response = await fetch(`${API_URL}/homepage-content`, {
+                const response = await fetch(`${API_URL}/admin/subscriptions`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                usersData = await response.json();
+
+                if (!usersData.length) {
+                    usersDiv.innerHTML = '<div class="no-data">No subscriptions found</div>';
+                    return;
+                }
+
+                renderUsersTable(usersData);
+            } catch (err) {
+                console.error('Error:', err);
+                usersDiv.innerHTML = '<div class="error">Failed to load data: ' + err.message + '</div>';
+            }
+        }
+
+        function renderUsersTable(data) {
+            const usersDiv = document.getElementById('usersTable');
+
+            let html = `
+                <div style="margin-bottom: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                    <input type="text" placeholder="Search Name..." id="filterName" onkeyup="filterAndRenderUsers()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <input type="text" placeholder="Search Email..." id="filterEmail" onkeyup="filterAndRenderUsers()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <input type="text" placeholder="Search Phone..." id="filterPhone" onkeyup="filterAndRenderUsers()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <select id="filterType" onchange="filterAndRenderUsers()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="">All Types</option>
+                        <option value="guest">Guest</option>
+                        <option value="registered">Registered</option>
+                    </select>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="cursor: pointer;" onclick="sortUsers('id')">Sub ID ↕️</th>
+                            <th style="cursor: pointer;" onclick="sortUsers('user_id')">User ID ↕️</th>
+                            <th style="cursor: pointer;" onclick="sortUsers('user_name')">Name ↕️</th>
+                            <th style="cursor: pointer;" onclick="sortUsers('user_email')">Email ↕️</th>
+                            <th style="cursor: pointer;" onclick="sortUsers('user_phone')">Phone ↕️</th>
+                            <th style="cursor: pointer;" onclick="sortUsers('user_type')">Type ↕️</th>
+                            <th style="cursor: pointer;" onclick="sortUsers('created_at')">Created ↕️</th>
+                            <th>Address</th>
+                            <th>Suburb</th>
+                            <th>Postcode</th>
+                            <th>Building</th>
+                            <th>Time Slot</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            data.forEach(row => {
+                const address = row.address_line1 ? row.address_line1 + (row.address_line2 ? ', ' + row.address_line2 : '') : '-';
+                const notes = row.notes ? row.notes.substring(0, 30) + (row.notes.length > 30 ? '...' : '') : '-';
+                const typeColor = row.user_type === 'guest' ? '#e3f2fd; color: #1565c0' : '#f0f4c3; color: #827717';
+
+                html += `
+                    <tr title="Full notes: ${row.notes || 'N/A'}">
+                        <td>#${row.id}</td>
+                        <td>${row.user_id || '-'}</td>
+                        <td>${row.user_name || '-'}</td>
+                        <td>${row.user_email || '-'}</td>
+                        <td>${row.user_phone || '-'}</td>
+                        <td><span class="status-badge" style="background: ${typeColor}">${row.user_type}</span></td>
+                        <td>${new Date(row.created_at).toLocaleDateString()}</td>
+                        <td>${address}</td>
+                        <td>${row.suburb || '-'}</td>
+                        <td>${row.postcode || '-'}</td>
+                        <td>${row.building_type || '-'}</td>
+                        <td>${row.time_slot || '-'}</td>
+                        <td>${notes}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            usersDiv.innerHTML = html;
+        }
+
+        function sortUsers(field) {
+            if (usersSortField === field) {
+                usersSortAsc = !usersSortAsc;
+            } else {
+                usersSortField = field;
+                usersSortAsc = true;
+            }
+            filterAndRenderUsers();
+        }
+
+        function filterAndRenderUsers() {
+            const filterName = document.getElementById('filterName')?.value.toLowerCase() || '';
+            const filterEmail = document.getElementById('filterEmail')?.value.toLowerCase() || '';
+            const filterPhone = document.getElementById('filterPhone')?.value.toLowerCase() || '';
+            const filterType = document.getElementById('filterType')?.value || '';
+
+            let filtered = usersData.filter(row => {
+                return (!filterName || (row.user_name && row.user_name.toLowerCase().includes(filterName))) &&
+                       (!filterEmail || (row.user_email && row.user_email.toLowerCase().includes(filterEmail))) &&
+                       (!filterPhone || (row.user_phone && row.user_phone.toLowerCase().includes(filterPhone))) &&
+                       (!filterType || row.user_type === filterType);
+            });
+
+            if (usersSortField) {
+                filtered.sort((a, b) => {
+                    let aVal = a[usersSortField] || '';
+                    let bVal = b[usersSortField] || '';
+                    if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+                    if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                    return usersSortAsc ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
+                });
+            }
+
+            renderUsersTable(filtered);
+        }
+
+        let manifestData = [];
+        let manifestSortField = null;
+        let manifestSortAsc = true;
+
+        async function loadOrders() {
+            const ordersDiv = document.getElementById('ordersTable');
+            ordersDiv.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <button class="btn btn-sm" onclick="loadDeliveryManifest('tomorrow')">📅 Tomorrow</button>
+                    <button class="btn btn-sm" onclick="loadDeliveryManifest('nextweek')" style="margin-left: 10px;">📅 Next Week</button>
+                    <button class="btn btn-sm" onclick="loadDeliveryManifest('nextmonth')" style="margin-left: 10px;">📅 Next Month</button>
+                    <button class="btn btn-sm" onclick="printManifest()" style="margin-left: 10px; background: #667eea;">🖨️ Print</button>
+                </div>
+                <div id="manifestContent"></div>
+            `;
+
+            // Load tomorrow's manifest by default
+            loadDeliveryManifest('tomorrow');
+        }
+
+        async function loadDeliveryManifest(period) {
+            const manifestDiv = document.getElementById('manifestContent');
+            manifestDiv.innerHTML = '<div class="loading">Loading delivery manifest...</div>';
+
+            try {
+                const today = new Date();
+                let from_date, to_date;
+
+                if (period === 'tomorrow') {
+                    from_date = new Date(today);
+                    from_date.setDate(from_date.getDate() + 1);
+                    to_date = new Date(from_date);
+                } else if (period === 'nextweek') {
+                    from_date = new Date(today);
+                    from_date.setDate(from_date.getDate() + 1);
+                    to_date = new Date(from_date);
+                    to_date.setDate(to_date.getDate() + 6);
+                } else if (period === 'nextmonth') {
+                    from_date = new Date(today);
+                    from_date.setDate(from_date.getDate() + 1);
+                    to_date = new Date(from_date);
+                    to_date.setMonth(to_date.getMonth() + 1);
+                }
+
+                const fromStr = from_date.toISOString().split('T')[0];
+                const toStr = to_date.toISOString().split('T')[0];
+
+                const response = await fetch(`${API_URL}/admin/delivery-manifest?from_date=${fromStr}&to_date=${toStr}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
-                const sections = await response.json();
-                let html = '<div class="sections">';
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
 
-                sections.forEach(section => {
+                manifestData = await response.json();
+
+                if (!manifestData || !manifestData.length) {
+                    manifestDiv.innerHTML = '<div class="no-data">No deliveries scheduled for ' + fromStr + ' to ' + toStr + '</div>';
+                    return;
+                }
+
+                renderManifestTable(manifestData);
+            } catch (err) {
+                console.error('Manifest Error:', err);
+                manifestDiv.innerHTML = '<div class="error" style="color: #e74c3c; padding: 20px; background: #fdecea; border-radius: 5px;">Failed to load manifest: ' + err.message + '</div>';
+            }
+        }
+
+        function renderManifestTable(data) {
+            const manifestDiv = document.getElementById('manifestContent');
+
+            let html = `
+                <div style="margin-bottom: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                    <input type="text" placeholder="Search Customer..." id="filterManifestCustomer" onkeyup="filterAndRenderManifest()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <input type="text" placeholder="Search Address..." id="filterManifestAddress" onkeyup="filterAndRenderManifest()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <input type="text" placeholder="Search Plan..." id="filterManifestPlan" onkeyup="filterAndRenderManifest()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                </div>
+                <div id="printableContent">`;
+
+                // Group by delivery date
+                const grouped = {};
+                data.forEach(item => {
+                    if (!grouped[item.delivery_date]) {
+                        grouped[item.delivery_date] = [];
+                    }
+                    grouped[item.delivery_date].push(item);
+                });
+
+                Object.keys(grouped).sort().forEach(date => {
+                    const deliveries = grouped[date];
+
                     html += `
-                        <div class="section-card">
-                            <h2>${section.section.replace(/_/g, ' ').toUpperCase()}</h2>
-                            <form onsubmit="saveSection(event, '${section.section}')">
-                                <div class="form-group">
-                                    <label>Title</label>
-                                    <input type="text" name="title" value="${section.title || ''}" placeholder="Section title">
-                                </div>
-                                <div class="form-group">
-                                    <label>Subtitle</label>
-                                    <input type="text" name="subtitle" value="${section.subtitle || ''}" placeholder="Subtitle">
-                                </div>
-                                <div class="form-group">
-                                    <label>Description</label>
-                                    <textarea name="description" placeholder="Description">${section.description || ''}</textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label>Image URL</label>
-                                    <input type="text" name="image_url" value="${section.image_url || ''}" placeholder="Image URL">
-                                </div>
-                                <div class="form-group">
-                                    <label>CTA Button Text</label>
-                                    <input type="text" name="cta_text" value="${section.cta_text || ''}" placeholder="Button text">
-                                </div>
-                                <div class="form-group">
-                                    <label>CTA Link</label>
-                                    <input type="text" name="cta_link" value="${section.cta_link || ''}" placeholder="Button link">
-                                </div>
-                                <button type="submit" class="btn">Save Changes</button>
-                                <div class="success" id="success-${section.section}" style="display: none;">✓ Saved</div>
-                            </form>
+                        <div style="background: white; padding: 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; page-break-inside: avoid;">
+                            <h3 style="margin: 0 0 10px 0; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+                                📅 ${new Date(date).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                            </h3>
+                            <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: #f5f5f5;">
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left; cursor: pointer;" onclick="sortManifest('delivery_id')">Delivery ID ↕️</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left; cursor: pointer;" onclick="sortManifest('subscription_id')">Sub ID ↕️</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left; cursor: pointer;" onclick="sortManifest('status')">Status ↕️</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left; cursor: pointer;" onclick="sortManifest('customer_name')">Customer ↕️</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Phone</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Address</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Plan</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Add-ons</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Time Slot</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${deliveries.map(d => {
+                                        const address = `${d.address_line1}${d.address_line2 ? ', ' + d.address_line2 : ''}, ${d.suburb} ${d.postcode}`;
+                                        const addons = d.addons && d.addons.length > 0
+                                            ? d.addons.map(a => `${a.name} (${a.qty})`).join(', ')
+                                            : 'Plan only';
+                                        const notes = d.notes || '-';
+                                        const statusColor = d.status === 'pending' ? '#fff3cd' : d.status === 'completed' ? '#d4edda' : '#f8d7da';
+                                        const statusTextColor = d.status === 'pending' ? '#856404' : d.status === 'completed' ? '#155724' : '#721c24';
+
+                                        return `
+                                            <tr style="border: 1px solid #ddd;">
+                                                <td style="border: 1px solid #ddd; padding: 8px;">${d.delivery_id || '-'}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px;">${d.subscription_id || '-'}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px; background: ${statusColor}; color: ${statusTextColor}; font-weight: 600; border-radius: 3px;">${d.status || 'pending'}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px;">${d.customer_name || 'N/A'}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px;">${d.phone || '-'}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px;">${address}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px;">${d.plan_name || 'N/A'}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px;">${addons}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px;">${d.delivery_slot || '-'}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px; max-width: 100px; overflow: hidden; text-overflow: ellipsis;" title="${notes}">${notes}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
                         </div>
                     `;
                 });
 
                 html += '</div>';
-                contentArea.innerHTML = html;
+                manifestDiv.innerHTML = html;
+        }
+
+        function sortManifest(field) {
+            if (manifestSortField === field) {
+                manifestSortAsc = !manifestSortAsc;
+            } else {
+                manifestSortField = field;
+                manifestSortAsc = true;
+            }
+            filterAndRenderManifest();
+        }
+
+        function filterAndRenderManifest() {
+            const filterCustomer = document.getElementById('filterManifestCustomer')?.value.toLowerCase() || '';
+            const filterAddress = document.getElementById('filterManifestAddress')?.value.toLowerCase() || '';
+            const filterPlan = document.getElementById('filterManifestPlan')?.value.toLowerCase() || '';
+
+            let filtered = manifestData.filter(row => {
+                return (!filterCustomer || (row.customer_name && row.customer_name.toLowerCase().includes(filterCustomer))) &&
+                       (!filterAddress || (row.address_line1 && row.address_line1.toLowerCase().includes(filterAddress))) &&
+                       (!filterPlan || (row.plan_name && row.plan_name.toLowerCase().includes(filterPlan)));
+            });
+
+            if (manifestSortField) {
+                filtered.sort((a, b) => {
+                    let aVal = a[manifestSortField] || '';
+                    let bVal = b[manifestSortField] || '';
+                    if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+                    if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                    return manifestSortAsc ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
+                });
+            }
+
+            renderManifestTable(filtered);
+        }
+
+        function printManifest() {
+            const printContent = document.getElementById('printableContent');
+            if (!printContent) {
+                alert('Load a manifest first');
+                return;
+            }
+            const printWindow = window.open('', '', 'width=1200,height=800');
+            const html = `<!DOCTYPE html>
+<html>
+<head>
+    <title>Delivery Manifest</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; font-weight: bold; }
+        h3 { margin-top: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        @media print {
+            .no-print { display: none; }
+            body { margin: 0; padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🌸 Bloomme Delivery Manifest</h1>
+    ${printContent.innerHTML}
+</body>
+</html>`;
+            printWindow.document.write(html);
+            printWindow.document.close();
+            setTimeout(() => {
+                printWindow.print();
+            }, 250);
+        }
+
+        let subsData = [];
+        let subsSortField = null;
+        let subsSortAsc = true;
+
+        async function loadSubscriptions() {
+            const subsDiv = document.getElementById('subscriptionsTable');
+            subsDiv.innerHTML = '<div class="loading">Loading subscriptions...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/admin/subscriptions`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                subsData = await response.json();
+
+                if (!subsData.length) {
+                    subsDiv.innerHTML = '<div class="no-data">No subscriptions found</div>';
+                    return;
+                }
+
+                renderSubscriptionsTable(subsData);
             } catch (err) {
-                contentArea.innerHTML = '<div class="error">Failed to load content</div>';
+                console.error('Error:', err);
+                subsDiv.innerHTML = '<div class="error">Failed to load subscriptions: ' + err.message + '</div>';
             }
         }
 
-        async function saveSection(event, section) {
-            event.preventDefault();
-            const form = event.target;
-            const data = {
-                title: form.title.value,
-                subtitle: form.subtitle.value,
-                description: form.description.value,
-                image_url: form.image_url.value,
-                cta_text: form.cta_text.value,
-                cta_link: form.cta_link.value
-            };
+        function renderSubscriptionsTable(data) {
+            const subsDiv = document.getElementById('subscriptionsTable');
+
+            let html = `
+                <div style="margin-bottom: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                    <input type="text" placeholder="Search Plan..." id="filterPlan" onkeyup="filterAndRenderSubs()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <input type="text" placeholder="Search Customer..." id="filterCustomer" onkeyup="filterAndRenderSubs()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <select id="filterSubStatus" onchange="filterAndRenderSubs()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="paused">Paused</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <table><thead><tr>
+                    <th style="cursor: pointer;" onclick="sortSubs('id')">Sub ID ↕️</th>
+                    <th style="cursor: pointer;" onclick="sortSubs('user_id')">User ID ↕️</th>
+                    <th style="cursor: pointer;" onclick="sortSubs('status')">Status ↕️</th>
+                    <th style="cursor: pointer;" onclick="sortSubs('plan_name')">Plan ↕️</th>
+                    <th style="cursor: pointer;" onclick="sortSubs('price')">Price ↕️</th>
+                    <th>Deliveries</th>
+                    <th>Period</th>
+                    <th>Time Slot</th>
+                    <th style="cursor: pointer;" onclick="sortSubs('created_at')">Created ↕️</th>
+                    <th>Details</th>
+                </tr></thead><tbody>`;
+
+            data.forEach(sub => {
+                const period = `${new Date(sub.start_date).toLocaleDateString()} - ${new Date(sub.end_date).toLocaleDateString()}`;
+
+                html += `
+                    <tr>
+                        <td>#${sub.id}</td>
+                        <td>${sub.user_id || '-'}</td>
+                        <td><span class="status-badge status-${sub.status}">${sub.status}</span></td>
+                        <td>${sub.plan_name || 'N/A'}</td>
+                        <td>₹${sub.price}</td>
+                        <td>${sub.delivery_count || 0}</td>
+                        <td>${period}</td>
+                        <td>${sub.time_slot || '-'}</td>
+                        <td>${new Date(sub.created_at).toLocaleDateString()}</td>
+                        <td><button class="btn btn-sm" onclick="viewSubscriptionDetails(${sub.id})">View</button></td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            subsDiv.innerHTML = html;
+        }
+
+        function sortSubs(field) {
+            if (subsSortField === field) {
+                subsSortAsc = !subsSortAsc;
+            } else {
+                subsSortField = field;
+                subsSortAsc = true;
+            }
+            filterAndRenderSubs();
+        }
+
+        function filterAndRenderSubs() {
+            const filterPlan = document.getElementById('filterPlan')?.value.toLowerCase() || '';
+            const filterCustomer = document.getElementById('filterCustomer')?.value.toLowerCase() || '';
+            const filterStatus = document.getElementById('filterSubStatus')?.value || '';
+
+            let filtered = subsData.filter(row => {
+                return (!filterPlan || (row.plan_name && row.plan_name.toLowerCase().includes(filterPlan))) &&
+                       (!filterCustomer || (row.user_name && row.user_name.toLowerCase().includes(filterCustomer))) &&
+                       (!filterStatus || row.status === filterStatus);
+            });
+
+            if (subsSortField) {
+                filtered.sort((a, b) => {
+                    let aVal = a[subsSortField] || '';
+                    let bVal = b[subsSortField] || '';
+                    if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+                    if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                    return subsSortAsc ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
+                });
+            }
+
+            renderSubscriptionsTable(filtered);
+        }
+
+        async function viewSubscriptionDetails(subId) {
+            const subsDiv = document.getElementById('subscriptionsTable');
 
             try {
-                const response = await fetch(`${API_URL}/homepage-content/${section}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(data)
+                const response = await fetch(`${API_URL}/admin/subscriptions/${subId}/details`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
+                const data = await response.json();
+                const sub = data.subscription;
+                const deliveryDates = data.delivery_dates || [];
+                const addons = data.addons || [];
+                const addonDeliveryDates = data.addon_delivery_dates || [];
 
-                if (response.ok) {
-                    const successEl = document.getElementById(`success-${section}`);
-                    successEl.style.display = 'block';
-                    setTimeout(() => {
-                        successEl.style.display = 'none';
-                    }, 3000);
-                }
+                let html = `
+                    <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h3>Subscription #${sub.id} Details</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            <div><strong>User ID:</strong> ${sub.user_id || 'Guest'}</div>
+                            <div><strong>Plan:</strong> ${sub.plan_name} (₹${sub.plan_price})</div>
+                            <div><strong>Status:</strong> ${sub.status}</div>
+                            <div><strong>Period:</strong> ${new Date(sub.start_date).toLocaleDateString()} - ${new Date(sub.end_date).toLocaleDateString()}</div>
+                            <div><strong>Time Slot:</strong> ${sub.time_slot || '-'}</div>
+                            <div><strong>Created:</strong> ${new Date(sub.created_at).toLocaleDateString()}</div>
+                            <div><strong>Notes:</strong> ${sub.notes || '-'}</div>
+                        </div>
+
+                        <h4>Delivery Dates (${deliveryDates.length})</h4>
+                        ${deliveryDates.length > 0 ? `
+                            <table style="font-size: 12px; width: 100%;">
+                                <thead><tr><th>Seq</th><th>Date</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    ${deliveryDates.map(d => `
+                                        <tr>
+                                            <td>${d.sequence}</td>
+                                            <td>${new Date(d.delivery_date).toLocaleDateString()}</td>
+                                            <td>${d.status}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        ` : '<p>No delivery dates</p>'}
+
+                        <h4>Add-ons (${addons.length})</h4>
+                        ${addons.length > 0 ? `
+                            <table style="font-size: 12px; width: 100%;">
+                                <thead><tr><th>Addon Name</th><th>Price</th><th>Qty/Delivery</th></tr></thead>
+                                <tbody>
+                                    ${addons.map(a => `
+                                        <tr>
+                                            <td>${a.addon_name}</td>
+                                            <td>₹${a.price}</td>
+                                            <td>${a.quantity_per_delivery}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        ` : '<p>No add-ons</p>'}
+
+                        <h4>Add-on Delivery Schedule</h4>
+                        ${addonDeliveryDates.length > 0 ? `
+                            <table style="font-size: 12px; width: 100%;">
+                                <thead><tr><th>Addon</th><th>Date</th><th>Qty</th></tr></thead>
+                                <tbody>
+                                    ${addonDeliveryDates.map(a => `
+                                        <tr>
+                                            <td>${a.addon_name}</td>
+                                            <td>${new Date(a.delivery_date).toLocaleDateString()}</td>
+                                            <td>${a.quantity}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        ` : '<p>No add-on deliveries</p>'}
+
+                        <button class="btn btn-sm" style="margin-top: 20px;" onclick="loadSubscriptions()">Back to List</button>
+                    </div>
+                `;
+
+                subsDiv.innerHTML = html;
             } catch (err) {
-                alert('Failed to save: ' + err);
+                subsDiv.innerHTML = '<div class="error">Failed to load details: ' + err.message + '</div>';
             }
         }
 

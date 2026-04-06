@@ -9,16 +9,16 @@ const JWT_SECRET = process.env.JWT_SECRET || 'bloom_secret_key';
 router.post('/signup', async (req, res) => {
     console.log('Signup request received:', req.body.email);
     try {
-        const { name, phone, email, password } = req.body;
+        const { name, phone, email, password, referred_by_code } = req.body;
 
         // Input validation
         if (!name || !phone || !email || !password) {
             console.log('Signup failed: Missing fields');
             return res.status(400).json({ error: 'All fields are required.' });
         }
-        if (password.length < 6) {
+        if (password.length < 8) {
             console.log('Signup failed: Password too short');
-            return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+            return res.status(400).json({ error: 'Password must be at least 8 characters.' });
         }
         if (!/^\d{10}$/.test(phone)) {
             console.log('Signup failed: Invalid phone');
@@ -29,16 +29,57 @@ router.post('/signup', async (req, res) => {
             return res.status(400).json({ error: 'Invalid email address.' });
         }
 
+        // Validate referral code if provided
+        let referrerId: number | null = null;
+        if (referred_by_code) {
+            const referrer = await pool.query('SELECT id FROM users WHERE referral_code = $1', [referred_by_code.toUpperCase()]);
+            if (referrer.rows.length === 0) {
+                console.log('Signup failed: Invalid referral code');
+                return res.status(400).json({ error: 'Invalid referral code.' });
+            }
+            referrerId = referrer.rows[0].id;
+            console.log('Valid referral code found, referrer ID:', referrerId);
+        }
+
         console.log('Hashing password...');
         const hashedPassword = await bcrypt.hash(password, 10);
-        const referralCode = `BLOOM${Math.floor(1000 + Math.random() * 9000)}`;
+
+        // Generate unique referral code with retry logic (6-char alphanumeric = 2.1B possibilities)
+        let referralCode: string;
+        let inserted = false;
+        let retries = 0;
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        do {
+            referralCode = 'BLOOM' + Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+            const existing = await pool.query('SELECT id FROM users WHERE referral_code = $1', [referralCode]);
+            if (existing.rows.length === 0) {
+                inserted = true;
+            } else {
+                retries++;
+            }
+        } while (!inserted && retries < 5);
+
+        if (!inserted) {
+            console.error('Failed to generate unique referral code after 5 retries');
+            return res.status(500).json({ error: 'Unable to create account, please try again.' });
+        }
 
         console.log('Inserting user into DB...');
         const newUser = await pool.query(
             'INSERT INTO users (name, phone, email, password, referral_code) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, phone, email, role, referral_code, referral_points, created_at',
             [name, phone, email, hashedPassword, referralCode]
         );
-        console.log('User inserted successfully:', newUser.rows[0].id);
+        const newUserId = newUser.rows[0].id;
+        console.log('User inserted successfully:', newUserId);
+
+        // Record referral if referral code was provided
+        if (referrerId) {
+            await pool.query(
+                'INSERT INTO referrals (referrer_id, referred_user_id, status) VALUES ($1, $2, $3)',
+                [referrerId, newUserId, 'pending']
+            );
+            console.log('Referral recorded:', { referrer_id: referrerId, referred_user_id: newUserId });
+        }
 
         // Check if restricted mode is enabled
         console.log('Checking site mode...');

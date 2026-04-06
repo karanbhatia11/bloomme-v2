@@ -90,6 +90,139 @@ app.put('/api/homepage-content/:section', authenticateToken, async (req: any, re
     }
 });
 
+// --- PROXY ROUTES FOR ADMIN DASHBOARD ---
+// GET /api/admin/stats
+app.get('/api/admin/stats', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/stats`, {
+            headers: { 'Authorization': req.headers.authorization }
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/users
+app.get('/api/admin/users', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/users`, {
+            headers: { 'Authorization': req.headers.authorization }
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/subscriptions
+app.get('/api/admin/subscriptions', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/subscriptions`, {
+            headers: { 'Authorization': req.headers.authorization }
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/subscriptions/:id/details
+app.get('/api/admin/subscriptions/:id/details', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const response = await fetch(`${BACKEND_URL}/api/admin/subscriptions/${id}/details`, {
+            headers: { 'Authorization': req.headers.authorization }
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/orders
+app.get('/api/admin/orders', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/orders`, {
+            headers: { 'Authorization': req.headers.authorization }
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/delivery-manifest
+app.get('/api/admin/delivery-manifest', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const { from_date, to_date } = req.query;
+        let queryStr = `${BACKEND_URL}/api/admin/delivery-manifest`;
+        if (from_date && to_date) {
+            queryStr += `?from_date=${from_date}&to_date=${to_date}`;
+        }
+        const response = await fetch(queryStr, {
+            headers: { 'Authorization': req.headers.authorization }
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/page-content
+app.get('/api/admin/page-content', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const page = req.query.page || '';
+        const response = await fetch(`${BACKEND_URL}/api/admin/page-content?page=${page}`, {
+            headers: { 'Authorization': req.headers.authorization }
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT /api/admin/page-content/:id
+app.put('/api/admin/page-content/:id', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const response = await fetch(`${BACKEND_URL}/api/admin/page-content/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': req.headers.authorization
+            },
+            body: JSON.stringify(req.body)
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/upload/image
+app.post('/api/upload/image', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/upload/image`, {
+            method: 'POST',
+            headers: { 'Authorization': req.headers.authorization },
+            body: req.body
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Serve admin portal HTML
 app.get('/', (req: Request, res: Response) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
