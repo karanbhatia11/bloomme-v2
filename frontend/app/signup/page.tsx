@@ -2,21 +2,85 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Navigation } from "@/components/common/Navigation";
 import { Footer } from "@/components/sections/Footer";
 
 export default function SignupPage() {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const password = e.target.value;
+    const pwd = e.target.value;
+    setPassword(pwd);
     let strength = 0;
-    if (password.length >= 8) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
-    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    if (pwd.length >= 8) strength++;
+    if (/[A-Z]/.test(pwd)) strength++;
+    if (/[0-9]/.test(pwd)) strength++;
+    if (/[^A-Za-z0-9]/.test(pwd)) strength++;
     setPasswordStrength(strength);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!name || !email || !phone || !password || !confirmPassword) {
+      setError("All fields are required");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            email,
+            phone,
+            password,
+            referred_by_code: referralCode || undefined,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Signup failed");
+        return;
+      }
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -40,7 +104,14 @@ export default function SignupPage() {
               </p>
             </div>
 
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              {/* Error Message */}
+              {error && (
+                <div className="p-4 bg-error-container text-error rounded-lg text-sm font-medium">
+                  {error}
+                </div>
+              )}
+
               {/* Name Field */}
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-on-surface-variant">
@@ -50,6 +121,9 @@ export default function SignupPage() {
                   className="w-full bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-lg px-4 py-3 transition-all placeholder:text-on-surface-variant/50"
                   placeholder="Jane Doe"
                   type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={loading}
                 />
               </div>
 
@@ -63,6 +137,9 @@ export default function SignupPage() {
                     className="w-full bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-lg px-4 py-3 transition-all placeholder:text-on-surface-variant/50"
                     placeholder="jane@example.com"
                     type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -77,9 +154,27 @@ export default function SignupPage() {
                       className="w-full bg-transparent border-0 focus:ring-0 p-0 text-sm placeholder:text-on-surface-variant/50"
                       placeholder="98765 43210"
                       type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      disabled={loading}
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Referral Code Field (Optional) */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-on-surface-variant">
+                  Referral Code <span className="text-on-surface-variant/60">(optional)</span>
+                </label>
+                <input
+                  className="w-full bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-lg px-4 py-3 transition-all placeholder:text-on-surface-variant/50 uppercase"
+                  placeholder="Enter a friend's referral code"
+                  type="text"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                  disabled={loading}
+                />
               </div>
 
               {/* Password Fields */}
@@ -92,7 +187,9 @@ export default function SignupPage() {
                     className="w-full bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-lg px-4 py-3 transition-all placeholder:text-on-surface-variant/50"
                     placeholder="••••••••"
                     type="password"
+                    value={password}
                     onChange={handlePasswordChange}
+                    disabled={loading}
                   />
                   {/* Strength Bar */}
                   <div className="flex flex-col gap-1.5 mt-2">
@@ -141,6 +238,9 @@ export default function SignupPage() {
                     className="w-full bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-lg px-4 py-3 transition-all placeholder:text-on-surface-variant/50"
                     placeholder="••••••••"
                     type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -178,10 +278,11 @@ export default function SignupPage() {
 
               {/* CTA Button */}
               <button
-                className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-4 px-8 rounded-lg font-bold text-lg shadow-lg shadow-primary/20 hover:shadow-xl active:scale-95 transition-all"
+                className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-4 px-8 rounded-lg font-bold text-lg shadow-lg shadow-primary/20 hover:shadow-xl active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 type="submit"
+                disabled={loading}
               >
-                Create Account
+                {loading ? "Creating Account..." : "Create Account"}
               </button>
 
             </form>

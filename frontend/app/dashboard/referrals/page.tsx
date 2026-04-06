@@ -22,111 +22,69 @@ interface Referral {
 export default function ReferralsPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
-  const [referralCode, setReferralCode] = useState("BLOOM2026");
+  const [referralCode, setReferralCode] = useState("");
   const [copied, setCopied] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [referrals, setReferrals] = useState<Referral[]>([
-    {
-      id: "1",
-      name: "Ananya Mishra",
-      email: "ananya.m@example.com",
-      dateJoined: "Oct 24, 2023",
-      status: "credited",
-      creditEarned: 50,
-    },
-    {
-      id: "2",
-      name: "Rohan Kapoor",
-      email: "rohan.k@example.com",
-      dateJoined: "Nov 12, 2023",
-      status: "pending",
-      creditEarned: 0,
-    },
-    {
-      id: "3",
-      name: "Sneha Das",
-      email: "sneha.das@example.com",
-      dateJoined: "Dec 05, 2023",
-      status: "credited",
-      creditEarned: 50,
-    },
-    {
-      id: "4",
-      name: "Vikram Singh",
-      email: "vikram.s@example.com",
-      dateJoined: "Jan 15, 2024",
-      status: "credited",
-      creditEarned: 50,
-    },
-    {
-      id: "5",
-      name: "Priya Sharma",
-      email: "priya.sh@example.com",
-      dateJoined: "Feb 02, 2024",
-      status: "credited",
-      creditEarned: 50,
-    },
-    {
-      id: "6",
-      name: "Arjun Patel",
-      email: "arjun.p@example.com",
-      dateJoined: "Feb 18, 2024",
-      status: "credited",
-      creditEarned: 50,
-    },
-    {
-      id: "7",
-      name: "Divya Nair",
-      email: "divya.n@example.com",
-      dateJoined: "Mar 05, 2024",
-      status: "credited",
-      creditEarned: 50,
-    },
-    {
-      id: "8",
-      name: "Aditya Gupta",
-      email: "aditya.g@example.com",
-      dateJoined: "Mar 10, 2024",
-      status: "credited",
-      creditEarned: 50,
-    },
-    {
-      id: "9",
-      name: "Kavya Menon",
-      email: "kavya.m@example.com",
-      dateJoined: "Mar 15, 2024",
-      status: "pending",
-      creditEarned: 0,
-    },
-  ]);
+  const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
 
-    if (!token && !userStr) {
-      const demoUser = {
-        id: "1",
-        name: "Demo",
-        email: "demo@bloomme.com",
-      };
-      localStorage.setItem("token", "demo_token");
-      localStorage.setItem("user", JSON.stringify(demoUser));
-      setUser(demoUser);
+    if (!token || !userStr) {
+      router.push("/login");
       return;
     }
 
-    if (userStr) {
-      try {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
-      } catch (error) {
-        console.error("Error parsing user data:", error);
+    try {
+      const userData = JSON.parse(userStr);
+      setUser(userData);
+      // Read referral code from localStorage (same as dashboard)
+      if (userData.referralCode) {
+        setReferralCode(userData.referralCode);
       }
+      // Fetch referrals from API
+      fetchReferrals(token);
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      router.push("/login");
     }
   }, []);
+
+  const fetchReferrals = async (token: string) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/referrals/overview`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch referrals");
+      }
+
+      const data = await response.json();
+      setReferrals(
+        data.referrals?.map((ref: any) => ({
+          id: ref.referred_user_id,
+          name: ref.name || "Unknown",
+          email: ref.email || "N/A",
+          dateJoined: new Date(ref.created_at).toLocaleDateString("en-IN"),
+          status: ref.status === "completed" ? "credited" : "pending",
+          creditEarned: ref.status === "completed" ? 50 : 0,
+        })) || []
+      );
+    } catch (error) {
+      console.error("Error fetching referrals:", error);
+      setReferrals([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -146,6 +104,17 @@ export default function ReferralsPage() {
 
   if (!user) {
     return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+          <p className="text-on-surface-variant">Loading referral data...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
