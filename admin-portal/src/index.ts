@@ -223,8 +223,12 @@ app.post('/api/upload/image', authenticateToken, async (req: any, res: Response)
     }
 });
 
-// Serve admin portal HTML
+// Serve admin portal HTML for root and all unmatched routes (SPA routing)
 app.get('/', (req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+app.get('*', (req: Request, res: Response) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
