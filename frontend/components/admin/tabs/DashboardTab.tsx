@@ -20,6 +20,9 @@ export default function DashboardTab({ token }: DashboardTabProps) {
 
     useEffect(() => {
         fetchStats();
+        // Poll for updates every 5 seconds
+        const interval = setInterval(fetchStats, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     const fetchStats = async () => {

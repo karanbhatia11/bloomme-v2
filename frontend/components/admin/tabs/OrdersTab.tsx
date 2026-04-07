@@ -32,6 +32,9 @@ export default function OrdersTab({ token }: OrdersTabProps) {
 
     useEffect(() => {
         fetchOrders();
+        // Poll for updates every 5 seconds
+        const interval = setInterval(fetchOrders, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     const fetchOrders = async () => {
