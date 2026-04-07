@@ -27,6 +27,9 @@ export default function SubscriptionsTab({ token }: SubscriptionsTabProps) {
 
     useEffect(() => {
         fetchSubscriptions();
+        // Poll for updates every 5 seconds
+        const interval = setInterval(fetchSubscriptions, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     const fetchSubscriptions = async () => {
