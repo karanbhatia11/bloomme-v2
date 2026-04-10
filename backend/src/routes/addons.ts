@@ -1,12 +1,12 @@
 import express from 'express';
 import pool from '../db';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, requireEmailVerification } from '../middleware/auth';
 
 const router = express.Router();
 
 // GET /api/addons/active
 // Get user's active add-ons from subscriptions and standalone addon orders
-router.get('/active', authenticateToken as any, async (req, res) => {
+router.get('/active', authenticateToken as any, requireEmailVerification as any, async (req, res) => {
     try {
         const user_id = (req as any).user.id;
         console.log('[Addons Active] Fetching for user:', user_id);

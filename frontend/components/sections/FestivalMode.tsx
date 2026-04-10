@@ -31,6 +31,12 @@ const FESTIVAL_DETAILS = [
     description: "Celebrate the beginning of a prosperous new year with fresh malas, vibrant flowers, and auspicious puja essentials. Perfect for welcoming positivity, new beginnings, and festive home decorations.",
     image: FESTIVAL_IMAGES[0].src,
     bestFor: ["New year puja setups", "Home entrance decor", "Festive subscriptions"],
+    recommendedProduct: {
+      id: "basic-puja",
+      title: "Basic Puja Set",
+      subtitle: "diya set + incense cones + roli moli + mishri prashaad",
+      price: 99,
+    },
   },
   {
     name: "Hanuman Jayanti",
@@ -38,6 +44,12 @@ const FESTIVAL_DETAILS = [
     description: "Offer devotion with marigold malas, sindoor, diyas, and sacred puja items dedicated to Lord Hanuman. Ideal for temple offerings, home puja, and strength-focused spiritual rituals.",
     image: FESTIVAL_IMAGES[1].src,
     bestFor: ["Marigold malas", "Sindoor kits", "Incense", "Diya sets"],
+    recommendedProduct: {
+      id: "basic-puja",
+      title: "Basic Puja Set",
+      subtitle: "diya set + incense cones + roli moli + mishri prashaad",
+      price: 99,
+    },
   },
   {
     name: "Akshaya Tritiya",
@@ -45,6 +57,12 @@ const FESTIVAL_DETAILS = [
     description: "A highly auspicious day symbolizing prosperity, abundance, and new purchases. Perfect for premium puja arrangements, lotus flowers, and complete spiritual setups for wealth and blessings.",
     image: FESTIVAL_IMAGES[2].src,
     bestFor: ["Premium Celestial plan", "Full puja kits", "Prosperity rituals"],
+    recommendedProduct: {
+      id: "basic-puja",
+      title: "Basic Puja Set",
+      subtitle: "diya set + incense cones + roli moli + mishri prashaad",
+      price: 99,
+    },
   },
   {
     name: "Buddha Purnima",
@@ -52,6 +70,12 @@ const FESTIVAL_DETAILS = [
     description: "A peaceful celebration focused on mindfulness, calmness, and spiritual reflection. Soft lotus flowers, diyas, and incense create a serene environment for meditation and prayer.",
     image: FESTIVAL_IMAGES[3].src,
     bestFor: ["Lotus flowers", "Calm puja setups", "Meditation offerings"],
+    recommendedProduct: {
+      id: "basic-puja",
+      title: "Basic Puja Set",
+      subtitle: "diya set + incense cones + roli moli + mishri prashaad",
+      price: 99,
+    },
   },
 ];
 
@@ -62,6 +86,12 @@ interface FestivalItem {
   description: string;
   image: string;
   bestFor: string[];
+  recommendedProduct?: {
+    id: string;
+    title: string;
+    subtitle: string;
+    price: number;
+  };
 }
 
 export const FestivalMode: React.FC = () => {
@@ -215,9 +245,9 @@ export const FestivalMode: React.FC = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/10"
+                    className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/10 space-y-4"
                   >
-                    <p className="text-sm text-on-surface-variant leading-relaxed mb-4">
+                    <p className="text-sm text-on-surface-variant leading-relaxed">
                       {festivals[currentImageIndex]?.description || FESTIVAL_DETAILS[currentImageIndex]?.description}
                     </p>
                     <div>
@@ -231,6 +261,27 @@ export const FestivalMode: React.FC = () => {
                         ))}
                       </ul>
                     </div>
+
+                    {(festivals[currentImageIndex]?.recommendedProduct || FESTIVAL_DETAILS[currentImageIndex]?.recommendedProduct) && (
+                      <div className="bg-secondary/5 rounded-xl p-3 border border-secondary/20">
+                        <p className="text-xs font-bold uppercase text-secondary mb-2">Recommended:</p>
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-sm">
+                              {festivals[currentImageIndex]?.recommendedProduct?.title || FESTIVAL_DETAILS[currentImageIndex]?.recommendedProduct?.title}
+                            </p>
+                            <p className="text-xs text-on-surface-variant">
+                              {festivals[currentImageIndex]?.recommendedProduct?.subtitle || FESTIVAL_DETAILS[currentImageIndex]?.recommendedProduct?.subtitle}
+                            </p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="font-bold text-secondary">
+                              ₹{festivals[currentImageIndex]?.recommendedProduct?.price || FESTIVAL_DETAILS[currentImageIndex]?.recommendedProduct?.price}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </motion.div>

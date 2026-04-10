@@ -10,9 +10,9 @@ export const Footer: React.FC = () => {
   const [email, setEmail] = useState("");
 
   return (
-    <footer className="w-full bg-gradient-to-r from-primary-container/20 via-secondary-container/20 to-primary-container/20 text-on-surface mt-12 sm:mt-20 border-t border-outline-variant/20">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-12 sm:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
+    <footer className="w-full bg-gradient-to-r from-primary-container/20 via-secondary-container/20 to-primary-container/20 text-on-surface mt-12 sm:mt-20 border-t border-outline-variant/20 overflow-x-hidden">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-12 sm:py-16 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 md:gap-12">
           {/* Left Section - Logo & Tagline */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -93,16 +93,16 @@ export const Footer: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 w-full">
               <Link
                 href="/contact"
-                className="inline-block px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-primary to-primary-fixed text-on-primary rounded-lg font-semibold text-xs sm:text-sm hover:opacity-90 transition-opacity active:scale-95"
+                className="inline-block px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-primary to-primary-fixed text-on-primary rounded-lg font-semibold text-xs sm:text-sm hover:opacity-90 transition-opacity active:scale-95 text-center min-h-[44px] flex items-center justify-center"
               >
                 Get in Touch
               </Link>
               <Link
                 href="/faq"
-                className="inline-block px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-surface-container to-surface-container-high text-primary rounded-lg font-semibold text-xs sm:text-sm hover:opacity-90 transition-opacity active:scale-95"
+                className="inline-block px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-surface-container to-surface-container-high text-primary rounded-lg font-semibold text-xs sm:text-sm hover:opacity-90 transition-opacity active:scale-95 text-center min-h-[44px] flex items-center justify-center"
               >
                 FAQ
               </Link>
@@ -119,18 +119,18 @@ export const Footer: React.FC = () => {
           >
             <h3 className="text-lg sm:text-xl font-bold">Newsletter</h3>
             <p className="text-on-surface-variant text-xs sm:text-sm">Tips for a mindful morning routine.</p>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
               <input
                 type="email"
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 px-4 py-3 text-sm rounded-xl bg-surface-container-low text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="flex-1 px-3 sm:px-4 py-3 text-xs sm:text-sm rounded-xl bg-surface-container-low text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary min-w-0"
               />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-3 text-sm rounded-full bg-primary text-on-primary font-bold hover:bg-primary/90 transition-colors"
+                className="px-4 sm:px-6 py-3 text-xs sm:text-sm rounded-full bg-primary text-on-primary font-bold hover:bg-primary/90 transition-colors min-h-[44px] flex-shrink-0"
               >
                 JOIN
               </motion.button>

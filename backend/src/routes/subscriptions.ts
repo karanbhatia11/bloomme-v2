@@ -1,6 +1,6 @@
 import express from 'express';
 import pool from '../db';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, requireEmailVerification } from '../middleware/auth';
 import { generateForSubscription } from '../services/scheduler';
 
 const router = express.Router();
@@ -15,7 +15,7 @@ router.get('/plans', (req, res) => {
 });
 
 // Update or create subscription
-router.post('/subscribe', authenticateToken as any, async (req, res) => {
+router.post('/subscribe', authenticateToken as any, requireEmailVerification as any, async (req, res) => {
     try {
         const {
             plan_id,

@@ -215,12 +215,21 @@ export default function CheckoutPayPage() {
         body: JSON.stringify({
           planId: cart.planId ? planIdMap[cart.planId] || null : null,
           deliveryDays: cart.frequency === "weekly" ? cart.deliveryDays : [],
-          addOns: cart.addons.map(a => ({
-            id: a.id,
-            quantity: a.quantity,
-            price: a.price,
-            schedule: cart.addonSchedules[a.id] || null,
-          })),
+          addOns: cart.addons.map(a => {
+            const sched = cart.addonSchedules[a.id] ?? { mode: "same" };
+            let multiplier = 1;
+            if (sched.mode === "same") {
+              multiplier = cart.selectedDeliveryDatesCount || 1;
+            } else if (sched.mode === "different" && sched.customDates) {
+              multiplier = sched.customDates.length || 1;
+            }
+            return {
+              id: a.id,
+              quantity: a.quantity,
+              price: a.price * a.quantity * multiplier,
+              schedule: cart.addonSchedules[a.id] || null,
+            };
+          }),
           promoCode: null,
           referralCode: null,
           customer: cart.customer,
@@ -321,12 +330,21 @@ export default function CheckoutPayPage() {
         body: JSON.stringify({
           planId: cart.planId ? planIdMap[cart.planId] || null : null,
           deliveryDays: cart.frequency === "weekly" ? cart.deliveryDays : [],
-          addOns: cart.addons.map(a => ({
-            id: a.id,
-            quantity: a.quantity,
-            price: a.price,
-            schedule: cart.addonSchedules[a.id] || null,
-          })),
+          addOns: cart.addons.map(a => {
+            const sched = cart.addonSchedules[a.id] ?? { mode: "same" };
+            let multiplier = 1;
+            if (sched.mode === "same") {
+              multiplier = cart.selectedDeliveryDatesCount || 1;
+            } else if (sched.mode === "different" && sched.customDates) {
+              multiplier = sched.customDates.length || 1;
+            }
+            return {
+              id: a.id,
+              quantity: a.quantity,
+              price: a.price * a.quantity * multiplier,
+              schedule: cart.addonSchedules[a.id] || null,
+            };
+          }),
           promoCode: null,
           referralCode: null,
           customer: cart.customer,

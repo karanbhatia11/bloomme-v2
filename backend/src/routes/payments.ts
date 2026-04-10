@@ -242,6 +242,27 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
 
                     const customerId = customerResult.rows[0]?.customer_id;
 
+                    // Auto-link: Check if customer email belongs to an existing registered user
+                    let resolvedUserId = user_id; // Start with authenticated user_id (may be null for guests)
+                    if (!resolvedUserId && customerId) {
+                        // Guest checkout: look up customer email and check if user exists
+                        const customerEmailResult = await pool.query(
+                            'SELECT email FROM customers WHERE id = $1',
+                            [customerId]
+                        );
+                        if (customerEmailResult.rows.length > 0) {
+                            const customerEmail = customerEmailResult.rows[0].email;
+                            const existingUserResult = await pool.query(
+                                'SELECT id FROM users WHERE email = $1',
+                                [customerEmail]
+                            );
+                            if (existingUserResult.rows.length > 0) {
+                                resolvedUserId = existingUserResult.rows[0].id;
+                                console.log(`Auto-linked guest subscription to user ${resolvedUserId} (email: ${customerEmail})`);
+                            }
+                        }
+                    }
+
                     // Calculate end_date from schedule (last date in the schedule)
                     let endDate = null;
                     if (schedule) {
@@ -274,7 +295,7 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
                         `INSERT INTO subscriptions (user_id, customer_id, plan_id, price, delivery_days, status, start_date, end_date, custom_schedule, created_at)
                          VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE, $7, $8, CURRENT_TIMESTAMP)
                          RETURNING id`,
-                        [user_id, customerId, planId, plan.price, JSON.stringify([]), 'active', endDate, scheduleForDb]
+                        [resolvedUserId, customerId, planId, plan.price, JSON.stringify([]), 'active', endDate, scheduleForDb]
                     );
 
                     const subscriptionId = subResult.rows[0].id;

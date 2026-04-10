@@ -16,7 +16,7 @@ export const PRODUCTS = [
     title: "Flower maala (normal size)",
     description: "Hand-picked colorful marigolds and seasonal flowers for daily puja offerings.",
     price: 35,
-    image: "/images/flowermala_normal_addons.jpeg",
+    image: "/images/Add ons Updated/Flower_Mala_Normal.jpeg",
   },
   {
     id: 2,
@@ -24,7 +24,7 @@ export const PRODUCTS = [
     title: "Flower maala (bigger size)",
     description: "Premium larger flower mala for elaborate puja rituals and special occasions.",
     price: 399,
-    image: "/images/backgroundlesslogo.png",
+    image: "/images/Add ons Updated/Flower_Mala_Bigger.jpeg",
   },
   {
     id: 3,
@@ -48,7 +48,7 @@ export const PRODUCTS = [
     title: "Extra flower mix (100gm)",
     description: "Assorted seasonal flowers to enhance your daily puja experience.",
     price: 39,
-    image: "/images/backgroundlesslogo.png",
+    image: "/images/Add ons Updated/Flower_Mix.jpeg",
   },
   {
     id: 6,
@@ -56,7 +56,7 @@ export const PRODUCTS = [
     title: "Incense sticks (pack of 7)",
     description: "Premium incense sticks with natural fragrance for spiritual ambiance.",
     price: 49,
-    image: "/images/incensesticks_addons.jpeg",
+    image: "/images/Add ons Updated/Incense_Sticks.jpeg",
   },
   {
     id: 7,
@@ -80,15 +80,7 @@ export const PRODUCTS = [
     title: "Incense cones (mix fragrance)",
     description: "Assorted incense cones with multiple fragrances for spiritual ambiance.",
     price: 59,
-    image: "/images/backgroundlesslogo.png",
-  },
-  {
-    id: 10,
-    category: "Add-On",
-    title: "Basic Puja set (diya set + incense cones + roli moli + mishri prashaad)",
-    description: "Complete puja essentials package with everything needed for a full ritual.",
-    price: 99,
-    image: "/images/backgroundlesslogo.png",
+    image: "/images/Add ons Updated/Mix_Incense_Cones.jpeg",
   },
 ];
 
