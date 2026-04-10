@@ -69,7 +69,7 @@ export const HeroSection: React.FC = () => {
           fill
           priority
           quality={85}
-          className="object-cover object-top scale-[1.30]"
+          className="object-cover object-[center_65%] scale-[1.30]"
         />
       </div>
 
@@ -94,6 +94,7 @@ export const HeroSection: React.FC = () => {
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            className="-mt-6"
           >
             <button
               onClick={() => router.push('/plans')}
@@ -103,7 +104,7 @@ export const HeroSection: React.FC = () => {
             </button>
           </motion.div>
 
-          <div className="h-6 sm:h-8 md:h-10"></div>
+          <div className="pt-4 sm:pt-6 md:pt-8"></div>
 
         </motion.div>
 
@@ -114,9 +115,6 @@ export const HeroSection: React.FC = () => {
           className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 pt-4 sm:pt-6 md:pt-8"
         >
           <span className="material-symbols-outlined text-secondary text-base sm:text-lg md:text-xl lg:text-2xl flex-shrink-0">favorite</span>
-          <p className="text-white/80 text-xs sm:text-sm md:text-base lg:text-lg px-2 sm:px-0">
-            {hero.metadata?.social_proof || DEFAULT_HERO.metadata?.social_proof}
-          </p>
         </motion.div>
       </div>
     </header>
