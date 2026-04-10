@@ -10,7 +10,7 @@ Bloomme is a subscription-based flower delivery service. The repo is a monorepo 
 - **`backend/`** — Express 5 (TypeScript, PostgreSQL, JWT auth, Razorpay, AWS SES)
 - **`admin-portal/`** — Separate Express 4 service for admin operations (port 9000)
 
-Production domain: `bloomme.co.in`. Nginx proxies `/` → frontend, `/api/` → backend, `admin.bloomme.co.in` → admin portal.
+Production domain: `bloomme.co.in`. Nginx proxies `/` → frontend, `/api/` → backend, `/admin/` → admin portal.
 
 ---
 
