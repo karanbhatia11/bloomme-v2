@@ -29,35 +29,35 @@ export const HeroSection: React.FC = () => {
   const router = useRouter();
   const [hero, setHero] = useState<HeroContent>(DEFAULT_HERO);
 
-  // useEffect(() => {
-  //   const fetchHeroContent = async () => {
-  //     try {
-  //       const response = await fetch('/api/admin/page-content?page=home');
-  //       if (!response.ok) {
-  //         console.warn('Failed to fetch hero content:', response.status);
-  //         return;
-  //       }
-  //       const content = await response.json();
-  //       const heroSection = Array.isArray(content)
-  //         ? content.find((item: any) => item.section_name === 'hero')
-  //         : null;
+  useEffect(() => {
+    const fetchHeroContent = async () => {
+      try {
+        const response = await fetch('/api/admin/page-content?page=home');
+        if (!response.ok) {
+          console.warn('Failed to fetch hero content:', response.status);
+          return;
+        }
+        const content = await response.json();
+        const heroSection = Array.isArray(content)
+          ? content.find((item: any) => item.section_name === 'hero')
+          : null;
 
-  //       if (heroSection) {
-  //         setHero({
-  //           title: heroSection.title || DEFAULT_HERO.title,
-  //           subtitle: heroSection.subtitle || DEFAULT_HERO.subtitle,
-  //           cta_text: heroSection.cta_text || DEFAULT_HERO.cta_text,
-  //           image_url: heroSection.image_url || DEFAULT_HERO.image_url,
-  //           metadata: heroSection.metadata || DEFAULT_HERO.metadata
-  //         });
-  //       }
-  //     } catch (err) {
-  //       // Keep DEFAULT_HERO on error
-  //     }
-  //   };
+        if (heroSection) {
+          setHero({
+            title: heroSection.title || DEFAULT_HERO.title,
+            subtitle: heroSection.subtitle || DEFAULT_HERO.subtitle,
+            cta_text: heroSection.cta_text || DEFAULT_HERO.cta_text,
+            image_url: heroSection.image_url || DEFAULT_HERO.image_url,
+            metadata: heroSection.metadata || DEFAULT_HERO.metadata
+          });
+        }
+      } catch (err) {
+        // Keep DEFAULT_HERO on error
+      }
+    };
 
-  //   fetchHeroContent();
-  // }, []);
+    fetchHeroContent();
+  }, []);
 
   return (
     <header className="relative w-full pt-32 pb-12 sm:pb-16 md:pb-20 flex items-center justify-center overflow-hidden min-h-[85vh] sm:min-h-[85vh] md:min-h-[85vh]">
@@ -109,7 +109,7 @@ export const HeroSection: React.FC = () => {
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 100 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 pt-4 sm:pt-6 md:pt-8"
         >
