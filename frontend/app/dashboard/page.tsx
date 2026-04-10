@@ -93,60 +93,62 @@ export default function DashboardPage() {
   return (
     <div className="bg-surface text-on-surface font-body">
       {/* Header */}
-      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-16 bg-[#fff8f5]/80 backdrop-blur-md shadow-sm">
-        <div className="flex items-center">
+      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-4 sm:px-6 md:px-8 lg:px-12 h-16 bg-[#fff8f5]/80 backdrop-blur-md shadow-sm overflow-x-hidden">
+        <div className="flex items-center flex-shrink-0">
           <Link href="/" className="flex items-center">
             <img
               alt="Bloomme Logo"
-              className="h-12 w-auto object-contain"
+              className="h-10 sm:h-12 w-auto object-contain"
               src="/images/backgroundlesslogo.png"
             />
           </Link>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="hidden md:flex gap-8">
-            <a className="text-[#C4A052] font-semibold tracking-tight border-b-2 border-[#C4A052]" href="#">
+        <div className="flex items-center gap-4 sm:gap-6 md:gap-8 flex-shrink-0">
+          <div className="hidden md:flex gap-6 md:gap-8">
+            <a className="text-[#C4A052] font-semibold tracking-tight border-b-2 border-[#C4A052] text-xs md:text-sm whitespace-nowrap" href="#">
               Dashboard
             </a>
-            <Link className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="/contact">
+            <Link className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors text-xs md:text-sm whitespace-nowrap" href="/contact">
               Support
             </Link>
           </div>
 
-          <div className="flex items-center gap-4 relative">
+          <div className="flex items-center gap-2 sm:gap-4 relative flex-shrink-0">
             {/* Notifications Dropdown */}
             <div className="relative">
-              <span
-                className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
+              <button
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
                 onClick={() => {
                   setShowNotifications(!showNotifications);
                   setShowCart(false);
                 }}
+                aria-label="Notifications"
               >
-                notifications
-              </span>
+                <span className="material-symbols-outlined">notifications</span>
+              </button>
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
-                  <p className="text-sm text-on-surface-variant text-center py-8">No notifications</p>
+                <div className="absolute right-0 mt-2 w-56 sm:w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50 max-h-[80vh] overflow-y-auto">
+                  <p className="text-xs sm:text-sm text-on-surface-variant text-center py-8">No notifications</p>
                 </div>
               )}
             </div>
 
             {/* Cart Dropdown */}
             <div className="relative">
-              <span
-                className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
+              <button
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
                 onClick={() => {
                   setShowCart(!showCart);
                   setShowNotifications(false);
                 }}
+                aria-label="Shopping cart"
               >
-                shopping_cart
-              </span>
+                <span className="material-symbols-outlined">shopping_cart</span>
+              </button>
               {showCart && (
-                <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
-                  <p className="text-sm text-on-surface-variant text-center py-8">Your cart is empty</p>
+                <div className="absolute right-0 mt-2 w-56 sm:w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50 max-h-[80vh] overflow-y-auto">
+                  <p className="text-xs sm:text-sm text-on-surface-variant text-center py-8">Your cart is empty</p>
                 </div>
               )}
             </div>

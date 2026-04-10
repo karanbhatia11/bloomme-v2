@@ -8,7 +8,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.ADMIN_PORT || 9000;
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5001';
 const JWT_SECRET = process.env.JWT_SECRET || 'admin-secret-key-change-in-production';
 
 app.use(cors());
@@ -157,6 +157,19 @@ app.get('/api/admin/orders', authenticateToken, async (req: any, res: Response) 
     }
 });
 
+// GET /api/admin/addons
+app.get('/api/admin/addons', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/addons`, {
+            headers: { 'Authorization': req.headers.authorization }
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET /api/admin/delivery-manifest
 app.get('/api/admin/delivery-manifest', authenticateToken, async (req: any, res: Response) => {
     try {
@@ -215,6 +228,24 @@ app.post('/api/upload/image', authenticateToken, async (req: any, res: Response)
             method: 'POST',
             headers: { 'Authorization': req.headers.authorization },
             body: req.body
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT /api/admin/deliveries/mark-status
+app.put('/api/admin/deliveries/mark-status', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/deliveries/mark-status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': req.headers.authorization
+            },
+            body: JSON.stringify(req.body)
         });
         const data = await response.json();
         res.json(data);

@@ -82,20 +82,20 @@ export default function UsersTab({ token }: UsersTabProps) {
     }
 
     return (
-        <div>
-            <h2 className="text-2xl font-bold mb-6">Users Management</h2>
+        <div className="w-full overflow-x-hidden">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 px-4 sm:px-0">Users Management</h2>
 
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
+            <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+                <div className="overflow-x-auto no-scrollbar">
+                    <table className="w-full min-w-full">
                         <thead className="bg-gray-100 border-b border-gray-200">
                             <tr>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Phone</th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Joined</th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Subscriptions</th>
-                                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">Actions</th>
+                                <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Name</th>
+                                <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Email</th>
+                                <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Phone</th>
+                                <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Joined</th>
+                                <th className="px-3 sm:px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Subs</th>
+                                <th className="px-3 sm:px-6 py-3 text-center text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -104,34 +104,34 @@ export default function UsersTab({ token }: UsersTabProps) {
                                 return (
                                     <React.Fragment key={user.id}>
                                         <tr className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 text-sm text-gray-900">{user.name}</td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{user.phone}</td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900 truncate">{user.name}</td>
+                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 truncate">{user.email}</td>
+                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 truncate">{user.phone}</td>
+                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 whitespace-nowrap">
                                                 {new Date(user.created_at).toLocaleDateString()}
                                             </td>
-                                            <td className="px-6 py-4 text-sm">
-                                                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm">
+                                                <span className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold inline-block">
                                                     {userSubs.length}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-center">
+                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-center">
                                                 <button
                                                     onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)}
-                                                    className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
+                                                    className="text-blue-600 hover:text-blue-800 font-semibold text-xs sm:text-sm whitespace-nowrap min-h-[44px] inline-flex items-center justify-center"
                                                 >
-                                                    {expandedUser === user.id ? 'Hide' : 'View'} Details
+                                                    {expandedUser === user.id ? 'Hide' : 'View'}
                                                 </button>
                                             </td>
                                         </tr>
 
                                         {expandedUser === user.id && userSubs.length > 0 && (
                                             <tr className="bg-blue-50">
-                                                <td colSpan={6} className="px-6 py-4">
-                                                    <div className="space-y-3">
+                                                <td colSpan={6} className="px-3 sm:px-6 py-3 sm:py-4 w-full">
+                                                    <div className="space-y-2 sm:space-y-3 overflow-x-auto">
                                                         {userSubs.map((sub) => (
-                                                            <div key={sub.id} className="bg-white p-4 rounded border border-blue-200">
-                                                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                                            <div key={sub.id} className="bg-white p-3 sm:p-4 rounded border border-blue-200 min-w-full">
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
                                                                     <div>
                                                                         <span className="text-gray-600">Plan:</span>
                                                                         <span className="ml-2 font-semibold">{sub.plan_type}</span>

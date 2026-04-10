@@ -1,12 +1,12 @@
 import express from 'express';
 import pool from '../db';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, requireEmailVerification } from '../middleware/auth';
 
 const router = express.Router();
 
 // GET /api/orders/history
 // Get user's order history with pagination
-router.get('/history', authenticateToken as any, async (req, res) => {
+router.get('/history', authenticateToken as any, requireEmailVerification as any, async (req, res) => {
     try {
         const user_id = (req as any).user.id;
         const page = parseInt(req.query.page as string) || 1;

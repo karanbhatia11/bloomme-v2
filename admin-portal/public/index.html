@@ -301,6 +301,73 @@
             font-size: 14px;
             margin-bottom: 20px;
         }
+
+        /* Delivery type badges */
+        .badge-subscription {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-sub-addons {
+            background: #ede9fe;
+            color: #5b21b6;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-addon-only {
+            background: #ffedd5;
+            color: #9a3412;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Action buttons for manifest */
+        .action-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        .action-btn-delivered {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .action-btn-delivered:disabled {
+            background: #e2e3e5;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .action-btn-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .action-btn-details {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        /* Totals row */
+        .totals-row {
+            background: #f9f9f9;
+            font-weight: 600;
+            border-top: 2px solid #ddd;
+            padding: 15px;
+        }
     </style>
 </head>
 <body>
@@ -335,9 +402,11 @@
                 <div class="tab-buttons">
                     <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
                     <button class="tab-btn" onclick="switchTab('content')">📝 Content Manager</button>
-                    <button class="tab-btn" onclick="switchTab('users')">👥 Users</button>
-                    <button class="tab-btn" onclick="switchTab('orders')">📦 Orders</button>
+                    <button class="tab-btn" onclick="switchTab('users')">👥 Customers</button>
+                    <button class="tab-btn" onclick="switchTab('orders')">🚚 Deliveries</button>
                     <button class="tab-btn" onclick="switchTab('subscriptions')">💳 Subscriptions</button>
+                    <button class="tab-btn" onclick="switchTab('addons')">🎁 Add-Ons</button>
+                    <button class="tab-btn" onclick="switchTab('search')">🔍 Search</button>
                 </div>
 
                 <!-- Dashboard Tab -->
@@ -354,13 +423,13 @@
 
                 <!-- Users Tab -->
                 <div id="users-tab" class="tab-content">
-                    <h2>Users Management</h2>
+                    <h2>Customers Management</h2>
                     <div id="usersTable"></div>
                 </div>
 
                 <!-- Orders Tab -->
                 <div id="orders-tab" class="tab-content">
-                    <h2>Orders Management</h2>
+                    <h2>Delivery Manifest</h2>
                     <div id="ordersTable"></div>
                 </div>
 
@@ -368,6 +437,22 @@
                 <div id="subscriptions-tab" class="tab-content">
                     <h2>Subscriptions Management</h2>
                     <div id="subscriptionsTable"></div>
+                </div>
+
+                <!-- Add-Ons Tab -->
+                <div id="addons-tab" class="tab-content">
+                    <h2>Add-Ons Management</h2>
+                    <div id="addonsTable"></div>
+                </div>
+
+                <!-- Search Tab -->
+                <div id="search-tab" class="tab-content">
+                    <h2>Search Subscription</h2>
+                    <div style="margin-bottom: 20px;">
+                        <input type="number" id="subscriptionId" placeholder="Enter Subscription ID" style="padding: 10px; width: 300px; font-size: 16px;">
+                        <button onclick="searchSubscription()" style="padding: 10px 20px; margin-left: 10px; cursor: pointer;">Search</button>
+                    </div>
+                    <div id="searchResults"></div>
                 </div>
             </div>
         </div>
@@ -394,6 +479,7 @@
                     body: JSON.stringify({ username, password })
                 });
 
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
                 if (data.success) {
                     token = data.token;
@@ -432,10 +518,44 @@
             if (tabName === 'users') loadUsers();
             if (tabName === 'orders') loadOrders();
             if (tabName === 'subscriptions') loadSubscriptions();
+            if (tabName === 'addons') loadAddOns();
         }
 
         async function loadDashboard() {
-            // TODO: Implement dashboard stats
+            const dashboardDiv = document.getElementById('dashboardStats');
+            dashboardDiv.innerHTML = '<div class="loading">Loading statistics...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/admin/stats`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                dashboardDiv.innerHTML = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-label">Active Subscriptions</div>
+                            <div class="stat-card-value">${data.active_subscriptions}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">Today's Deliveries</div>
+                            <div class="stat-card-value">${data.todays_deliveries || 0}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">Delivered Today</div>
+                            <div class="stat-card-value">${data.delivered_today || 0}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">Revenue Today</div>
+                            <div class="stat-card-value">₹${(data.revenue_today / 100).toFixed(2)}</div>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                console.error('Error:', err);
+                dashboardDiv.innerHTML = '<div class="error">Failed to load statistics: ' + err.message + '</div>';
+            }
         }
 
         async function loadContent() {
@@ -454,6 +574,7 @@
                 const response = await fetch(`${API_URL}/admin/subscriptions`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 usersData = await response.json();
 
                 if (!usersData.length) {
@@ -648,11 +769,16 @@
 
                 // Group by delivery date
                 const grouped = {};
+                let totalDeliveries = 0, totalDelivered = 0, totalRevenue = 0;
+
                 data.forEach(item => {
                     if (!grouped[item.delivery_date]) {
                         grouped[item.delivery_date] = [];
                     }
                     grouped[item.delivery_date].push(item);
+                    totalDeliveries++;
+                    if (item.delivery_status === 'delivered') totalDelivered++;
+                    totalRevenue += parseFloat(item.total_amount || 0) / 100;
                 });
 
                 Object.keys(grouped).sort().forEach(date => {
@@ -666,16 +792,15 @@
                             <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
                                 <thead>
                                     <tr style="background: #f5f5f5;">
-                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left; cursor: pointer;" onclick="sortManifest('delivery_id')">Delivery ID ↕️</th>
-                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left; cursor: pointer;" onclick="sortManifest('subscription_id')">Sub ID ↕️</th>
-                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left; cursor: pointer;" onclick="sortManifest('status')">Status ↕️</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Type</th>
                                         <th style="border: 1px solid #ddd; padding: 8px; text-align: left; cursor: pointer;" onclick="sortManifest('customer_name')">Customer ↕️</th>
                                         <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Phone</th>
                                         <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Address</th>
                                         <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Plan</th>
                                         <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Add-ons</th>
-                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Time Slot</th>
-                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Notes</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Total</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Status</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left; no-print" style="print: none;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -683,23 +808,28 @@
                                         const address = `${d.address_line1}${d.address_line2 ? ', ' + d.address_line2 : ''}, ${d.suburb} ${d.postcode}`;
                                         const addons = d.addons && d.addons.length > 0
                                             ? d.addons.map(a => `${a.name} (${a.qty})`).join(', ')
-                                            : 'Plan only';
+                                            : (d.plan_name ? 'Plan only' : 'Add-ons only');
                                         const notes = d.notes || '-';
-                                        const statusColor = d.status === 'pending' ? '#fff3cd' : d.status === 'completed' ? '#d4edda' : '#f8d7da';
-                                        const statusTextColor = d.status === 'pending' ? '#856404' : d.status === 'completed' ? '#155724' : '#721c24';
+                                        const statusColor = d.delivery_status === 'pending' ? '#fff3cd' : d.delivery_status === 'delivered' ? '#d4edda' : '#f8d7da';
+                                        const statusTextColor = d.delivery_status === 'pending' ? '#856404' : d.delivery_status === 'delivered' ? '#155724' : '#721c24';
+                                        const typeBadge = d.delivery_type === 'subscription' ? 'badge-subscription' : d.delivery_type === 'sub+addons' ? 'badge-sub-addons' : 'badge-addon-only';
+                                        const typeLabel = d.delivery_type === 'subscription' ? 'SUB' : d.delivery_type === 'sub+addons' ? 'SUB+AO' : 'AO';
+                                        const isDelivered = d.delivery_status === 'delivered';
 
                                         return `
                                             <tr style="border: 1px solid #ddd;">
-                                                <td style="border: 1px solid #ddd; padding: 8px;">${d.delivery_id || '-'}</td>
-                                                <td style="border: 1px solid #ddd; padding: 8px;">${d.subscription_id || '-'}</td>
-                                                <td style="border: 1px solid #ddd; padding: 8px; background: ${statusColor}; color: ${statusTextColor}; font-weight: 600; border-radius: 3px;">${d.status || 'pending'}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px;"><span class="${typeBadge}">${typeLabel}</span></td>
                                                 <td style="border: 1px solid #ddd; padding: 8px;">${d.customer_name || 'N/A'}</td>
                                                 <td style="border: 1px solid #ddd; padding: 8px;">${d.phone || '-'}</td>
                                                 <td style="border: 1px solid #ddd; padding: 8px;">${address}</td>
-                                                <td style="border: 1px solid #ddd; padding: 8px;">${d.plan_name || 'N/A'}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px;">${d.plan_name || '-'}</td>
                                                 <td style="border: 1px solid #ddd; padding: 8px;">${addons}</td>
-                                                <td style="border: 1px solid #ddd; padding: 8px;">${d.delivery_slot || '-'}</td>
-                                                <td style="border: 1px solid #ddd; padding: 8px; max-width: 100px; overflow: hidden; text-overflow: ellipsis;" title="${notes}">${notes}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px;">₹${(parseFloat(d.total_amount || 0) / 100).toFixed(2)}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px; background: ${statusColor}; color: ${statusTextColor}; font-weight: 600; border-radius: 3px;">${d.delivery_status}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px; no-print" style="print: none;">
+                                                    ${isDelivered ? `<button class="action-btn action-btn-delivered" disabled>✓ Delivered</button>` : `<button class="action-btn action-btn-delivered" onclick="markDeliveryStatus('${d.order_type}', ${d.subscription_id || 'null'}, '${d.delivery_date}', ${d.order_id || 'null'}, 'delivered')">✓ Delivered</button>`}
+                                                    ${isDelivered ? '' : `<button class="action-btn action-btn-failed" onclick="markDeliveryStatus('${d.order_type}', ${d.subscription_id || 'null'}, '${d.delivery_date}', ${d.order_id || 'null'}, 'failed')">✗ Failed</button>`}
+                                                </td>
                                             </tr>
                                         `;
                                     }).join('')}
@@ -710,7 +840,48 @@
                 });
 
                 html += '</div>';
+                html += `<div class="totals-row">Total: ${totalDeliveries} deliveries | ${totalDelivered} delivered | ${totalDeliveries - totalDelivered} scheduled | Revenue: ₹${totalRevenue.toFixed(2)}</div>`;
                 manifestDiv.innerHTML = html;
+        }
+
+        async function markDeliveryStatus(orderType, subscriptionId, deliveryDate, orderId, status) {
+            if (!confirm(`Mark as ${status}?`)) return;
+
+            try {
+                const response = await fetch(`${API_URL}/admin/deliveries/mark-status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        delivery_type: orderType === 'addon_only' ? 'addon_only' : 'subscription',
+                        subscription_id: subscriptionId,
+                        delivery_date: deliveryDate,
+                        order_id: orderId,
+                        status: status
+                    })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    console.error('Error response:', data);
+                    alert('Failed to update delivery status: ' + (data.error || 'Unknown error'));
+                    return;
+                }
+                const data = await response.json();
+                if (data.success) {
+                    // Reload the current manifest
+                    const currentPeriod = 'nextmonth'; // This could be tracked better
+                    await loadDeliveryManifest(currentPeriod);
+                } else {
+                    console.error('Error response:', data);
+                    alert('Failed to update delivery status: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                alert('Error updating status: ' + err.message);
+            }
         }
 
         function sortManifest(field) {
@@ -899,6 +1070,7 @@
                 const response = await fetch(`${API_URL}/admin/subscriptions/${subId}/details`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
                 const sub = data.subscription;
                 const deliveryDates = data.delivery_dates || [];
@@ -973,6 +1145,269 @@
                 subsDiv.innerHTML = html;
             } catch (err) {
                 subsDiv.innerHTML = '<div class="error">Failed to load details: ' + err.message + '</div>';
+            }
+        }
+
+        async function loadAddOns() {
+            const addonsDiv = document.getElementById('addonsTable');
+            addonsDiv.innerHTML = '<div class="loading">Loading add-ons...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/admin/addons`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                addOnsData = await response.json();
+
+                if (!addOnsData.length) {
+                    addonsDiv.innerHTML = '<div class="no-data">No add-ons found</div>';
+                    return;
+                }
+
+                renderAddOnsTable(addOnsData);
+            } catch (err) {
+                console.error('Error:', err);
+                addonsDiv.innerHTML = '<div class="error">Failed to load add-ons: ' + err.message + '</div>';
+            }
+        }
+
+        function renderAddOnsTable(data) {
+            const addonsDiv = document.getElementById('addonsTable');
+
+            let html = `
+                <div style="margin-bottom: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                    <input type="text" placeholder="Search Add-On..." id="filterAddon" onkeyup="filterAndRenderAddOns()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <input type="text" placeholder="Search Customer..." id="filterAddonCustomer" onkeyup="filterAndRenderAddOns()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <select id="filterAddonStatus" onchange="filterAndRenderAddOns()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="">All Status</option>
+                        <option value="paid">Paid</option>
+                        <option value="pending">Pending</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                </div>
+                <table><thead><tr>
+                    <th style="cursor: pointer;" onclick="sortAddOns('id')">Item ID ↕️</th>
+                    <th style="cursor: pointer;" onclick="sortAddOns('order_id')">Order ID ↕️</th>
+                    <th style="cursor: pointer;" onclick="sortAddOns('user_name')">Customer ↕️</th>
+                    <th style="cursor: pointer;" onclick="sortAddOns('addon_name')">Add-On ↕️</th>
+                    <th style="cursor: pointer;" onclick="sortAddOns('quantity')">Qty ↕️</th>
+                    <th style="cursor: pointer;" onclick="sortAddOns('price')">Price ↕️</th>
+                    <th style="cursor: pointer;" onclick="sortAddOns('status')">Status ↕️</th>
+                    <th style="cursor: pointer;" onclick="sortAddOns('created_at')">Created ↕️</th>
+                </tr></thead><tbody>`;
+
+            data.forEach(addon => {
+                const priceInRupees = parseFloat(addon.price) / 100;
+                html += `
+                    <tr>
+                        <td>#${addon.id}</td>
+                        <td>#${addon.order_id}</td>
+                        <td>
+                            <div style="font-weight: 500;">${addon.user_name || 'N/A'}</div>
+                            <div style="font-size: 12px; color: #666;">${addon.user_email || '-'}</div>
+                        </td>
+                        <td>${addon.addon_name}</td>
+                        <td>${addon.quantity}</td>
+                        <td>₹${priceInRupees.toFixed(2)}</td>
+                        <td><span class="status-badge status-${addon.status}">${addon.status}</span></td>
+                        <td>${new Date(addon.created_at).toLocaleDateString()}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            addonsDiv.innerHTML = html;
+        }
+
+        let addOnsData = [];
+        let addonsSortField = 'created_at';
+        let addonsSortAsc = false;
+
+        function sortAddOns(field) {
+            if (addonsSortField === field) {
+                addonsSortAsc = !addonsSortAsc;
+            } else {
+                addonsSortField = field;
+                addonsSortAsc = true;
+            }
+            filterAndRenderAddOns();
+        }
+
+        function filterAndRenderAddOns() {
+            const filterAddon = document.getElementById('filterAddon')?.value.toLowerCase() || '';
+            const filterCustomer = document.getElementById('filterAddonCustomer')?.value.toLowerCase() || '';
+            const filterStatus = document.getElementById('filterAddonStatus')?.value || '';
+
+            let filtered = addOnsData.filter(row => {
+                return (!filterAddon || (row.addon_name && row.addon_name.toLowerCase().includes(filterAddon))) &&
+                       (!filterCustomer || (row.user_name && row.user_name.toLowerCase().includes(filterCustomer))) &&
+                       (!filterStatus || row.status === filterStatus);
+            });
+
+            if (addonsSortField) {
+                filtered.sort((a, b) => {
+                    let aVal = a[addonsSortField] || '';
+                    let bVal = b[addonsSortField] || '';
+                    if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+                    if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                    return addonsSortAsc ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
+                });
+            }
+
+            renderAddOnsTable(filtered);
+        }
+
+        async function searchSubscription() {
+            const subId = document.getElementById('subscriptionId').value.trim();
+            const resultsDiv = document.getElementById('searchResults');
+
+            if (!subId) {
+                resultsDiv.innerHTML = '<p style="color: red;">Please enter a Subscription ID</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/admin/subscriptions/${subId}/details`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    resultsDiv.innerHTML = `<p style="color: red;">Subscription not found (ID: ${subId})</p>`;
+                    return;
+                }
+
+                const apiData = await response.json();
+                const sub = apiData.subscription;
+                const deliveries = apiData.delivery_dates || [];
+                const addons = apiData.addons || [];
+                const addonDeliveries = apiData.addon_delivery_dates || [];
+                const order = apiData.order || null;
+
+                // Group addon deliveries by subscription_addon_id
+                const addonDeliveryMap = {};
+                addonDeliveries.forEach(ad => {
+                    if (!addonDeliveryMap[ad.subscription_addon_id]) {
+                        addonDeliveryMap[ad.subscription_addon_id] = [];
+                    }
+                    addonDeliveryMap[ad.subscription_addon_id].push(ad);
+                });
+
+                const html = `
+                    <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                        <h3 style="margin-top: 0; color: #333;">📋 Subscription Details (ID: ${subId})</h3>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                            <!-- User Information -->
+                            <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #6b4c9a;">
+                                <h4>👤 User Information</h4>
+                                <p><strong>Name:</strong> ${sub.user_name || 'N/A'}</p>
+                                <p><strong>Email:</strong> ${sub.user_email || 'N/A'}</p>
+                                <p><strong>Phone:</strong> ${sub.user_phone || 'N/A'}</p>
+                                <p><strong>Type:</strong> ${sub.user_type || 'N/A'}</p>
+                            </div>
+
+                            <!-- Plan Details -->
+                            <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #6b4c9a;">
+                                <h4>💳 Plan Details</h4>
+                                <p><strong>Plan Name:</strong> ${sub.plan_name || 'N/A'}</p>
+                                <p><strong>Plan Price:</strong> ₹${sub.plan_price || 'N/A'}</p>
+                                <p><strong>Subscription Price:</strong> ₹${sub.price || 'N/A'}</p>
+                                <p><strong>Status:</strong> <span class="status-badge status-${sub.status}">${sub.status}</span></p>
+                            </div>
+
+                            <!-- Schedule Information -->
+                            <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #6b4c9a;">
+                                <h4>📅 Schedule Information</h4>
+                                <p><strong>Start Date:</strong> ${new Date(sub.start_date).toLocaleDateString()}</p>
+                                <p><strong>End Date:</strong> ${sub.end_date ? new Date(sub.end_date).toLocaleDateString() : 'Ongoing'}</p>
+                                <p><strong>Time Slot:</strong> ${sub.time_slot || 'No specific slot'}</p>
+                                <p><strong>Total Deliveries:</strong> ${deliveries.length}</p>
+                                ${sub.pause_start_date ? `<p><strong>Paused:</strong> ${new Date(sub.pause_start_date).toLocaleDateString()} to ${sub.pause_end_date ? new Date(sub.pause_end_date).toLocaleDateString() : 'TBD'}</p>` : ''}
+                            </div>
+
+                            <!-- Address Information -->
+                            <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #6b4c9a;">
+                                <h4>📍 Delivery Address</h4>
+                                <p><strong>Address:</strong> ${sub.address_line1 || ''} ${sub.address_line2 || ''}</p>
+                                <p><strong>Suburb/Area:</strong> ${sub.suburb || 'N/A'}</p>
+                                <p><strong>Postcode:</strong> ${sub.postcode || 'N/A'}</p>
+                                <p><strong>Building Type:</strong> ${sub.building_type || 'N/A'}</p>
+                                <p><strong>Delivery Notes:</strong> ${sub.delivery_notes || 'None'}</p>
+                            </div>
+                        </div>
+
+                        <!-- Payment/Order Information -->
+                        ${order ? `
+                            <div style="background: white; padding: 15px; border-radius: 6px; margin-top: 20px; border-top: 2px solid #6b4c9a;">
+                                <h4>💰 Payment & Order</h4>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div>
+                                        <p><strong>Order ID:</strong> ${order.id}</p>
+                                        <p><strong>Razorpay Order ID:</strong> ${order.razorpay_order_id || 'N/A'}</p>
+                                        <p><strong>Amount:</strong> ₹${(order.amount / 100).toFixed(2)} ${order.currency}</p>
+                                        <p><strong>Status:</strong> <span class="status-badge status-${order.status}">${order.status}</span></p>
+                                    </div>
+                                    <div>
+                                        <p><strong>Order Type:</strong> ${order.order_type || 'N/A'}</p>
+                                        <p><strong>Promo Code:</strong> ${order.promo_code || 'None'} (Discount: ₹${order.promo_discount || '0'})</p>
+                                        <p><strong>Referral Discount:</strong> ₹${order.referral_discount || '0'}</p>
+                                        <p><strong>Paid At:</strong> ${order.paid_at ? new Date(order.paid_at).toLocaleDateString() : 'Pending'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <!-- Delivery Dates -->
+                        ${deliveries.length > 0 ? `
+                            <div style="background: white; padding: 15px; border-radius: 6px; margin-top: 20px;">
+                                <h4>📦 Delivery Schedule (${deliveries.length} total)</h4>
+                                <div style="max-height: 300px; overflow-y: auto;">
+                                    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                        <tr style="background: #f0f0f0;">
+                                            <th style="padding: 8px; text-align: left; border-bottom: 1px solid #ddd;">Sequence</th>
+                                            <th style="padding: 8px; text-align: left; border-bottom: 1px solid #ddd;">Delivery Date</th>
+                                            <th style="padding: 8px; text-align: left; border-bottom: 1px solid #ddd;">Status</th>
+                                        </tr>
+                                        ${deliveries.map(d => `
+                                            <tr style="border-bottom: 1px solid #eee;">
+                                                <td style="padding: 8px;">#${d.sequence}</td>
+                                                <td style="padding: 8px;">${new Date(d.delivery_date).toLocaleDateString()}</td>
+                                                <td style="padding: 8px;"><span class="status-badge status-${d.status}">${d.status}</span></td>
+                                            </tr>
+                                        `).join('')}
+                                    </table>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <!-- Add-Ons with Delivery Dates -->
+                        ${addons.length > 0 ? `
+                            <div style="background: white; padding: 15px; border-radius: 6px; margin-top: 20px;">
+                                <h4>🎁 Add-Ons & Delivery Schedule</h4>
+                                ${addons.map(a => {
+                                    const addonDates = addonDeliveryMap[a.id] || [];
+                                    return `
+                                        <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+                                            <div style="font-weight: 500; color: #333; margin-bottom: 8px;">
+                                                ${a.addon_name} - ₹${a.price} (${addonDates.length} scheduled dates)
+                                            </div>
+                                            ${addonDates.length > 0 ? `
+                                                <div style="font-size: 12px; background: #f5f5f5; padding: 8px; border-radius: 4px;">
+                                                    <strong>Delivery Dates:</strong>
+                                                    ${addonDates.map(ad => `<span style="display: inline-block; margin-right: 8px; margin-top: 4px;">📅 ${new Date(ad.delivery_date).toLocaleDateString()} (Qty: ${ad.quantity})</span>`).join('')}
+                                                </div>
+                                            ` : '<div style="font-size: 12px; color: #999;">No scheduled dates</div>'}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                resultsDiv.innerHTML = html;
+            } catch (error) {
+                resultsDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
             }
         }
 

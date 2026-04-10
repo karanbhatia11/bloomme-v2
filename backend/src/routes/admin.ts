@@ -17,13 +17,43 @@ router.get('/stats', async (req, res) => {
         const subCount = await pool.query('SELECT COUNT(*) FROM subscriptions');
         const activeSubs = await pool.query('SELECT COUNT(*) FROM subscriptions WHERE status = \'active\'');
 
-        const planStats = await pool.query('SELECT plan_type, COUNT(*) FROM subscriptions GROUP BY plan_type');
+        const planStats = await pool.query(`
+            SELECT p.name as plan_name, COUNT(*) as count
+            FROM subscriptions s
+            LEFT JOIN plans p ON s.plan_id = p.id
+            GROUP BY p.id, p.name
+            ORDER BY COUNT(*) DESC
+        `);
+
+        // Today's deliveries (subscriptions + addon-only orders)
+        const todaysDeliveries = await pool.query(`
+            SELECT COUNT(*) as count FROM (
+                SELECT id FROM subscription_delivery_dates WHERE delivery_date = CURRENT_DATE
+                UNION ALL
+                SELECT id FROM orders WHERE delivery_date = CURRENT_DATE AND status != 'failed'
+            ) AS today_deliveries
+        `);
+
+        // Delivered today count
+        const deliveredToday = await pool.query(`
+            SELECT COUNT(*) as count FROM deliveries
+            WHERE delivery_date = CURRENT_DATE AND status = 'delivered'
+        `);
+
+        // Today's revenue (orders paid today)
+        const revenueToday = await pool.query(`
+            SELECT COALESCE(SUM(amount), 0) as total FROM orders
+            WHERE DATE(paid_at) = CURRENT_DATE AND status = 'paid'
+        `);
 
         res.json({
             total_users: parseInt(userCount.rows[0].count),
             total_subscriptions: parseInt(subCount.rows[0].count),
             active_subscriptions: parseInt(activeSubs.rows[0].count),
-            plan_breakdown: planStats.rows
+            plan_breakdown: planStats.rows,
+            todays_deliveries: parseInt(todaysDeliveries.rows[0].count),
+            delivered_today: parseInt(deliveredToday.rows[0].count),
+            revenue_today: parseInt(revenueToday.rows[0].total)
         });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -84,17 +114,29 @@ router.get('/subscriptions/:id/details', async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Subscription main info
+        // Subscription main info with user details and full address
         const subResult = await pool.query(`
             SELECT
                 s.*,
                 p.name as plan_name,
                 p.price as plan_price,
                 a.id as address_id,
-                a.time_slot
+                a.time_slot,
+                a.address_line1,
+                a.address_line2,
+                a.suburb,
+                a.postcode,
+                a.delivery_notes,
+                a.building_type,
+                COALESCE(u.name, c.name) as user_name,
+                COALESCE(u.email, c.email) as user_email,
+                COALESCE(u.phone, c.phone) as user_phone,
+                CASE WHEN s.user_id IS NULL THEN 'guest' ELSE 'registered' END as user_type
             FROM subscriptions s
             LEFT JOIN plans p ON s.plan_id = p.id
             LEFT JOIN addresses a ON a.customer_id = s.customer_id
+            LEFT JOIN users u ON s.user_id = u.id
+            LEFT JOIN customers c ON s.customer_id = c.id
             WHERE s.id = $1
             LIMIT 1
         `, [id]);
@@ -144,11 +186,33 @@ router.get('/subscriptions/:id/details', async (req, res) => {
             ORDER BY add.delivery_date
         `, [id]);
 
+        // Order and payment info
+        const orderResult = await pool.query(`
+            SELECT
+                id,
+                razorpay_order_id,
+                razorpay_payment_id,
+                amount,
+                currency,
+                status,
+                order_type,
+                promo_code,
+                promo_discount,
+                referral_discount,
+                created_at,
+                paid_at
+            FROM orders
+            WHERE customer_id = $1
+            ORDER BY created_at DESC
+            LIMIT 1
+        `, [subResult.rows[0].customer_id]);
+
         res.json({
             subscription: subResult.rows[0],
             delivery_dates: deliveryDatesResult.rows,
             addons: addonsResult.rows,
-            addon_delivery_dates: addonDeliveryDatesResult.rows
+            addon_delivery_dates: addonDeliveryDatesResult.rows,
+            order: orderResult.rows[0] || null
         });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -344,15 +408,17 @@ router.delete('/page-content/:id', async (req, res) => {
     }
 });
 
-// --- DELIVERY MANIFEST ---
+// --- UNIFIED DELIVERY MANIFEST (Subscriptions + Addon-only orders) ---
 router.get('/delivery-manifest', async (req, res) => {
     try {
         const { from_date, to_date } = req.query;
-        let dateFilter = '';
+        let dateFilterSub = '';
+        let dateFilterAddon = '';
         let params: any[] = [];
 
         if (from_date && to_date) {
-            dateFilter = 'AND sdd.delivery_date BETWEEN $1 AND $2';
+            dateFilterSub = 'AND sdd.delivery_date BETWEEN $1 AND $2';
+            dateFilterAddon = 'AND o.delivery_date BETWEEN $1 AND $2';
             params = [from_date, to_date];
         }
 
@@ -365,10 +431,17 @@ router.get('/delivery-manifest', async (req, res) => {
                 FROM addon_delivery_dates add
                 GROUP BY add.subscription_addon_id, add.delivery_date
             )
+            -- Subscription deliveries
             SELECT
                 sdd.id as delivery_id,
                 sdd.delivery_date,
                 TO_CHAR(sdd.delivery_date, 'Day') as delivery_day,
+                'subscription' as order_type,
+                CASE WHEN EXISTS (
+                    SELECT 1 FROM subscription_add_ons sa
+                    LEFT JOIN addon_delivery_dates add ON sa.id = add.subscription_addon_id
+                    WHERE sa.subscription_id = s.id AND add.delivery_date = sdd.delivery_date
+                ) THEN 'sub+addons' ELSE 'subscription' END as delivery_type,
                 c.name as customer_name,
                 c.phone,
                 a.address_line1,
@@ -377,9 +450,14 @@ router.get('/delivery-manifest', async (req, res) => {
                 a.postcode,
                 a.time_slot as delivery_slot,
                 p.name as plan_name,
+                p.price as plan_price,
                 s.id as subscription_id,
-                COALESCE(d.status, 'pending') as status,
+                NULL::integer as order_id,
+                COALESCE(d.status, 'scheduled') as delivery_status,
+                NULL::text as payment_status,
                 s.notes,
+                (SELECT COALESCE(SUM(ao.price), 0) FROM subscription_add_ons sa LEFT JOIN add_ons ao ON sa.add_on_id = ao.id WHERE sa.subscription_id = s.id) as addon_total,
+                COALESCE(p.price, 0) + (SELECT COALESCE(SUM(ao.price), 0) FROM subscription_add_ons sa LEFT JOIN add_ons ao ON sa.add_on_id = ao.id WHERE sa.subscription_id = s.id) as total_amount,
                 (
                     SELECT json_agg(json_build_object(
                         'name', ao.name,
@@ -398,11 +476,85 @@ router.get('/delivery-manifest', async (req, res) => {
             LEFT JOIN plans p ON s.plan_id = p.id
             LEFT JOIN deliveries d ON s.id = d.subscription_id AND sdd.delivery_date = d.delivery_date
             WHERE s.status = 'active'
-            ${dateFilter}
-            ORDER BY sdd.delivery_date, c.name
+            ${dateFilterSub}
+
+            UNION ALL
+
+            -- Addon-only orders
+            SELECT
+                o.id as delivery_id,
+                o.delivery_date,
+                TO_CHAR(o.delivery_date, 'Day') as delivery_day,
+                'addon_only' as order_type,
+                'addon_only' as delivery_type,
+                COALESCE(u.name, c.name) as customer_name,
+                COALESCE(u.phone, c.phone) as phone,
+                a.address_line1,
+                a.address_line2,
+                a.suburb,
+                a.postcode,
+                o.delivery_slot,
+                NULL::text as plan_name,
+                NULL::numeric as plan_price,
+                NULL::integer as subscription_id,
+                o.id as order_id,
+                CASE WHEN o.delivered_at IS NOT NULL THEN 'delivered'
+                     WHEN o.failed_reason IS NOT NULL THEN 'failed'
+                     ELSE 'scheduled' END as delivery_status,
+                o.status as payment_status,
+                NULL::text as notes,
+                (SELECT COALESCE(SUM(oi.price * oi.quantity), 0) FROM order_items oi WHERE oi.order_id = o.id AND oi.item_type = 'addon') as addon_total,
+                COALESCE(o.amount, 0) as total_amount,
+                (SELECT json_agg(json_build_object('name', ao.name, 'qty', oi.quantity))
+                 FROM order_items oi
+                 LEFT JOIN add_ons ao ON oi.item_id = ao.id
+                 WHERE oi.order_id = o.id AND oi.item_type = 'addon') as addons
+            FROM orders o
+            LEFT JOIN users u ON o.user_id = u.id
+            LEFT JOIN customers c ON o.customer_id = c.id
+            LEFT JOIN addresses a ON c.id = a.customer_id
+            WHERE o.delivery_date IS NOT NULL AND o.order_type = 'addon'
+            ${dateFilterAddon}
+
+            ORDER BY delivery_date, customer_name
         `, params);
 
         res.json(result.rows);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- MARK DELIVERY STATUS ---
+router.put('/deliveries/mark-status', async (req, res) => {
+    try {
+        const { delivery_type, subscription_id, delivery_date, order_id, status, failed_reason } = req.body;
+
+        if (delivery_type === 'subscription') {
+            // Subscription delivery: UPSERT into deliveries table
+            const result = await pool.query(`
+                INSERT INTO deliveries (subscription_id, delivery_date, status)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (subscription_id, delivery_date) DO UPDATE SET
+                    status = $3,
+                    updated_at = CURRENT_TIMESTAMP
+                RETURNING *
+            `, [subscription_id, delivery_date, status]);
+            res.json({ success: true, delivery: result.rows[0] });
+        } else if (delivery_type === 'addon_only') {
+            // Addon-only order: UPDATE orders table
+            const result = await pool.query(`
+                UPDATE orders
+                SET status = $1,
+                    delivered_at = CASE WHEN $1 = 'delivered' THEN CURRENT_TIMESTAMP ELSE delivered_at END,
+                    failed_reason = $2
+                WHERE id = $3
+                RETURNING *
+            `, [status, failed_reason || null, order_id]);
+            res.json({ success: true, delivery: result.rows[0] });
+        } else {
+            res.status(400).json({ error: 'Invalid delivery_type' });
+        }
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
@@ -429,6 +581,34 @@ router.get('/orders', async (req, res) => {
             LEFT JOIN users u ON o.user_id = u.id
             LEFT JOIN customers c ON o.customer_id = c.id
             LEFT JOIN addresses a ON c.id = a.customer_id
+            ORDER BY o.created_at DESC
+        `);
+        res.json(result.rows);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- ADD-ONS ONLY (FOR ADMIN VIEW) ---
+router.get('/addons', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT DISTINCT
+                oi.id,
+                o.id as order_id,
+                u.id as user_id,
+                u.name as user_name,
+                u.email as user_email,
+                ao.name as addon_name,
+                oi.quantity,
+                oi.price,
+                o.status,
+                o.created_at
+            FROM order_items oi
+            JOIN orders o ON oi.order_id = o.id
+            LEFT JOIN users u ON o.user_id = u.id
+            LEFT JOIN add_ons ao ON oi.item_id = ao.id
+            WHERE oi.item_type = 'addon'
             ORDER BY o.created_at DESC
         `);
         res.json(result.rows);

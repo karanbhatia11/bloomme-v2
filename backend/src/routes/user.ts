@@ -1,6 +1,6 @@
 import express from 'express';
 import pool from '../db';
-import { authenticateToken, authorizeAdmin } from '../middleware/auth';
+import { authenticateToken, authorizeAdmin, requireEmailVerification } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -13,7 +13,7 @@ router.get('/config/add-ons', async (req, res) => {
     }
 });
 
-router.post('/address', authenticateToken as any, async (req, res) => {
+router.post('/address', authenticateToken as any, requireEmailVerification as any, async (req, res) => {
     try {
         const { address_line1, address_line2, suburb, postcode, delivery_notes, time_slot, building_type } = req.body;
         const user_id = (req as any).user.id;

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import pool from '../db';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'bloom_secret_key';
 
@@ -48,3 +49,30 @@ export const authorizeAdmin = (req: AuthRequest, res: Response, next: NextFuncti
     }
     next();
 };
+
+export const requireEmailVerification = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const user = await pool.query('SELECT email_verified FROM users WHERE id = $1', [req.user.id]);
+
+        if (user.rows.length === 0) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+
+        if (!user.rows[0].email_verified) {
+            return res.status(403).json({
+                message: 'Email verification required',
+                error: 'Please verify your email before accessing this feature. Check your inbox for the verification link.'
+            });
+        }
+
+        next();
+    } catch (err) {
+        console.error('Email verification check error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+

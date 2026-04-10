@@ -30,7 +30,7 @@ export default function StickyCart({ isOpen, onClose }: StickyCartProps) {
 
         {/* Empty Cart Panel */}
         {isOpen && (
-          <div className="fixed top-24 right-6 w-80 bg-white rounded-2xl border-2 border-[#d1c5b3]/30 shadow-2xl p-8 z-50 flex flex-col items-center justify-center gap-6 max-h-[80vh] overflow-y-auto">
+          <div className="fixed top-24 left-4 right-4 sm:right-6 sm:left-auto max-w-[90vw] sm:max-w-sm md:w-80 bg-white rounded-2xl border-2 border-[#d1c5b3]/30 shadow-2xl p-6 sm:p-8 z-50 flex flex-col items-center justify-center gap-6 max-h-[80vh] overflow-y-auto">
             <div className="text-center space-y-3">
               <span className="material-symbols-outlined text-6xl text-[#c4a052]">shopping_basket</span>
               <p className="text-lg font-bold text-[#2f1500]">Your ritual is waiting on you</p>
@@ -66,7 +66,7 @@ export default function StickyCart({ isOpen, onClose }: StickyCartProps) {
 
       {/* Dropdown Panel from header */}
       {isOpen && (
-        <div className="fixed top-24 right-6 w-80 bg-white rounded-2xl border-2 border-[#d1c5b3]/30 shadow-2xl p-6 space-y-4 z-50 max-h-[80vh] overflow-y-auto">
+        <div className="fixed top-24 left-4 right-4 sm:right-6 sm:left-auto max-w-[90vw] sm:max-w-sm md:w-80 bg-white rounded-2xl border-2 border-[#d1c5b3]/30 shadow-2xl p-4 sm:p-6 space-y-4 z-50 max-h-[80vh] overflow-y-auto">
           {/* Plan Section - only show if plan exists */}
           {cart.planId && (
           <div className="border-b border-[#d1c5b3]/20 pb-4">
@@ -75,7 +75,7 @@ export default function StickyCart({ isOpen, onClose }: StickyCartProps) {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => removePlan()}
-                  className="w-6 h-6 rounded-full bg-[#ffdcc3] text-[#775a11] font-bold flex items-center justify-center hover:bg-[#c4a052] hover:text-white transition-colors text-sm"
+                  className="w-8 h-8 sm:w-6 sm:h-6 rounded-full bg-[#ffdcc3] text-[#775a11] font-bold flex items-center justify-center hover:bg-[#c4a052] hover:text-white transition-colors text-sm"
                   title="Remove plan"
                 >
                   −
@@ -114,14 +114,14 @@ export default function StickyCart({ isOpen, onClose }: StickyCartProps) {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => removeAddon(addon.id)}
-                        className="w-6 h-6 rounded-full bg-[#ffdcc3] text-[#775a11] font-bold flex items-center justify-center hover:bg-[#c4a052] hover:text-white transition-colors text-sm"
+                        className="w-8 h-8 sm:w-6 sm:h-6 rounded-full bg-[#ffdcc3] text-[#775a11] font-bold flex items-center justify-center hover:bg-[#c4a052] hover:text-white transition-colors text-sm min-w-[2rem]"
                       >
                         −
                       </button>
-                      <span className="w-6 text-center text-sm font-bold text-[#2f1500]">{addon.quantity}</span>
+                      <span className="w-8 sm:w-6 text-center text-sm font-bold text-[#2f1500]">{addon.quantity}</span>
                       <button
                         onClick={() => addAddon({ id: addon.id, title: addon.title, price: addon.price, image: addon.image })}
-                        className="w-6 h-6 rounded-full bg-[#ffdcc3] text-[#775a11] font-bold flex items-center justify-center hover:bg-[#c4a052] hover:text-white transition-colors text-sm"
+                        className="w-8 h-8 sm:w-6 sm:h-6 rounded-full bg-[#ffdcc3] text-[#775a11] font-bold flex items-center justify-center hover:bg-[#c4a052] hover:text-white transition-colors text-sm min-w-[2rem]"
                       >
                         +
                       </button>
