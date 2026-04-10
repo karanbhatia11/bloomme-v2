@@ -374,7 +374,7 @@
     </div>
 
     <script>
-        const API_URL = '/api';
+        const API_URL = '/admin/api';
         let token = localStorage.getItem('adminToken');
 
         if (token) {
@@ -414,6 +414,10 @@
         }
 
         function switchTab(tabName) {
+            // Clear all polling intervals
+            if (ordersPollingInterval) clearInterval(ordersPollingInterval);
+            if (subsPollingInterval) clearInterval(subsPollingInterval);
+
             // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -566,25 +570,135 @@
             renderUsersTable(filtered);
         }
 
-        let manifestData = [];
-        let manifestSortField = null;
-        let manifestSortAsc = true;
+        let ordersData = [];
+        let ordersSortField = null;
+        let ordersSortAsc = true;
+        let ordersPollingInterval = null;
 
         async function loadOrders() {
             const ordersDiv = document.getElementById('ordersTable');
-            ordersDiv.innerHTML = `
-                <div style="margin-bottom: 20px;">
-                    <button class="btn btn-sm" onclick="loadDeliveryManifest('tomorrow')">📅 Tomorrow</button>
-                    <button class="btn btn-sm" onclick="loadDeliveryManifest('nextweek')" style="margin-left: 10px;">📅 Next Week</button>
-                    <button class="btn btn-sm" onclick="loadDeliveryManifest('nextmonth')" style="margin-left: 10px;">📅 Next Month</button>
-                    <button class="btn btn-sm" onclick="printManifest()" style="margin-left: 10px; background: #667eea;">🖨️ Print</button>
-                </div>
-                <div id="manifestContent"></div>
-            `;
+            ordersDiv.innerHTML = '<div class="loading">Loading orders...</div>';
 
-            // Load tomorrow's manifest by default
-            loadDeliveryManifest('tomorrow');
+            // Clear existing polling interval
+            if (ordersPollingInterval) clearInterval(ordersPollingInterval);
+
+            try {
+                const response = await fetch(`${API_URL}/admin/orders`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                ordersData = await response.json();
+
+                if (!ordersData.length) {
+                    ordersDiv.innerHTML = '<div class="no-data">No orders found</div>';
+                } else {
+                    renderOrdersTable(ordersData);
+                }
+
+                // Poll for updates every 5 seconds
+                ordersPollingInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch(`${API_URL}/admin/orders`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        ordersData = await response.json();
+                        renderOrdersTable(ordersData);
+                    } catch (err) {
+                        console.error('Polling error:', err);
+                    }
+                }, 5000);
+            } catch (err) {
+                console.error('Error:', err);
+                ordersDiv.innerHTML = '<div class="error">Failed to load orders: ' + err.message + '</div>';
+            }
         }
+
+        function renderOrdersTable(data) {
+            const ordersDiv = document.getElementById('ordersTable');
+
+            let html = `
+                <div style="margin-bottom: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                    <input type="text" placeholder="Search Order ID..." id="filterOrderId" onkeyup="filterAndRenderOrders()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <input type="text" placeholder="Search Customer..." id="filterOrderCustomer" onkeyup="filterAndRenderOrders()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <select id="filterOrderStatus" onchange="filterAndRenderOrders()" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="cursor: pointer;" onclick="sortOrders('id')">Order ID ↕️</th>
+                            <th style="cursor: pointer;" onclick="sortOrders('customer_id')">Customer ID ↕️</th>
+                            <th style="cursor: pointer;" onclick="sortOrders('amount')">Amount ↕️</th>
+                            <th style="cursor: pointer;" onclick="sortOrders('status')">Status ↕️</th>
+                            <th style="cursor: pointer;" onclick="sortOrders('order_type')">Type ↕️</th>
+                            <th style="cursor: pointer;" onclick="sortOrders('created_at')">Created ↕️</th>
+                            <th style="cursor: pointer;" onclick="sortOrders('paid_at')">Paid ↕️</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            data.forEach(order => {
+                const amount = (order.amount / 100).toFixed(2);
+                const createdDate = new Date(order.created_at).toLocaleDateString();
+                const paidDate = order.paid_at ? new Date(order.paid_at).toLocaleDateString() : '-';
+
+                html += `
+                    <tr>
+                        <td>#${order.id}</td>
+                        <td>${order.customer_id || '-'}</td>
+                        <td>₹${amount}</td>
+                        <td><span class="status-badge status-${order.status}">${order.status}</span></td>
+                        <td>${order.order_type || '-'}</td>
+                        <td>${createdDate}</td>
+                        <td>${paidDate}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            ordersDiv.innerHTML = html;
+        }
+
+        function sortOrders(field) {
+            if (ordersSortField === field) {
+                ordersSortAsc = !ordersSortAsc;
+            } else {
+                ordersSortField = field;
+                ordersSortAsc = true;
+            }
+            filterAndRenderOrders();
+        }
+
+        function filterAndRenderOrders() {
+            const filterOrderId = document.getElementById('filterOrderId')?.value.toLowerCase() || '';
+            const filterCustomer = document.getElementById('filterOrderCustomer')?.value.toLowerCase() || '';
+            const filterStatus = document.getElementById('filterOrderStatus')?.value || '';
+
+            let filtered = ordersData.filter(row => {
+                return (!filterOrderId || row.id.toString().includes(filterOrderId)) &&
+                       (!filterCustomer || (row.customer_id && row.customer_id.toString().includes(filterCustomer))) &&
+                       (!filterStatus || row.status === filterStatus);
+            });
+
+            if (ordersSortField) {
+                filtered.sort((a, b) => {
+                    let aVal = a[ordersSortField] || '';
+                    let bVal = b[ordersSortField] || '';
+                    if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+                    if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                    return ordersSortAsc ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
+                });
+            }
+
+            renderOrdersTable(filtered);
+        }
+
+        let manifestData = [];
+        let manifestSortField = null;
+        let manifestSortAsc = true;
 
         async function loadDeliveryManifest(period) {
             const manifestDiv = document.getElementById('manifestContent');
@@ -785,10 +899,14 @@
         let subsData = [];
         let subsSortField = null;
         let subsSortAsc = true;
+        let subsPollingInterval = null;
 
         async function loadSubscriptions() {
             const subsDiv = document.getElementById('subscriptionsTable');
             subsDiv.innerHTML = '<div class="loading">Loading subscriptions...</div>';
+
+            // Clear existing polling interval
+            if (subsPollingInterval) clearInterval(subsPollingInterval);
 
             try {
                 const response = await fetch(`${API_URL}/admin/subscriptions`, {
@@ -802,6 +920,19 @@
                 }
 
                 renderSubscriptionsTable(subsData);
+
+                // Poll for updates every 5 seconds
+                subsPollingInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch(`${API_URL}/admin/subscriptions`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        subsData = await response.json();
+                        renderSubscriptionsTable(subsData);
+                    } catch (err) {
+                        console.error('Polling error:', err);
+                    }
+                }, 5000);
             } catch (err) {
                 console.error('Error:', err);
                 subsDiv.innerHTML = '<div class="error">Failed to load subscriptions: ' + err.message + '</div>';

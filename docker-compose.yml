@@ -40,6 +40,7 @@ services:
       - "5001:3000"
     environment:
       - NEXT_PUBLIC_API_URL=/api
+      - NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_SZjf3QjriE0xWX
     depends_on:
       - backend
     restart: unless-stopped
