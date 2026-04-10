@@ -24,7 +24,7 @@ services:
     ports:
       - "5002:5000"
     env_file:
-      - ./backend/.env
+      - ./backend/.env.docker
     volumes:
       - ./backend/uploads:/app/uploads
     depends_on:
@@ -39,7 +39,7 @@ services:
     ports:
       - "5001:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=/api
+      - NEXT_PUBLIC_API_URL=http://backend:5000
       - NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_SZjf3QjriE0xWX
     depends_on:
       - backend

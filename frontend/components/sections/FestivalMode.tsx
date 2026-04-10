@@ -104,16 +104,27 @@ export const FestivalMode: React.FC = () => {
     const fetchFestivalContent = async () => {
       try {
         const response = await fetch('/api/admin/page-content?page=home');
-        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const text = await response.text();
+        if (!text) {
+          console.warn('Empty response from festival API');
+          return;
+        }
+
+        const data = JSON.parse(text);
         const section = Array.isArray(data)
           ? data.find((item: any) => item.section_name === 'festival-mode')
           : null;
 
-        if (section?.metadata?.carousel_items) {
+        if (section?.metadata?.carousel_items && Array.isArray(section.metadata.carousel_items)) {
           setFestivals(section.metadata.carousel_items);
         }
       } catch (err) {
         console.error('Failed to fetch festival content:', err);
+        // Continue with default festival details
       } finally {
         setLoading(false);
       }
