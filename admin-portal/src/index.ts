@@ -8,7 +8,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.ADMIN_PORT || 9000;
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5001';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 const JWT_SECRET = process.env.JWT_SECRET || 'admin-secret-key-change-in-production';
 
 app.use(cors());
