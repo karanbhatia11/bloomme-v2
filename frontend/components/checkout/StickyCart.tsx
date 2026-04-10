@@ -23,7 +23,7 @@ export default function StickyCart({ isOpen, onClose }: StickyCartProps) {
         {/* Backdrop */}
         {isOpen && (
           <div
-            className="fixed inset-0 z-30 bg-black/20"
+            className="fixed inset-0 z-40 bg-black/20"
             onClick={onClose}
           />
         )}
