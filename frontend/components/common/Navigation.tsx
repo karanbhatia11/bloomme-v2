@@ -6,12 +6,12 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { NAV_LINKS, LOGO_URL } from "@/constants";
 import { useCart } from "@/context/CartContext";
-import StickyCart from "@/components/checkout/StickyCart";
+import { useCartUI } from "@/context/CartUIContext";
 
 export const Navigation: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const { isCartOpen, setIsCartOpen } = useCartUI();
   const { cart } = useCart();
   const cartCount = cart.addons.reduce((s, a) => s + a.quantity, 0) + (cart.planId ? 1 : 0);
 
@@ -113,7 +113,6 @@ export const Navigation: React.FC = () => {
           </div>
         </motion.div>
       )}
-      <StickyCart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </nav>
   );
 };
