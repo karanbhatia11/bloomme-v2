@@ -52,7 +52,7 @@ export default function SignupPage() {
     setLoading(true);
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -86,17 +86,17 @@ export default function SignupPage() {
   return (
     <>
       <Navigation />
-      <main className="min-h-screen flex items-center justify-center p-4 md:p-8 lg:p-12 bg-gradient-to-br from-surface via-surface to-surface-container-low pb-3">
-        <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-0 overflow-hidden rounded-2xl shadow-lg bg-surface-container-lowest mt-24 mb-1">
+      <main className="min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-12 bg-gradient-to-br from-surface via-surface to-surface-container-low pb-6">
+        <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-0 overflow-hidden rounded-xl sm:rounded-2xl shadow-lg bg-surface-container-lowest mt-20 sm:mt-24">
           {/* Left Side: Signup Form */}
           <motion.section
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="p-8 md:p-12 lg:p-16 flex flex-col justify-center"
+            className="p-6 sm:p-8 md:p-12 lg:p-16 flex flex-col justify-center"
           >
-            <div className="mb-10">
-              <h1 className="text-4xl md:text-5xl font-bold font-headline tracking-tight text-on-surface mb-2">
+            <div className="mb-8 sm:mb-10">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold font-headline tracking-tight text-on-surface mb-2">
                 Sign Up for Daily Puja Flower Delivery
               </h1>
               <p className="font-accent italic text-lg text-primary opacity-80">

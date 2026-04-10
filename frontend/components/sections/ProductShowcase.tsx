@@ -16,8 +16,9 @@ export const ProductShowcase: React.FC = () => {
 
   const scrollToIndex = (index: number, smooth = true) => {
     if (carouselRef.current) {
-      const cardWidth = window.innerWidth < 768 ? 320 : 400;
-      const gap = 32;
+      const isMobile = window.innerWidth < 768;
+      const cardWidth = isMobile ? window.innerWidth - 32 : 400;
+      const gap = 24;
       carouselRef.current.scrollTo({
         left: index * (cardWidth + gap),
         behavior: smooth ? "smooth" : "instant",
@@ -69,34 +70,34 @@ export const ProductShowcase: React.FC = () => {
         <span className="material-symbols-outlined text-[160px] text-primary/50">local_florist</span>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 relative z-10">
-        <div className="flex justify-between items-center mb-12 sm:mb-16">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 relative z-10 w-full">
+        <div className="flex justify-between items-center mb-8 sm:mb-12 md:mb-16">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight">Add Ons</h2>
-          <div className="flex gap-2 sm:gap-4">
+          <div className="flex gap-2 sm:gap-4 flex-shrink-0">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handlePrev}
-              className="w-10 sm:w-12 h-10 sm:h-12 rounded-full border border-outline flex items-center justify-center hover:bg-primary hover:text-white transition-all"
+              className="min-h-[44px] min-w-[44px] sm:w-12 sm:h-12 rounded-full border border-outline flex items-center justify-center hover:bg-primary hover:text-white transition-all"
             >
-              <span className="material-symbols-outlined text-xl sm:text-2xl">chevron_left</span>
+              <span className="material-symbols-outlined text-lg sm:text-2xl">chevron_left</span>
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleNext}
-              className="w-10 sm:w-12 h-10 sm:h-12 rounded-full border border-outline flex items-center justify-center hover:bg-primary hover:text-white transition-all"
+              className="min-h-[44px] min-w-[44px] sm:w-12 sm:h-12 rounded-full border border-outline flex items-center justify-center hover:bg-primary hover:text-white transition-all"
             >
-              <span className="material-symbols-outlined text-xl sm:text-2xl">chevron_right</span>
+              <span className="material-symbols-outlined text-lg sm:text-2xl">chevron_right</span>
             </motion.button>
           </div>
         </div>
 
-        <div ref={carouselRef} className="flex overflow-x-hidden gap-4 sm:gap-8 no-scrollbar pb-8 sm:pb-10">
+        <div ref={carouselRef} className="flex overflow-x-auto gap-4 sm:gap-6 md:gap-8 no-scrollbar pb-6 sm:pb-8 md:pb-10 w-full scroll-smooth snap-x snap-mandatory">
           {INFINITE_PRODUCTS.map((product, index) => (
             <div
               key={index}
-              className="min-w-[320px] md:min-w-[400px] bg-surface-container-low rounded-[40px] overflow-hidden shadow-bloom transition-all group flex-shrink-0"
+              className="min-w-[calc(100vw-32px)] sm:min-w-[320px] md:min-w-[400px] bg-surface-container-low rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-bloom transition-all group flex-shrink-0 snap-center"
             >
               <div className="h-96 overflow-hidden">
                 <div

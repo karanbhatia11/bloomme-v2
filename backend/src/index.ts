@@ -1,6 +1,8 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import { loginLimiter, signupLimiter, generalLimiter } from './middleware/rateLimiter';
 import pool from './db';
 import authRoutes from './routes/auth';
 import subRoutes from './routes/subscriptions';
@@ -24,6 +26,31 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// HTTPS enforcement - redirect if not using HTTPS (except in development)
+if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+        if (req.header('x-forwarded-proto') !== 'https') {
+            return res.redirect(301, `https://${req.header('host')}${req.url}`);
+        }
+        next();
+    });
+}
+
+// Security headers
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", 'data:', 'https:'],
+        },
+    },
+}));
+
+// Apply general rate limiter
+app.use(generalLimiter);
 
 app.use(cors({
     origin: (origin, callback) => {

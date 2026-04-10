@@ -57,22 +57,22 @@ export const PricingSection: React.FC = () => {
         <span className="material-symbols-outlined text-[160px] text-primary/50">local_florist</span>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 relative z-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 relative z-10 w-full">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="text-center mb-12 sm:mb-16"
         >
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 sm:mb-6">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4 sm:mb-6">
             Puja Flower Subscription Plans
           </h2>
-          <p className="text-xs sm:text-sm md:text-base text-on-surface-variant">
+          <p className="text-xs sm:text-sm md:text-base text-on-surface-variant px-2 sm:px-0">
             Tailored for your daily spiritual needs
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-start">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 items-start">
           {SUBSCRIPTION_PLANS.map((plan, index) => {
             const imageKey = (plan.name.toLowerCase() as keyof typeof planImages) || "traditional";
             const imageSrc = planImages[imageKey] || planImages.traditional;
@@ -85,9 +85,9 @@ export const PricingSection: React.FC = () => {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ y: -8 }}
-                className={`rounded-[2rem] flex flex-col relative ${
+                className={`rounded-[1.5rem] sm:rounded-[2rem] flex flex-col relative w-full ${
                   plan.highlighted
-                    ? "bg-primary text-on-primary md:scale-105 shadow-2xl"
+                    ? "bg-primary text-on-primary lg:scale-105 shadow-2xl"
                     : "bg-surface-container-lowest border border-transparent hover:border-primary-container/20"
                 }`}
               >
@@ -100,7 +100,7 @@ export const PricingSection: React.FC = () => {
                   </div>
                 )}
 
-                <div className="h-64 overflow-hidden rounded-t-[2rem] bg-gray-50 flex items-center justify-center">
+                <div className="h-40 sm:h-48 md:h-56 lg:h-64 overflow-hidden rounded-t-[1.5rem] sm:rounded-t-[2rem] bg-gray-50 flex items-center justify-center w-full">
                   <Image
                     src={imageSrc}
                     alt={plan.name}
@@ -110,23 +110,23 @@ export const PricingSection: React.FC = () => {
                   />
                 </div>
 
-                <div className="p-10 flex flex-col flex-grow">
-                  <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                <div className="p-6 sm:p-8 lg:p-10 flex flex-col flex-grow">
+                  <h3 className="text-lg sm:text-xl font-bold mb-2">{plan.name}</h3>
                   <p
-                    className={`text-sm mb-8 ${
+                    className={`text-xs sm:text-sm mb-6 sm:mb-8 ${
                       plan.highlighted ? "opacity-70" : "text-on-surface-variant"
                     }`}
                   >
                     {plan.description}
                   </p>
 
-                  <div className="mb-8 flex items-baseline gap-1 justify-center">
-                    <span className="text-4xl font-bold">₹{plan.price}</span>
-                    <span className={plan.highlighted ? "opacity-70" : ""}>
+                  <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-center sm:items-baseline gap-1 sm:gap-2 justify-center">
+                    <span className="text-3xl sm:text-4xl font-bold">₹{plan.price}</span>
+                    <span className={`text-xs sm:text-sm ${plan.highlighted ? "opacity-70" : ""}`}>
                       {plan.period}
                     </span>
                     {plan.originalPrice && (
-                      <span className={`text-2xl font-semibold line-through leading-none ${plan.highlighted ? "opacity-50" : "text-on-surface-variant opacity-60"}`}>
+                      <span className={`text-xl sm:text-2xl font-semibold line-through leading-none ${plan.highlighted ? "opacity-50" : "text-on-surface-variant opacity-60"}`}>
                         ₹{plan.originalPrice}
                       </span>
                     )}

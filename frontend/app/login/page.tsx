@@ -60,20 +60,20 @@ function LoginForm() {
   return (
     <>
       <Navigation />
-      <main className="flex items-start justify-center px-6 pt-32 relative overflow-hidden bg-gradient-to-br from-surface via-surface to-surface-container-low">
+      <main className="flex items-start justify-center px-4 sm:px-6 pt-28 sm:pt-32 pb-8 relative overflow-hidden bg-gradient-to-br from-surface via-surface to-surface-container-low min-h-screen">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-[400px] z-10"
+          className="w-full max-w-sm z-10"
         >
           {/* Login Card */}
-          <div className="bg-surface-container-lowest rounded-2xl p-8 shadow-lg border border-surface-container">
-            <header className="mb-8">
-              <h2 className="font-headline font-bold text-2xl text-on-surface tracking-tight">
+          <div className="bg-surface-container-lowest rounded-2xl p-6 sm:p-8 shadow-lg border border-surface-container w-full">
+            <header className="mb-6 sm:mb-8">
+              <h2 className="font-headline font-bold text-xl sm:text-2xl text-on-surface tracking-tight">
                 Welcome Back
               </h2>
-              <p className="text-on-surface-variant text-sm mt-1">
+              <p className="text-on-surface-variant text-xs sm:text-sm mt-1">
                 Sign in to your account
               </p>
             </header>
@@ -84,18 +84,18 @@ function LoginForm() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               {/* Email Field */}
               <div className="space-y-2">
                 <label
-                  className="block font-label font-semibold text-sm text-on-surface-variant"
+                  className="block font-label font-semibold text-xs sm:text-sm text-on-surface-variant"
                   htmlFor="email"
                 >
                   Email
                 </label>
                 <div className="bg-surface-container-low rounded-lg transition-all focus-within:bg-surface-container-highest group">
                   <input
-                    className="w-full bg-transparent px-4 py-3 text-on-surface placeholder:text-outline-variant focus:outline-none border-none text-sm"
+                    className="w-full bg-transparent px-4 py-3 text-on-surface placeholder:text-outline-variant focus:outline-none border-none text-sm min-h-[44px]"
                     id="email"
                     placeholder="name@atelier.com"
                     type="email"
@@ -109,22 +109,22 @@ function LoginForm() {
 
               {/* Password Field */}
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0">
                   <label
-                    className="font-label font-semibold text-sm text-on-surface-variant"
+                    className="font-label font-semibold text-xs sm:text-sm text-on-surface-variant"
                     htmlFor="password"
                   >
                     Password
                   </label>
                   <Link
-                    href="#"
+                    href="/forgot-password"
                     className="text-xs font-semibold text-primary-container hover:text-primary transition-colors"
                   >
                     Forgot password?
                   </Link>
                 </div>
                 <div className="bg-surface-container-low rounded-lg transition-all focus-within:bg-surface-container-highest group">
-                  <div className="flex items-center">
+                  <div className="flex items-center min-h-[44px]">
                     <input
                       className="flex-1 bg-transparent px-4 py-3 text-on-surface placeholder:text-outline-variant focus:outline-none border-none text-sm"
                       id="password"
@@ -137,9 +137,10 @@ function LoginForm() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="px-3 text-on-surface-variant hover:text-on-surface transition-colors"
+                      className="px-3 min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
-                      <span className="material-symbols-outlined text-sm">
+                      <span className="material-symbols-outlined text-base sm:text-lg">
                         {showPassword ? "visibility_off" : "visibility"}
                       </span>
                     </button>
@@ -149,14 +150,14 @@ function LoginForm() {
               </div>
 
               {/* Remember Me */}
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 min-h-[44px]">
                 <input
-                  className="w-5 h-5 rounded border-none bg-surface-container-high text-primary focus:ring-primary/20 cursor-pointer"
+                  className="w-5 h-5 rounded border-none bg-surface-container-high text-primary focus:ring-primary/20 cursor-pointer flex-shrink-0"
                   id="remember"
                   type="checkbox"
                 />
                 <label
-                  className="text-sm text-on-surface-variant font-medium cursor-pointer"
+                  className="text-xs sm:text-sm text-on-surface-variant font-medium cursor-pointer"
                   htmlFor="remember"
                 >
                   Remember me
@@ -165,7 +166,7 @@ function LoginForm() {
 
               {/* CTA */}
               <button
-                className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-4 rounded-lg font-headline font-bold text-sm tracking-wide shadow-lg shadow-primary/20 hover:shadow-xl active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-3 sm:py-4 rounded-lg font-headline font-bold text-sm sm:text-base tracking-wide shadow-lg shadow-primary/20 hover:shadow-xl active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] mt-4 sm:mt-6"
                 type="submit"
                 disabled={loading}
                 onClick={(e) => {
@@ -182,8 +183,8 @@ function LoginForm() {
             </form>
 
             {/* Sign Up Link */}
-            <div className="mt-8 text-center">
-              <p className="text-sm text-on-surface-variant">
+            <div className="mt-6 sm:mt-8 text-center">
+              <p className="text-xs sm:text-sm text-on-surface-variant">
                 Don&apos;t have an account?{" "}
                 <Link
                   href="/signup"

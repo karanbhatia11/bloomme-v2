@@ -13,6 +13,8 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 120px;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 body {
@@ -27,6 +29,33 @@ body {
     radial-gradient(circle at 50% 50%, rgba(255, 245, 200, 0.08) 0%, transparent 50%);
   background-attachment: fixed;
   color: #2f1500;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Responsive Images & Media */
+img,
+video,
+iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Responsive Typography - Scale headings across breakpoints */
+@layer components {
+  @screen sm {
+    /* Adjust root font size for better mobile typography */
+    html {
+      font-size: 14px;
+    }
+  }
+
+  @screen md {
+    html {
+      font-size: 16px;
+    }
+  }
 }
 
 /* Material Icons */

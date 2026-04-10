@@ -13,6 +13,11 @@ const initDb = async () => {
                 referral_code TEXT UNIQUE,
                 referral_points INTEGER DEFAULT 0,
                 notifications JSONB DEFAULT '{"email":true,"sms":false,"push":true}',
+                email_verified BOOLEAN DEFAULT FALSE,
+                email_verification_token TEXT,
+                email_verification_expires_at TIMESTAMP,
+                password_reset_token TEXT,
+                password_reset_expires_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
@@ -84,7 +89,8 @@ const initDb = async () => {
                 id SERIAL PRIMARY KEY,
                 subscription_id INTEGER REFERENCES subscriptions(id),
                 delivery_date DATE NOT NULL,
-                status TEXT DEFAULT 'pending'
+                status TEXT DEFAULT 'pending',
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
             CREATE TABLE IF NOT EXISTS delivery_addons (
@@ -253,6 +259,18 @@ const initDb = async () => {
             );
 
             CREATE INDEX IF NOT EXISTS idx_page_content_page_section ON page_content(page_name, section_name);
+
+            -- Add columns to orders table for addon-only deliveries
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_date DATE;
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_slot VARCHAR(50);
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivered_at TIMESTAMPTZ;
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS failed_reason TEXT;
+
+            -- Add columns to deliveries table
+            ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+            CREATE INDEX IF NOT EXISTS idx_orders_delivery_date ON orders(delivery_date);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_deliveries_subscription_date ON deliveries(subscription_id, delivery_date);
 
             -- Initial App Config
             INSERT INTO app_config (key, value) VALUES ('site_mode', '{"mode": "coming_soon"}') ON CONFLICT (key) DO NOTHING;

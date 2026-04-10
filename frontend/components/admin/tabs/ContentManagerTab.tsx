@@ -120,37 +120,37 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
         const type = item?.metadata?.type || 'generic';
 
         return (
-            <div className="space-y-4 bg-gray-50 p-6 rounded-lg">
-                <h3 className="text-lg font-bold mb-4">Edit: {item?.section_name}</h3>
+            <div className="space-y-4 sm:space-y-6 bg-gray-50 p-4 sm:p-6 md:p-8 rounded-lg overflow-x-hidden">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">Edit: {item?.section_name}</h3>
 
                 {/* GENERIC FIELDS */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Title</label>
                     <input
                         type="text"
                         value={formData.title || ''}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent text-xs sm:text-sm min-h-[44px]"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Subtitle</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Subtitle</label>
                     <input
                         type="text"
                         value={formData.subtitle || ''}
                         onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent text-xs sm:text-sm min-h-[44px]"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Description</label>
                     <textarea
                         value={formData.description || ''}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent text-xs sm:text-sm"
                     />
                 </div>
 
@@ -158,16 +158,16 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
                 {type === 'hero' && (
                     <>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Background Image</label>
-                            <div className="flex gap-2">
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Background Image</label>
+                            <div className="flex flex-col sm:flex-row gap-2">
                                 <input
                                     type="text"
                                     value={formData.image_url || ''}
                                     onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                                     placeholder="Image URL"
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-xs sm:text-sm min-h-[44px]"
                                 />
-                                <label className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer text-sm font-medium">
+                                <label className="px-3 sm:px-4 py-2 sm:py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer text-xs sm:text-sm font-medium min-h-[44px] flex items-center justify-center whitespace-nowrap">
                                     📸 Upload
                                     <input
                                         type="file"
@@ -179,23 +179,23 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
                             </div>
                             {formData.image_url && (
                                 <div className="mt-3">
-                                    <img src={formData.image_url} alt="Preview" className="h-40 object-cover rounded border" />
+                                    <img src={formData.image_url} alt="Preview" className="h-32 sm:h-40 md:h-48 object-cover rounded border w-full" />
                                 </div>
                             )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">CTA Button Text</label>
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">CTA Button Text</label>
                             <input
                                 type="text"
                                 value={formData.cta_text || ''}
                                 onChange={(e) => setFormData({ ...formData, cta_text: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-xs sm:text-sm min-h-[44px]"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Social Proof Text</label>
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Social Proof Text</label>
                             <input
                                 type="text"
                                 value={formData.metadata?.social_proof || ''}
@@ -203,7 +203,7 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
                                     ...formData,
                                     metadata: { ...formData.metadata, social_proof: e.target.value }
                                 })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-xs sm:text-sm min-h-[44px]"
                             />
                         </div>
                     </>
@@ -211,10 +211,10 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
 
                 {type === 'ritual-cards' && (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Cards</label>
-                        <div className="space-y-4">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Cards</label>
+                        <div className="space-y-3 sm:space-y-4">
                             {formData.metadata?.cards?.map((card: any, idx: number) => (
-                                <div key={idx} className="bg-white p-4 rounded border">
+                                <div key={idx} className="bg-white p-3 sm:p-4 rounded border space-y-2">
                                     <input
                                         type="text"
                                         placeholder="Icon (material symbol)"
@@ -224,7 +224,7 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
                                             cards[idx].icon = e.target.value;
                                             setFormData({ ...formData, metadata: { ...formData.metadata, cards } });
                                         }}
-                                        className="w-full px-2 py-1 border border-gray-300 rounded mb-2 text-sm"
+                                        className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 rounded text-xs sm:text-sm min-h-[40px]"
                                     />
                                     <input
                                         type="text"
@@ -235,7 +235,7 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
                                             cards[idx].title = e.target.value;
                                             setFormData({ ...formData, metadata: { ...formData.metadata, cards } });
                                         }}
-                                        className="w-full px-2 py-1 border border-gray-300 rounded mb-2 text-sm"
+                                        className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 rounded text-xs sm:text-sm min-h-[40px]"
                                     />
                                     <textarea
                                         placeholder="Description"
@@ -246,7 +246,7 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
                                             setFormData({ ...formData, metadata: { ...formData.metadata, cards } });
                                         }}
                                         rows={2}
-                                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                        className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 rounded text-xs sm:text-sm"
                                     />
                                 </div>
                             ))}
@@ -256,10 +256,10 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
 
                 {type === 'festival-carousel' && (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Festival Items</label>
-                        <div className="space-y-4">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Festival Items</label>
+                        <div className="space-y-3 sm:space-y-4">
                             {formData.metadata?.carousel_items?.map((item: any, idx: number) => (
-                                <div key={idx} className="bg-white p-4 rounded border">
+                                <div key={idx} className="bg-white p-3 sm:p-4 rounded border space-y-2">
                                     <input
                                         type="text"
                                         placeholder="Festival Name"
@@ -269,7 +269,7 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
                                             items[idx].name = e.target.value;
                                             setFormData({ ...formData, metadata: { ...formData.metadata, carousel_items: items } });
                                         }}
-                                        className="w-full px-2 py-1 border border-gray-300 rounded mb-2 text-sm"
+                                        className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 rounded text-xs sm:text-sm min-h-[40px]"
                                     />
                                     <input
                                         type="text"
@@ -280,9 +280,9 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
                                             items[idx].date = e.target.value;
                                             setFormData({ ...formData, metadata: { ...formData.metadata, carousel_items: items } });
                                         }}
-                                        className="w-full px-2 py-1 border border-gray-300 rounded mb-2 text-sm"
+                                        className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 rounded text-xs sm:text-sm min-h-[40px]"
                                     />
-                                    <div className="flex gap-1 mb-2">
+                                    <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
                                         <input
                                             type="text"
                                             placeholder="Image URL"
@@ -292,9 +292,9 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
                                                 items[idx].image = e.target.value;
                                                 setFormData({ ...formData, metadata: { ...formData.metadata, carousel_items: items } });
                                             }}
-                                            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                                            className="flex-1 px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 rounded text-xs sm:text-sm min-h-[40px]"
                                         />
-                                        <label className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer text-xs font-medium">
+                                        <label className="px-2 sm:px-3 py-1 sm:py-2 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer text-xs font-medium min-h-[40px] flex items-center justify-center whitespace-nowrap">
                                             📸
                                             <input
                                                 type="file"
@@ -304,7 +304,7 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
                                             />
                                         </label>
                                     </div>
-                                    {item.image && <img src={item.image} alt="Preview" className="h-20 object-cover rounded mb-2 border" />}
+                                    {item.image && <img src={item.image} alt="Preview" className="h-20 sm:h-24 object-cover rounded border w-full" />}
                                     <textarea
                                         placeholder="Description"
                                         value={item.description}
@@ -314,7 +314,7 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
                                             setFormData({ ...formData, metadata: { ...formData.metadata, carousel_items: items } });
                                         }}
                                         rows={2}
-                                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                        className="w-full px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 rounded text-xs sm:text-sm"
                                     />
                                 </div>
                             ))}
@@ -322,16 +322,16 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
                     </div>
                 )}
 
-                <div className="flex gap-3 mt-6">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6">
                     <button
                         onClick={handleSave}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                        className="px-3 sm:px-4 py-2 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs sm:text-sm font-medium min-h-[44px] flex items-center justify-center"
                     >
                         Save Changes
                     </button>
                     <button
                         onClick={() => setEditing(null)}
-                        className="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
+                        className="px-3 sm:px-4 py-2 sm:py-3 bg-gray-400 text-white rounded-lg hover:bg-gray-500 text-xs sm:text-sm font-medium min-h-[44px] flex items-center justify-center"
                     >
                         Cancel
                     </button>
@@ -341,16 +341,16 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
     };
 
     return (
-        <div>
-            <h2 className="text-2xl font-bold mb-6">Content Manager</h2>
+        <div className="w-full overflow-x-hidden">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 px-4 sm:px-0">Content Manager</h2>
 
             {/* Page Selector */}
-            <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Page</label>
+            <div className="mb-4 sm:mb-6 px-4 sm:px-0">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Select Page</label>
                 <select
                     value={selectedPage}
                     onChange={(e) => setSelectedPage(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent text-xs sm:text-sm min-h-[44px]"
                 >
                     {pages.map((page) => (
                         <option key={page} value={page}>
@@ -365,32 +365,32 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
             ) : editing ? (
                 renderForm()
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4 px-4 sm:px-0">
                     {content.map((item) => (
-                        <div key={item.id} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
-                            <div className="flex justify-between items-start mb-3">
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-900">{item.section_name}</h3>
-                                    <p className="text-gray-600 text-sm">{item.title}</p>
+                        <div key={item.id} className="bg-white rounded-lg shadow p-4 sm:p-6 hover:shadow-lg transition-shadow">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-3 mb-3 sm:mb-4">
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">{item.section_name}</h3>
+                                    <p className="text-gray-600 text-xs sm:text-sm truncate">{item.title}</p>
                                 </div>
                                 <button
                                     onClick={() => handleEdit(item)}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                                    className="px-3 sm:px-4 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs sm:text-sm font-medium min-h-[44px] inline-flex items-center justify-center whitespace-nowrap flex-shrink-0"
                                 >
                                     ✎ Edit
                                 </button>
                             </div>
 
                             {item.image_url && (
-                                <img src={item.image_url} alt={item.section_name} className="h-24 object-cover rounded mb-3" />
+                                <img src={item.image_url} alt={item.section_name} className="h-20 sm:h-24 md:h-32 object-cover rounded mb-3 w-full" />
                             )}
 
                             {item.description && (
-                                <p className="text-gray-700 text-sm mb-2 line-clamp-2">{item.description}</p>
+                                <p className="text-gray-700 text-xs sm:text-sm mb-2 line-clamp-2">{item.description}</p>
                             )}
 
                             {item.metadata?.type && (
-                                <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
+                                <span className="inline-block bg-purple-100 text-purple-800 text-[10px] sm:text-xs px-2 sm:px-3 py-1 rounded">
                                     {item.metadata.type}
                                 </span>
                             )}
@@ -398,7 +398,7 @@ export default function ContentManagerTab({ token }: ContentManagerTabProps) {
                     ))}
 
                     {content.length === 0 && (
-                        <div className="text-center py-8 text-gray-600">No content found for this page</div>
+                        <div className="text-center py-8 text-gray-600 text-xs sm:text-sm">No content found for this page</div>
                     )}
                 </div>
             )}
