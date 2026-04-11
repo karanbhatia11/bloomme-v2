@@ -108,6 +108,25 @@ export function getFrequencyLabel(frequency: Frequency, daysCount: number = 0): 
 }
 
 /**
+ * Get the calendar start offset based on current IST time
+ * Before 5 PM IST: offset = 1 (today+1)
+ * After 5 PM IST: offset = 2 (today+2)
+ */
+export function getCalendarStartOffset(): number {
+  const now = new Date();
+  // Convert to IST (UTC+5:30)
+  const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  const hours = istTime.getHours();
+  const minutes = istTime.getMinutes();
+
+  // Check if time is >= 5 PM (17:00)
+  if (hours >= 17) {
+    return 2; // After 5 PM: today+2
+  }
+  return 1; // Before 5 PM: today+1
+}
+
+/**
  * Shortcut handlers
  */
 export function applyDailyShortcut(): number[] {

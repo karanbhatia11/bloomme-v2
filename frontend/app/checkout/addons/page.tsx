@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCart, AddonSchedule } from "@/context/CartContext";
 import { PRODUCTS } from "@/constants";
+import { getCalendarStartOffset } from "@/utils/frequencyDetection";
 import StickyCart from "@/components/checkout/StickyCart";
 import CheckoutHeader from "@/components/checkout/CheckoutHeader";
 import ConfirmationModal from "@/components/checkout/ConfirmationModal";
@@ -53,10 +54,11 @@ function AddonSchedulePanel({
   const subscriptionDates = useMemo(() => {
     const dates = new Set<string>();
     const deselectedSet = new Set<string>(cart.deselectedDates ?? []);
+    const offset = getCalendarStartOffset();
 
     for (let i = 0; i < 30; i++) {
       const d = new Date();
-      d.setDate(d.getDate() + i + 1);
+      d.setDate(d.getDate() + offset + i);
       const dn = d.getDay();
       const ds = getLocalDateString(d);
 
@@ -153,8 +155,9 @@ function AddonSchedulePanel({
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#4d4638]/50 mb-2">Delivery Dates (Next 30 Days)</p>
               <div className="grid grid-cols-7 gap-2 mb-4">
                 {Array.from({ length: 30 }).map((_, idx) => {
+                  const offset = getCalendarStartOffset();
                   const date = new Date();
-                  date.setDate(date.getDate() + idx + 1);
+                  date.setDate(date.getDate() + offset + idx);
                   const dateStr = getLocalDateString(date);
                   const dayNum = date.getDay();
                   const dayShort = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][dayNum];

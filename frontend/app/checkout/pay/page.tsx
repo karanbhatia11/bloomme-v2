@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
+import { getCalendarStartOffset } from "@/utils/frequencyDetection";
 import StickyCart from "@/components/checkout/StickyCart";
 import CheckoutHeader from "@/components/checkout/CheckoutHeader";
 import CheckoutProgressBar from "@/components/checkout/CheckoutProgressBar";
@@ -58,8 +59,16 @@ export default function CheckoutPayPage() {
     setPreviewLoading(true);
     setPreviewError("");
 
-    // Determine start date: use subscription start date, or today for addon-only
-    const from = cart.startDate || new Date().toISOString().slice(0, 10);
+    // Determine start date: use subscription start date, or today+offset for addon-only
+    let from: string;
+    if (cart.startDate) {
+      from = cart.startDate;
+    } else {
+      const offset = getCalendarStartOffset();
+      const d = new Date();
+      d.setDate(d.getDate() + offset);
+      from = d.toISOString().slice(0, 10);
+    }
     const to = (() => {
       const d = new Date(from + "T00:00:00");
       d.setDate(d.getDate() + 30);
@@ -602,11 +611,11 @@ export default function CheckoutPayPage() {
               <div className="bg-[#fafafa] rounded-2xl p-4 mb-4">
               <div className="grid grid-cols-7 gap-2">
                 {Array.from({ length: 30 }).map((_, idx) => {
-                  // Parse the start date and add idx days properly
-                  // Use preview.from as the base (handles both subscription and addon-only)
-                  const baseDate = preview.from || cart.startDate;
-                  const date = new Date(baseDate + "T00:00:00");
-                  date.setDate(date.getDate() + idx);
+                  // Use IST offset for consistent calendar window across all pages
+                  const offset = getCalendarStartOffset();
+                  const baseDate = new Date();
+                  baseDate.setDate(baseDate.getDate() + offset + idx);
+                  const date = baseDate;
                   const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
                   const dayNum = date.getDay();
                   const dayShort = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][dayNum];
