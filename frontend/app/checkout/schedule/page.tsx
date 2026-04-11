@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
-import { calculatePrice, getFrequencyLabel } from "@/utils/frequencyDetection";
+import { calculatePrice, getFrequencyLabel, getCalendarStartOffset } from "@/utils/frequencyDetection";
 import StickyCart from "@/components/checkout/StickyCart";
 import CheckoutHeader from "@/components/checkout/CheckoutHeader";
 import CheckoutProgressBar from "@/components/checkout/CheckoutProgressBar";
@@ -74,11 +74,12 @@ export default function CheckoutSchedulePage() {
 
   const next30Dates = useMemo<Date[]>(() => {
     if (!hydrated) return [];
+    const offset = getCalendarStartOffset();
     const dates: Date[] = [];
-    for (let i = 1; i <= 30; i++) {
+    for (let i = 0; i < 30; i++) {
       const d = new Date();
       d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() + i);
+      d.setDate(d.getDate() + offset + i);
       dates.push(d);
     }
     return dates;
@@ -107,11 +108,12 @@ export default function CheckoutSchedulePage() {
     } catch {}
 
     // Build dates now (client-side only, correct timezone)
+    const offset = getCalendarStartOffset();
     const dates: Date[] = [];
-    for (let i = 1; i <= 30; i++) {
+    for (let i = 0; i < 30; i++) {
       const d = new Date();
       d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() + i);
+      d.setDate(d.getDate() + offset + i);
       dates.push(d);
     }
 
