@@ -1,5 +1,13 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
+const handleUnauthorized = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    window.location.href = '/login?expired=true';
+  }
+};
+
 export const apiCall = async (
   endpoint: string,
   options: RequestInit & { token?: string } = {}
@@ -19,6 +27,12 @@ export const apiCall = async (
     ...fetchOptions,
     headers,
   });
+
+  // Handle 403 Forbidden - user session expired or invalid
+  if (response.status === 403) {
+    handleUnauthorized();
+    throw new Error('Session expired. Please log in again.');
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
