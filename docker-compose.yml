@@ -4,9 +4,9 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=bloomme_user
-      - POSTGRES_PASSWORD=bloomme_secure_password_change_this
-      - POSTGRES_DB=bloomme_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-bloomme_db}
     ports:
       - "5433:5432"
     volumes:
@@ -40,7 +40,7 @@ services:
       - "5001:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://backend:5000
-      - NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_SZjf3QjriE0xWX
+      - NEXT_PUBLIC_RAZORPAY_KEY_ID=${NEXT_PUBLIC_RAZORPAY_KEY_ID}
     depends_on:
       - backend
     restart: unless-stopped
@@ -51,6 +51,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5003:9000"
+    env_file:
+      - ./admin-portal/.env.docker
     environment:
       - ADMIN_PORT=9000
       - BACKEND_URL=http://backend:5000

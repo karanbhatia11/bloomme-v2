@@ -232,12 +232,12 @@ External URLs (via Nginx + SSL):
 ```env
 PORT=5000
 DATABASE_URL=postgresql://bloomme_user:bloomme_secure_password_change_this@32.236.8.241:5433/bloomme_db
-JWT_SECRET=local_dev_secret_key
+JWT_SECRET=your_jwt_secret
 NODE_ENV=development
 FRONTEND_URL=http://localhost:3000
-RAZORPAY_KEY_ID=rzp_live_SZjf3QjriE0xWX
-RAZORPAY_KEY_SECRET=9hrlvxYOnV4grGdKvvx3x6yr
-RESEND_API_KEY=re_RmE99tmx_gwNNXL26sNPTWjpavTPVhSig
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+RESEND_API_KEY=your_resend_api_key
 RESEND_FROM_EMAIL=Info@bloomme.co.in
 ```
 
@@ -245,39 +245,39 @@ RESEND_FROM_EMAIL=Info@bloomme.co.in
 ```env
 PORT=5000
 DATABASE_URL=postgresql://bloomme_user:bloomme_secure_password_change_this@db:5432/bloomme_db
-JWT_SECRET=local_dev_secret_key
+JWT_SECRET=your_jwt_secret
 NODE_ENV=development
 FRONTEND_URL=http://localhost:5001
-RAZORPAY_KEY_ID=rzp_live_SZjf3QjriE0xWX
-RAZORPAY_KEY_SECRET=9hrlvxYOnV4grGdKvvx3x6yr
-RESEND_API_KEY=re_RmE99tmx_gwNNXL26sNPTWjpavTPVhSig
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+RESEND_API_KEY=your_resend_api_key
 RESEND_FROM_EMAIL=Info@bloomme.co.in
 ```
 
 ### frontend/.env.local (Local Dev)
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:5000
-NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_SZjf3QjriE0xWX
+NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_key_id
 ```
 
 ### frontend/.env.docker (Docker Compose)
 ```env
 NEXT_PUBLIC_API_URL=http://backend:5000
-NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_SZjf3QjriE0xWX
+NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_key_id
 ```
 
 ### admin-portal/.env.local (Local Dev)
 ```env
 ADMIN_PORT=9000
 BACKEND_URL=http://localhost:5000
-JWT_SECRET=admin-secret-key-change-in-production
+JWT_SECRET=your_jwt_secret
 ```
 
 ### admin-portal/.env.docker (Docker Compose)
 ```env
 ADMIN_PORT=9000
 BACKEND_URL=http://backend:5000
-JWT_SECRET=admin-secret-key-change-in-production
+JWT_SECRET=your_jwt_secret
 ```
 
 ---
