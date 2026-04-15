@@ -1,0 +1,21 @@
+# Prevent secrets and local-only state from landing in the image.
+# docker-compose provides real env via env_file at runtime.
+.env
+.env.*
+!.env.example
+
+# Build artifacts / deps
+node_modules
+dist
+coverage
+
+# VCS & editor
+.git
+.gitignore
+*.log
+.DS_Store
+.vscode
+.idea
+
+# Tests & docs (optional, keeps image smaller)
+uploads
