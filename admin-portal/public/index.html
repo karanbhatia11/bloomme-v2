@@ -478,7 +478,7 @@
     </div>
 
     <script>
-        const API_URL = '/api';
+        const API_URL = window.location.pathname.startsWith('/admin') ? '/admin/api' : '/api';
         let token = localStorage.getItem('adminToken');
 
         if (token) {
