@@ -1,3 +1,5 @@
+process.env.TZ = 'Asia/Kolkata'; // All date operations use IST
+
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -19,6 +21,7 @@ import referralsRoutes from './routes/referrals';
 import promoRoutes from './routes/promo';
 import calendarRoutes from './routes/calendar';
 import previewRoutes from './routes/preview';
+import creditsRoutes from './routes/credits';
 import { startDeliveryJob } from './jobs/generateDeliveries';
 import path from 'path';
 
@@ -99,6 +102,7 @@ app.use('/api/referrals', referralsRoutes);
 app.use('/api/promo', promoRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/preview', previewRoutes);
+app.use('/api/credits', creditsRoutes);
 
 // Serving uploaded files (using /api/uploads so it works seamlessly behind Nginx)
 app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));

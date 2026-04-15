@@ -1,6 +1,7 @@
 import express from 'express';
 import pool from '../db';
 import { authenticateToken, requireEmailVerification } from '../middleware/auth';
+import { getBloomCreditsBalance } from './credits';
 
 const router = express.Router();
 
@@ -36,19 +37,20 @@ router.get('/stats', authenticateToken as any, requireEmailVerification as any, 
             [user_id]
         );
 
-        // Get referral balance
+        // Get referral balance (legacy) + bloom credits
         const userResult = await pool.query(
             'SELECT referral_points FROM users WHERE id = $1',
             [user_id]
         );
-
         const referralBalance = userResult.rows.length > 0 ? userResult.rows[0].referral_points : 0;
+        const bloomCredits = await getBloomCreditsBalance(user_id);
 
         res.json({
             activeSubscriptions: parseInt(activeSubs.rows[0].count),
             upcomingDeliveries: parseInt(upcomingDeliveries.rows[0].count),
-            totalSpentThisMonth: Math.round(parseInt(monthlySpent.rows[0].total) / 100), // Convert from paise
-            referralBalance
+            totalSpentThisMonth: Math.round(parseInt(monthlySpent.rows[0].total) / 100),
+            referralBalance,
+            bloomCredits
         });
     } catch (err: any) {
         console.error('Dashboard stats error:', err);

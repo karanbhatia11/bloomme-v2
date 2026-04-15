@@ -63,7 +63,7 @@ export default function PauseModal({
   };
 
   // Min date is today or subscription start date (whichever is later)
-  const today = new Date().toISOString().split("T")[0];
+  const _n = new Date(); const today = `${_n.getFullYear()}-${String(_n.getMonth()+1).padStart(2,'0')}-${String(_n.getDate()).padStart(2,'0')}`;
   const minDate = subscriptionStartDate && subscriptionStartDate > today ? subscriptionStartDate : today;
 
   // Max date is subscription end date, or no limit if not set

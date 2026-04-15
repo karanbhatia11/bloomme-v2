@@ -3,12 +3,44 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useCartUI } from "@/context/CartUIContext";
+import { useCart } from "@/context/CartContext";
 
 interface UserData {
   id: string;
   name: string;
   email: string;
   phone?: string;
+}
+
+function ChangePasswordButton({ email }: { email?: string }) {
+  const [state, setState] = useState<"idle" | "loading" | "sent">("idle");
+
+  const handleClick = async () => {
+    if (!email || state !== "idle") return;
+    setState("loading");
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+    } finally {
+      setState("sent");
+    }
+  };
+
+  if (state === "sent") return <span className="text-sm text-primary font-semibold">Check your email</span>;
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={state === "loading"}
+      className="text-primary font-bold text-sm hover:underline disabled:opacity-50"
+    >
+      {state === "loading" ? "Sending…" : "Change"}
+    </button>
+  );
 }
 
 export default function SettingsPage() {
@@ -39,8 +71,11 @@ export default function SettingsPage() {
   const [notifMsg, setNotifMsg] = useState("");
 
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showCart, setShowCart] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { setIsCartOpen } = useCartUI();
+  const { cart } = useCart();
+  const cartCount = cart.addons.reduce((s, a) => s + a.quantity, 0) + (cart.planId ? 1 : 0);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -175,10 +210,41 @@ export default function SettingsPage() {
     <div className="bg-surface text-on-surface font-body">
       {/* Header */}
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-16 bg-[#fff8f5]/80 backdrop-blur-md shadow-sm">
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center">
             <img alt="Bloomme Logo" className="h-12 w-auto object-contain" src="/images/backgroundlesslogo.png" />
           </Link>
+          {/* Mobile hamburger - second from left */}
+          <div className="relative md:hidden">
+            <button
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
+              onClick={() => { setMobileMenuOpen(!mobileMenuOpen); setShowProfile(false); }}
+            >
+              <span className="material-symbols-outlined">{mobileMenuOpen ? "close" : "menu"}</span>
+            </button>
+            {mobileMenuOpen && (
+              <div className="absolute left-0 top-full mt-1 w-52 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/10 py-2 z-50">
+                <a href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">dashboard</span>Dashboard
+                </a>
+                <a href="/dashboard/subscriptions" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">loyalty</span>Subscriptions
+                </a>
+                <a href="/dashboard/add-ons" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">featured_video</span>Add-ons
+                </a>
+                <a href="/dashboard/calendar" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">calendar_today</span>Calendar
+                </a>
+                <a href="/dashboard/referrals" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">redeem</span>Referrals
+                </a>
+                <a href="/dashboard/settings" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-primary bg-primary/5">
+                  <span className="material-symbols-outlined text-base">settings</span>Settings
+                </a>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-6">
           <div className="hidden md:flex gap-8">
@@ -186,28 +252,32 @@ export default function SettingsPage() {
             <a className="text-[#C4A052] font-bold border-b-2 border-[#C4A052]" href="#">Settings</a>
             <Link className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="/contact">Support</Link>
           </div>
+
           <div className="flex items-center gap-4 relative">
             <div className="relative">
               <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
-                onClick={() => { setShowNotifications(!showNotifications); setShowCart(false); }}>notifications</span>
+                onClick={() => { setShowNotifications(!showNotifications); }}>notifications</span>
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
                   <p className="text-sm text-on-surface-variant text-center py-8">No notifications</p>
                 </div>
               )}
             </div>
-            <div className="relative">
-              <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
-                onClick={() => { setShowCart(!showCart); setShowNotifications(false); }}>shopping_cart</span>
-              {showCart && (
-                <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
-                  <p className="text-sm text-on-surface-variant text-center py-8">Your cart is empty</p>
-                </div>
+            <button
+              className="relative min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"
+              onClick={() => { setIsCartOpen(true); setShowNotifications(false); }}
+              aria-label="Shopping cart"
+            >
+              <span className="material-symbols-outlined">shopping_basket</span>
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-on-primary text-[9px] font-bold flex items-center justify-center">
+                  {cartCount}
+                </span>
               )}
-            </div>
+            </button>
             <div className="relative">
               <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-primary transition-all"
-                onClick={() => { setShowProfile(!showProfile); setShowNotifications(false); setShowCart(false); }}>
+                onClick={() => { setShowProfile(!showProfile); setShowNotifications(false); setMobileMenuOpen(false); }}>
                 <span className="text-white text-sm font-bold">{user.name?.[0]?.toUpperCase()}</span>
               </div>
               {showProfile && (
@@ -452,7 +522,7 @@ export default function SettingsPage() {
                         <p className="font-bold">Password</p>
                         <p className="text-sm text-on-surface-variant">Change your account password</p>
                       </div>
-                      <button className="text-primary font-bold text-sm hover:underline">Change</button>
+                      <ChangePasswordButton email={user?.email} />
                     </div>
                   </div>
                   <div className="pb-6 border-b border-outline-variant/20">

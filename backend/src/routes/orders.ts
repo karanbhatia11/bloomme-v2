@@ -73,8 +73,8 @@ router.get('/history', authenticateToken as any, requireEmailVerification as any
                     items,
                     amount: order.amount / 100, // Convert from paise
                     status: order.status === 'paid' ? 'confirmed' : order.status,
-                    orderDate: order.created_at.toISOString().split('T')[0],
-                    deliveryDate: order.paid_at ? new Date(order.paid_at).toISOString().split('T')[0] : undefined
+                    orderDate: (() => { const d = order.created_at instanceof Date ? order.created_at : new Date(order.created_at); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
+                    deliveryDate: order.paid_at ? (() => { const d = new Date(order.paid_at); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })() : undefined
                 };
             })
         );
@@ -165,6 +165,37 @@ router.get('/:orderId', authenticateToken as any, async (req, res) => {
         });
     } catch (err: any) {
         console.error('Order detail error:', err);
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// POST /api/orders/rate
+// Save star rating + optional comment, looked up by razorpay_payment_id
+router.post('/rate', async (req, res) => {
+    try {
+        const { razorpayPaymentId, rating, comment } = req.body;
+
+        if (!razorpayPaymentId) {
+            return res.status(400).json({ error: 'razorpayPaymentId is required' });
+        }
+        if (!rating || rating < 1 || rating > 5) {
+            return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+        }
+
+        const result = await pool.query(
+            `UPDATE orders SET rating = $1, rating_comment = $2
+             WHERE razorpay_payment_id = $3
+             RETURNING id`,
+            [rating, comment?.trim() || null, razorpayPaymentId]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        res.json({ success: true, orderId: result.rows[0].id });
+    } catch (err: any) {
+        console.error('Rating error:', err);
         res.status(400).json({ error: err.message });
     }
 });

@@ -4,6 +4,8 @@ export interface AddOn {
   id: string;
   name: string;
   price: number;
+  deliveryCount: number;
+  deliveryDates: string[];
   oneOffDate?: string | null;
 }
 
@@ -16,6 +18,7 @@ export interface Subscription {
   totalPrice?: number;
   addOns?: AddOn[];
   deliveryDays: string[];
+  customSchedule?: string[] | null;
   startDate: string | null;
   endDate?: string | null;
   createdAt: string;
@@ -68,7 +71,7 @@ export function useSubscriptions(token: string | null) {
   }, [token]);
 
   const pause = useCallback(
-    async (subscriptionId: string, payload: PauseDateRangePayload) => {
+    async (subscriptionId: string, _payload?: PauseDateRangePayload) => {
       if (!token) return false;
       setActionLoading(subscriptionId + ":pause");
       try {
@@ -78,7 +81,7 @@ export function useSubscriptions(token: string | null) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({}),
         });
         if (res.ok) {
           await fetchSubscriptions();

@@ -72,7 +72,7 @@ export default function SkipDatesModal({
 
       days.push({
         date: i,
-        fullDate: date.toISOString().split("T")[0],
+        fullDate: `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`,
         dayOfWeek: dayOfWeekName,
         isDeliveryDay,
         isPast,

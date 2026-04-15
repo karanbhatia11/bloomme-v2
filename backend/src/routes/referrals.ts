@@ -72,7 +72,7 @@ router.get('/list', authenticateToken as any, async (req, res) => {
             referredEmail: row.referred_email,
             status: row.status,
             earnedAmount: parseFloat(row.earned_amount),
-            referralDate: row.created_at.toISOString().split('T')[0]
+            referralDate: (() => { const d = row.created_at instanceof Date ? row.created_at : new Date(row.created_at); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })()
         }));
 
         res.json({

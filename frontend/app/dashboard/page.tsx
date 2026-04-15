@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useCartUI } from "@/context/CartUIContext";
+import { useCart } from "@/context/CartContext";
 
 interface UserData {
   id: string;
@@ -19,6 +21,7 @@ interface DashboardStats {
   upcomingDeliveries: number;
   totalSpentThisMonth: number;
   referralBalance: number;
+  bloomCredits?: number;
 }
 
 export default function DashboardPage() {
@@ -26,9 +29,16 @@ export default function DashboardPage() {
   const [user, setUser] = useState<UserData | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeSubs, setActiveSubs] = useState<{ id: string; planType: string; nextDelivery: string | null }[]>([]);
+  const [activeSubIndex, setActiveSubIndex] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const subItemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showCart, setShowCart] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { setIsCartOpen } = useCartUI();
+  const { cart } = useCart();
+  const cartCount = cart.addons.reduce((s, a) => s + a.quantity, 0) + (cart.planId ? 1 : 0);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -55,6 +65,21 @@ export default function DashboardPage() {
         })
         .then((data) => {
           setStats(data);
+          // Also fetch active subscriptions for the delivery card
+          return fetch("/api/subs/my-subscriptions", { headers: { Authorization: `Bearer ${token}` } });
+        })
+        .then((res) => res?.json?.())
+        .then((data) => {
+          if (!data?.subscriptions) return;
+          const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+          const active = data.subscriptions
+            .filter((s: any) => s.status === "active")
+            .map((s: any) => ({
+              id: s.id,
+              planType: s.planType,
+              nextDelivery: (s.customSchedule ?? []).filter((d: string) => d >= today).sort()[0] ?? null,
+            }));
+          setActiveSubs(active);
         })
         .catch((error) => {
           console.error("Error fetching stats:", error);
@@ -72,6 +97,32 @@ export default function DashboardPage() {
       router.push("/login");
     }
   }, [router]);
+
+  // IntersectionObserver to track which sub is in view
+  useEffect(() => {
+    if (activeSubs.length <= 1) return;
+    const container = carouselRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const idx = subItemRefs.current.indexOf(entry.target as HTMLDivElement);
+            if (idx !== -1) setActiveSubIndex(idx);
+          }
+        });
+      },
+      { root: container, threshold: 0.6 }
+    );
+
+    subItemRefs.current.forEach(ref => { if (ref) observer.observe(ref); });
+    return () => observer.disconnect();
+  }, [activeSubs]);
+
+  const scrollToSub = (index: number) => {
+    subItemRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -93,8 +144,8 @@ export default function DashboardPage() {
   return (
     <div className="bg-surface text-on-surface font-body">
       {/* Header */}
-      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-4 sm:px-6 md:px-8 lg:px-12 h-16 bg-[#fff8f5]/80 backdrop-blur-md shadow-sm overflow-x-hidden">
-        <div className="flex items-center flex-shrink-0">
+      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-4 sm:px-6 md:px-8 lg:px-12 h-16 bg-[#fff8f5]/80 backdrop-blur-md shadow-sm">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Link href="/" className="flex items-center">
             <img
               alt="Bloomme Logo"
@@ -102,6 +153,37 @@ export default function DashboardPage() {
               src="/images/backgroundlesslogo.png"
             />
           </Link>
+          {/* Mobile hamburger - second from left */}
+          <div className="relative md:hidden">
+            <button
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
+              onClick={() => { setMobileMenuOpen(!mobileMenuOpen); setShowProfile(false); }}
+            >
+              <span className="material-symbols-outlined">{mobileMenuOpen ? "close" : "menu"}</span>
+            </button>
+            {mobileMenuOpen && (
+              <div className="absolute left-0 top-full mt-1 w-52 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/10 py-2 z-50">
+                <a href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-primary bg-primary/5">
+                  <span className="material-symbols-outlined text-base">dashboard</span>Dashboard
+                </a>
+                <a href="/dashboard/subscriptions" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">loyalty</span>Subscriptions
+                </a>
+                <a href="/dashboard/add-ons" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">featured_video</span>Add-ons
+                </a>
+                <a href="/dashboard/calendar" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">calendar_today</span>Calendar
+                </a>
+                <a href="/dashboard/referrals" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">redeem</span>Referrals
+                </a>
+                <a href="/dashboard/settings" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">settings</span>Settings
+                </a>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-4 sm:gap-6 md:gap-8 flex-shrink-0">
@@ -121,7 +203,6 @@ export default function DashboardPage() {
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
                 onClick={() => {
                   setShowNotifications(!showNotifications);
-                  setShowCart(false);
                 }}
                 aria-label="Notifications"
               >
@@ -134,40 +215,30 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Cart Dropdown */}
-            <div className="relative">
-              <button
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
-                onClick={() => {
-                  setShowCart(!showCart);
-                  setShowNotifications(false);
-                }}
-                aria-label="Shopping cart"
-              >
-                <span className="material-symbols-outlined">shopping_cart</span>
-              </button>
-              {showCart && (
-                <div className="absolute right-0 mt-2 w-56 sm:w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50 max-h-[80vh] overflow-y-auto">
-                  <p className="text-xs sm:text-sm text-on-surface-variant text-center py-8">Your cart is empty</p>
-                </div>
+            {/* Cart */}
+            <button
+              className="relative min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
+              onClick={() => { setIsCartOpen(true); setShowNotifications(false); }}
+              aria-label="Shopping cart"
+            >
+              <span className="material-symbols-outlined">shopping_basket</span>
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-on-primary text-[9px] font-bold flex items-center justify-center">
+                  {cartCount}
+                </span>
               )}
-            </div>
+            </button>
 
             {/* Profile Dropdown */}
             <div className="relative">
               <div
-                className="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                className="h-8 w-8 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-primary transition-all"
                 onClick={() => {
                   setShowProfile(!showProfile);
                   setShowNotifications(false);
-                  setShowCart(false);
                 }}
               >
-                <img
-                  alt="User profile avatar"
-                  className="w-full h-full object-cover"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHhyc1TjbQpgDV4EvaZYIBZl2PmpmUeGGZRfZaMTRz80LDFCO9qZZ10dXaJ2kK5xyhe_NlNVvP6bKIXHXPuxQS60SPC8jYn4wXFvTj-4ovjTjNynvdo_mMm7cnj_P51RkJxUWPQ7xFAGN8vmTHjk6tegBW6YAIlNbPtQYy46MkbKOiz9WeCGUgYnOcojT0bU64QFv_mqrixESzuQL4DRbfEOKD5wpKG689p4K7DrS0ezaVHoNtnoOF-3_cExJ2Yn64xwwzfOY3zisv"
-                />
+                <span className="text-white text-sm font-bold">{user?.name?.[0]?.toUpperCase()}</span>
               </div>
               {showProfile && (
                 <div className="absolute right-0 mt-2 w-48 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-3 z-50">
@@ -233,7 +304,7 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="md:ml-64 pt-24 px-8 pb-12">
         {/* Quick Stats Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
           <div className="bg-surface-container-low p-6 rounded-xl flex flex-col justify-between">
             <span className="text-on-surface-variant text-sm font-medium">Active Subscriptions</span>
             <div className="flex items-baseline gap-2 mt-4">
@@ -241,12 +312,58 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-surface-container-low p-6 rounded-xl flex flex-col justify-between">
-            <span className="text-on-surface-variant text-sm font-medium">Upcoming Deliveries</span>
-            <div className="mt-4">
-              <div className="text-4xl font-bold text-on-surface">{stats?.upcomingDeliveries || 0}</div>
-              <div className="text-primary font-semibold text-sm">Next 30 days</div>
+          <div className="bg-surface-container-low p-6 rounded-xl flex flex-col justify-between min-w-0">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <span className="text-on-surface-variant text-sm font-medium">Next Delivery</span>
+              {/* Number pills — auto-highlight via IntersectionObserver */}
+              {activeSubs.length > 1 && (
+                <div className="flex gap-1 flex-wrap">
+                  {activeSubs.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => scrollToSub(i)}
+                      className={`w-5 h-5 rounded-full text-[10px] font-bold transition-all ${
+                        i === activeSubIndex
+                          ? "bg-primary text-white scale-110"
+                          : "bg-surface-container text-on-surface-variant hover:bg-surface-container-highest"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* Content */}
+            {activeSubs.length === 0 ? (
+              <div className="mt-4">
+                <p className="text-2xl font-bold text-on-surface">—</p>
+                <p className="text-sm text-on-surface-variant">No active subscriptions</p>
+              </div>
+            ) : (
+              <div
+                ref={carouselRef}
+                className="mt-4 overflow-y-auto snap-y snap-mandatory"
+                style={{ height: "64px", scrollbarWidth: "none", msOverflowStyle: "none" }}
+              >
+                {activeSubs.map((sub, i) => (
+                  <div
+                    key={sub.id}
+                    ref={el => { subItemRefs.current[i] = el; }}
+                    className="snap-start h-16 flex flex-col justify-center"
+                  >
+                    <p className="text-2xl font-bold text-on-surface leading-tight">
+                      {sub.nextDelivery
+                        ? new Date(sub.nextDelivery + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })
+                        : "Done"}
+                    </p>
+                    <p className="text-sm text-primary font-semibold">{sub.planType} Plan</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="bg-surface-container-low p-6 rounded-xl flex flex-col justify-between">
@@ -257,12 +374,33 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-surface-container-low p-6 rounded-xl flex flex-col justify-between">
-            <span className="text-on-surface-variant text-sm font-medium">Referral Balance</span>
-            <div className="mt-4 flex items-center gap-2">
-              <span className="text-2xl font-bold text-on-surface">₹{stats?.referralBalance || 0}</span>
+          <Link href="/dashboard/referrals" className="bg-surface-container-low p-6 rounded-xl flex flex-col justify-between hover:bg-surface-container transition-colors">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-on-surface-variant text-sm font-medium">Bloom Credits</span>
+              <span className="text-[10px] font-bold text-primary uppercase tracking-wider">10 credits = ₹1</span>
             </div>
-          </div>
+            {(() => {
+              const credits = stats?.bloomCredits ?? Math.round((stats?.referralBalance || 0) * 10);
+              const minRedeem = 100;
+              const progress = Math.min((credits / minRedeem) * 100, 100);
+              const canRedeem = credits >= minRedeem;
+              return (
+                <div className="mt-4 space-y-3">
+                  <p className="text-2xl font-bold text-on-surface">
+                    {credits.toLocaleString()} <span className="text-on-surface-variant">credits</span> = <span className="text-primary">₹{Math.ceil(credits * 0.10)}</span>
+                  </p>
+                  <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+                    <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
+                  </div>
+                  <p className="text-[10px] text-on-surface-variant">
+                    {canRedeem
+                      ? <span className="text-primary font-semibold">✓ Ready to redeem</span>
+                      : <>{minRedeem - credits} more credits to unlock redemption</>}
+                  </p>
+                </div>
+              );
+            })()}
+          </Link>
         </section>
 
         {/* Main Grid */}
@@ -344,8 +482,8 @@ export default function DashboardPage() {
                         <span className="material-symbols-outlined text-primary text-2xl">redeem</span>
                       </div>
                       <div>
-                        <div className="font-bold text-on-surface">Referrals</div>
-                        <div className="text-sm text-on-surface-variant">Earn rewards & credits</div>
+                        <div className="font-bold text-on-surface">Bloom Credits</div>
+                        <div className="text-sm text-on-surface-variant">Earn & redeem credits</div>
                       </div>
                     </div>
                     <span className="material-symbols-outlined text-outline opacity-40 group-hover:opacity-100 transition-opacity">
@@ -359,12 +497,6 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Floating Action Button */}
-      <button className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-90 transition-transform z-40">
-        <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-          local_florist
-        </span>
-      </button>
     </div>
   );
 }

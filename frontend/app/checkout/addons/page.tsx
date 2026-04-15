@@ -98,7 +98,7 @@ function AddonSchedulePanel({
   const minDate = (() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
-    return d.toISOString().split("T")[0];
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   })();
 
   // Auto-populate start date with the earliest selected custom date

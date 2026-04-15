@@ -37,7 +37,8 @@ router.get('/my-deliveries', authenticateToken as any, requireEmailVerification 
         // Group deliveries by date
         const deliveriesByDate: { [key: string]: any } = {};
         result.rows.forEach((row) => {
-            const dateStr = row.delivery_date.toISOString().split('T')[0];
+            const _d = row.delivery_date instanceof Date ? row.delivery_date : new Date(row.delivery_date);
+            const dateStr = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
             if (!deliveriesByDate[dateStr]) {
                 deliveriesByDate[dateStr] = {
                     date: dateStr,

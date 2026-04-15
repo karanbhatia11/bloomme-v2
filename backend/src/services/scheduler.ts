@@ -26,9 +26,10 @@ export interface GenerateResult {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Returns today's date as "YYYY-MM-DD" in UTC. */
+/** Returns today's date as "YYYY-MM-DD" in IST. */
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 /** Returns the date N days from today as "YYYY-MM-DD" in UTC. */

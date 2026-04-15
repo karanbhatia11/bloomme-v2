@@ -44,6 +44,8 @@ export default function CheckoutPayPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState("");
   const [isCartOpen, setIsCartOpen]     = useState(false);
+  const [bloomCredits, setBloomCredits] = useState(0);
+  const [creditsToRedeem, setCreditsToRedeem] = useState(0);
 
   // Build addon name lookup (id → title) for the preview display
   const addonNames: Record<string, string> = {};
@@ -67,12 +69,12 @@ export default function CheckoutPayPage() {
       const offset = getCalendarStartOffset();
       const d = new Date();
       d.setDate(d.getDate() + offset);
-      from = d.toISOString().slice(0, 10);
+      from = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
     const to = (() => {
       const d = new Date(from + "T00:00:00");
       d.setDate(d.getDate() + 30);
-      return d.toISOString().slice(0, 10);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     })();
 
     try {
@@ -123,62 +125,53 @@ export default function CheckoutPayPage() {
     fetchPreview();
   }, [fetchPreview]);
 
-  // ── Subscribe → store subscription + trigger scheduler ───────────────────
-  const createSubscription = async (): Promise<void> => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    if (!token) return; // gracefully skip if not authenticated
+  // Fetch bloom credits balance
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    fetch("/api/dashboard/stats", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) setBloomCredits(data.bloomCredits ?? Math.round((data.referralBalance || 0) * 10));
+      })
+      .catch(() => {});
+  }, []);
 
-    // Skip if no plan (addon-only)
-    if (!cart.planId) return;
-
-    const addonApiItems = buildAddonPayload();
-
-    const addon_configs = addonApiItems.map((item) => ({
-      add_on_id:             parseInt(item.id, 10),
-      addon_type:            item.type,
-      addon_frequency:       item.frequency ?? null,
-      addon_delivery_days:   item.deliveryDays ?? null,
-      addon_custom_dates:    item.customDates ?? null,
-      addon_start_date:      item.startDate ?? null,
-    }));
-
-    // Extract delivery dates from preview for custom_schedule
-    let custom_schedule: string[] | null = null;
-    if (preview && cart.planId) {
-      const datesWithSubscription = Object.entries(preview.queue)
-        .filter(([_, items]) => items.some(item => item.type === "subscription"))
-        .map(([date]) => date)
-        .sort();
-      if (datesWithSubscription.length > 0) {
-        custom_schedule = datesWithSubscription;
-      }
-    }
-
-    try {
-      const res = await fetch("/api/subs/subscribe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          plan_id:       cart.planId === "TRADITIONAL" ? 1 : cart.planId === "DIVINE" ? 2 : cart.planId === "CELESTIAL" ? 3 : null,
-          price:         cart.planPrice,
-          frequency:     cart.frequency,
-          start_date:    cart.startDate,
-          delivery_days: cart.frequency === "weekly" ? cart.deliveryDays : [],
-          custom_schedule: custom_schedule,
-          addon_configs: addon_configs.length > 0 ? addon_configs : undefined,
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        console.error("Subscription creation failed:", err);
-      }
-    } catch (err) {
-      console.error("Subscription creation error:", err);
-    }
-  };
+  // ── DISABLED: subscription is already created in payments/verify ────────────
+  // const createSubscription = async (): Promise<void> => {
+  //   const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+  //   if (!token) return;
+  //   if (!cart.planId) return;
+  //   const addonApiItems = buildAddonPayload();
+  //   const addon_configs = addonApiItems.map((item) => ({
+  //     add_on_id:           parseInt(item.id, 10),
+  //     addon_type:          item.type,
+  //     addon_frequency:     item.frequency ?? null,
+  //     addon_delivery_days: item.deliveryDays ?? null,
+  //     addon_custom_dates:  item.customDates ?? null,
+  //     addon_start_date:    item.startDate ?? null,
+  //   }));
+  //   let custom_schedule: string[] | null = null;
+  //   if (preview && cart.planId) {
+  //     const datesWithSubscription = Object.entries(preview.queue)
+  //       .filter(([_, items]) => items.some(item => item.type === "subscription"))
+  //       .map(([date]) => date).sort();
+  //     if (datesWithSubscription.length > 0) custom_schedule = datesWithSubscription;
+  //   }
+  //   try {
+  //     const res = await fetch("/api/subs/subscribe", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+  //       body: JSON.stringify({
+  //         plan_id: cart.planId === "TRADITIONAL" ? 1 : cart.planId === "DIVINE" ? 2 : cart.planId === "CELESTIAL" ? 3 : null,
+  //         price: cart.planPrice, frequency: cart.frequency, start_date: cart.startDate,
+  //         delivery_days: cart.frequency === "weekly" ? cart.deliveryDays : [],
+  //         custom_schedule, addon_configs: addon_configs.length > 0 ? addon_configs : undefined,
+  //       }),
+  //     });
+  //     if (!res.ok) { const err = await res.json(); console.error("Subscription creation failed:", err); }
+  //   } catch (err) { console.error("Subscription creation error:", err); }
+  // };
 
   // ── Dev test payment (skip Razorpay, guest or authenticated) ─────────────
   const handleDevPay = async () => {
@@ -284,9 +277,8 @@ export default function CheckoutPayPage() {
         const verifyData = await verifyRes.json();
         // Only create subscription for logged-in users
         // Guests will create account after payment
-        if (!verifyData.isGuest) {
-          await createSubscription();
-        }
+        // if (!verifyData.isGuest) { await createSubscription(); } // subscription created in payments/verify
+        sessionStorage.setItem("confirmedOrder", JSON.stringify(buildOrderSummary(`dev_payment_${Date.now()}`)));
         clearCart();
         router.push("/checkout/confirmed");
       } else {
@@ -421,11 +413,8 @@ export default function CheckoutPayPage() {
 
             if (verifyRes.ok) {
               const verifyData = await verifyRes.json();
-              // Payment verified — create subscription for logged-in users
-              // Guests will create account after payment
-              if (!verifyData.isGuest) {
-                await createSubscription();
-              }
+              // if (!verifyData.isGuest) { await createSubscription(); } // subscription created in payments/verify
+              sessionStorage.setItem("confirmedOrder", JSON.stringify(buildOrderSummary(response.razorpay_payment_id)));
               clearCart();
               router.push("/checkout/confirmed");
             } else {
@@ -454,7 +443,50 @@ export default function CheckoutPayPage() {
     }
   };
 
-  const total = getTotal();
+  const baseTotal = getTotal();
+  const creditDiscount = parseFloat((creditsToRedeem * 0.10).toFixed(2));
+  const total = Math.max(0, baseTotal - creditDiscount);
+  const maxRedeemableCredits = Math.min(bloomCredits, Math.floor((baseTotal * 0.20) / 0.10));
+
+  const buildOrderSummary = (razorpayPaymentId: string) => {
+    const addonItems = cart.addons.map(a => {
+      const sched = cart.addonSchedules[a.id];
+      const deliveryCount = (!sched || sched.mode === "same")
+        ? (cart.selectedDeliveryDatesCount || 1)
+        : (sched.customDates?.length || 1);
+      return {
+        title: a.title,
+        price: a.price * a.quantity * deliveryCount,
+        quantity: a.quantity,
+        deliveryCount,
+        customDates: sched?.mode === "different" ? (sched.customDates || []) : [],
+        scheduleMode: sched?.mode || "same",
+      };
+    });
+    let planStartDate = cart.startDate || "";
+    let planEndDate = "";
+    if (preview) {
+      const subDates = Object.entries(preview.queue)
+        .filter(([_, items]) => (items as any[]).some((i: any) => i.type === "subscription"))
+        .map(([d]) => d).sort();
+      if (subDates.length > 0) { planStartDate = subDates[0]; planEndDate = subDates[subDates.length - 1]; }
+    }
+    return {
+      razorpayPaymentId,
+      planName: cart.planName || "",
+      planPrice: (cart as any).adjustedPrice || cart.planPrice || 0,
+      deliveryCount: cart.selectedDeliveryDatesCount || 0,
+      frequency: cart.frequency,
+      startDate: planStartDate,
+      endDate: planEndDate,
+      addons: addonItems,
+      creditsRedeemed: creditsToRedeem,
+      creditDiscount,
+      total,
+      creditsEarned: Math.ceil(total / 10),
+      customer: cart.customer,
+    };
+  };
 
   // Check for addons that are set to "same_as_subscription" but no subscription exists
   const addonsNeedingDates = cart.addons.filter((addon) => {
@@ -574,6 +606,12 @@ export default function CheckoutPayPage() {
             );
           })}
 
+          {creditsToRedeem > 0 && (
+            <div className="flex items-center justify-between text-sm text-[#775a11] font-semibold pt-2">
+              <span>Bloom Credits ({creditsToRedeem} credits)</span>
+              <span>−₹{creditDiscount.toFixed(0)}</span>
+            </div>
+          )}
           <div className="pt-3 border-t-2 border-[#d1c5b3]/30 flex items-center justify-between">
             <p className="font-bold text-[#2f1500]">Total</p>
             <p className="text-2xl font-extrabold text-[#2f1500]">₹{total}.00</p>
@@ -688,6 +726,81 @@ export default function CheckoutPayPage() {
             </Link>
           </div>
         )}
+
+        {/* Credits you'll earn on this order */}
+        {baseTotal > 0 && (
+          <div className="flex items-center gap-3 bg-[#ffdcc3]/30 border border-[#c4a052]/20 rounded-2xl px-5 py-3 mb-4">
+            <span className="material-symbols-outlined text-[#775a11] text-lg">stars</span>
+            <p className="text-sm text-[#2f1500]">
+              You'll earn{" "}
+              <span className="font-bold text-[#775a11]">
+                {Math.ceil(total / 10).toLocaleString()} Bloom Credits
+              </span>{" "}
+              <span className="text-[#4d4638]/60">(worth ₹{Math.ceil(Math.ceil(total / 10) * 0.1)}) on this order</span>
+            </p>
+          </div>
+        )}
+
+        {/* Bloom Credits Redemption */}
+        <div className="bg-[#fff1e9] rounded-3xl p-6 mb-6 border border-[#c4a052]/20">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#775a11] text-sm">stars</span>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[#4d4638]/60">Bloom Credits</h3>
+            </div>
+            <span className="text-xs font-bold text-[#775a11]">
+              {bloomCredits.toLocaleString()} credits = ₹{(bloomCredits * 0.10).toFixed(0)} available
+            </span>
+          </div>
+
+          {bloomCredits < 100 ? (
+            <div className="flex items-center gap-3 py-2">
+              <div className="flex-1 bg-[#d1c5b3]/30 rounded-full h-1.5 overflow-hidden">
+                <div className="h-full bg-[#c4a052] rounded-full" style={{ width: `${Math.min((bloomCredits / 100) * 100, 100)}%` }} />
+              </div>
+              <p className="text-xs text-[#4d4638]/60 whitespace-nowrap">
+                {100 - bloomCredits} more to unlock
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-[#2f1500]">
+                  Apply credits <span className="text-[#4d4638]/50 font-normal">(max 20% of order)</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCreditsToRedeem(0)}
+                    className={`text-xs px-2 py-1 rounded-lg font-semibold transition-all ${creditsToRedeem === 0 ? "bg-[#d1c5b3] text-[#2f1500]" : "text-[#4d4638]/60 hover:text-[#2f1500]"}`}
+                  >None</button>
+                  <button
+                    onClick={() => setCreditsToRedeem(maxRedeemableCredits)}
+                    className={`text-xs px-2 py-1 rounded-lg font-semibold transition-all ${creditsToRedeem === maxRedeemableCredits && creditsToRedeem > 0 ? "bg-[#775a11] text-white" : "text-[#775a11] hover:bg-[#ffdcc3]"}`}
+                  >Max</button>
+                </div>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={maxRedeemableCredits}
+                step={10}
+                value={creditsToRedeem}
+                onChange={e => setCreditsToRedeem(Number(e.target.value))}
+                className="w-full accent-[#775a11]"
+              />
+              <div className="flex justify-between text-xs text-[#4d4638]/60">
+                <span>0 credits</span>
+                <span>{maxRedeemableCredits} credits (₹{(maxRedeemableCredits * 0.10).toFixed(0)} off)</span>
+              </div>
+              {creditsToRedeem > 0 && (
+                <div className="flex items-center justify-between bg-[#ffdcc3]/40 rounded-xl px-4 py-2.5">
+                  <span className="text-sm font-semibold text-[#2f1500]">{creditsToRedeem} credits applied</span>
+                  <span className="text-sm font-bold text-[#775a11]">−₹{creditDiscount.toFixed(0)}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Trust badges */}
         <div className="flex items-center justify-center gap-6 py-4 mb-6">

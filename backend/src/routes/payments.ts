@@ -2,6 +2,8 @@ import express from 'express';
 import crypto from 'crypto';
 import pool from '../db';
 import { optionalAuth } from '../middleware/auth';
+import { awardCredits } from './credits';
+import { sendOrderConfirmationEmail, OrderConfirmationData } from '../utils/email';
 
 const router = express.Router();
 
@@ -94,20 +96,21 @@ router.post('/create', optionalAuth as any, async (req, res) => {
 
         const customerId = customerResult.rows[0].id;
 
-        // Insert guest address if provided
+        // Insert address linked to user (if authenticated) or standalone (if guest)
         if (customer.addressLine1 && customer.suburb && customer.postcode) {
             await pool.query(
-                `INSERT INTO addresses (customer_id, address_line1, address_line2, suburb, postcode, delivery_notes, time_slot, building_type)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                `INSERT INTO addresses (user_id, full_name, phone, house_number, street, area, city, pin_code, instructions)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
                 [
-                    customerId,
-                    customer.addressLine1,
-                    customer.addressLine2 || null,
-                    customer.suburb,
-                    customer.postcode,
+                    user_id || null,
+                    customer.name,
+                    customer.phone,
+                    customer.houseNumber || customer.addressLine1,
+                    customer.street || customer.addressLine1,
+                    customer.area || customer.addressLine2 || '',
+                    customer.city || customer.suburb,
+                    customer.pinCode || customer.postcode,
                     customer.deliveryNotes || null,
-                    customer.timeSlot || '5:30 to 6:30',
-                    customer.buildingType || 'house'
                 ]
             );
         }
@@ -121,7 +124,7 @@ router.post('/create', optionalAuth as any, async (req, res) => {
                 user_id,
                 customerId,
                 razorpayOrderId,
-                Math.round(total * 100), // Convert to paise for Razorpay
+                Math.round(total * 100),
                 'INR',
                 'pending',
                 planId ? 'subscription' : 'addon',
@@ -136,9 +139,23 @@ router.post('/create', optionalAuth as any, async (req, res) => {
         // Store order items (addOns)
         if (Array.isArray(addOns) && addOns.length > 0) {
             for (const addon of addOns) {
+                // Extract dates for custom_schedule_dates
+                let addonDates: string[] = [];
+                if (addon.schedule) {
+                    if (addon.schedule.mode === 'different' && Array.isArray(addon.schedule.customDates)) {
+                        addonDates = addon.schedule.customDates;
+                    } else if (addon.schedule.mode === 'same' && Array.isArray(customSchedule)) {
+                        addonDates = customSchedule;
+                    }
+                }
+
+                const addonCustomDates = addonDates.length > 0
+                    ? `ARRAY[${addonDates.map(d => `'${d}'::DATE`).join(', ')}]`
+                    : 'NULL';
+
                 await pool.query(
-                    `INSERT INTO order_items (order_id, item_type, item_id, quantity, price, schedule)
-                     VALUES ($1, $2, $3, $4, $5, $6)`,
+                    `INSERT INTO order_items (order_id, item_type, item_id, quantity, price, schedule, custom_schedule_dates)
+                     VALUES ($1, $2, $3, $4, $5, $6, ${addonCustomDates})`,
                     [orderId, 'addon', addon.id, addon.quantity || 1, Math.round((addon.price || 0) * 100), addon.schedule ? JSON.stringify(addon.schedule) : null]
                 );
             }
@@ -146,10 +163,18 @@ router.post('/create', optionalAuth as any, async (req, res) => {
 
         // If subscription, store subscription item with schedule
         if (planId) {
+            const subCustomDates = Array.isArray(customSchedule) && customSchedule.length > 0
+                ? `ARRAY[${customSchedule.map(d => `'${d}'::DATE`).join(', ')}]`
+                : 'NULL';
+
+            // Store subscription price in paise
+            // subtotal = plan price only (addons are separate)
+            const subscriptionPricePaise = Math.round((subtotal || 0) * 100);
+
             await pool.query(
-                `INSERT INTO order_items (order_id, item_type, item_id, quantity, price, schedule)
-                 VALUES ($1, $2, $3, $4, $5, $6)`,
-                [orderId, 'subscription', planId, 1, subtotal || 0, customSchedule ? JSON.stringify(customSchedule) : null]
+                `INSERT INTO order_items (order_id, item_type, item_id, quantity, price, schedule, custom_schedule_dates)
+                 VALUES ($1, $2, $3, $4, $5, $6, ${subCustomDates})`,
+                [orderId, 'subscription', planId, 1, subscriptionPricePaise, customSchedule ? JSON.stringify(customSchedule) : null]
             );
         }
 
@@ -215,6 +240,51 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
             ['paid', razorpayPaymentId, razorpaySignature, orderId]
         );
 
+        // Award Bloom Credits: 1 credit per ₹2 spent (5%), only for logged-in users
+        if (user_id) {
+            const amountRupees = order.amount / 100;
+            const creditsEarned = Math.ceil(amountRupees / 10);
+            if (creditsEarned > 0) {
+                await awardCredits(
+                    user_id,
+                    creditsEarned,
+                    'earn_purchase',
+                    `Earned ${creditsEarned} credits on ₹${amountRupees} order`,
+                    parseInt(orderId)
+                );
+                console.log(`Awarded ${creditsEarned} Bloom Credits to user ${user_id} for order ${orderId}`);
+            }
+
+            // Award referral credits if this is user's first order
+            const previousOrders = await pool.query(
+                `SELECT COUNT(*) FROM orders WHERE user_id = $1 AND status = 'paid' AND id != $2`,
+                [user_id, orderId]
+            );
+            if (parseInt(previousOrders.rows[0].count) === 0) {
+                // This is first order — check if user was referred
+                const referral = await pool.query(
+                    `SELECT r.id, r.referrer_id FROM referrals r
+                     WHERE r.referred_user_id = $1 AND r.status = 'pending'`,
+                    [user_id]
+                );
+                if (referral.rows.length > 0) {
+                    const { id: referralId, referrer_id } = referral.rows[0];
+                    // Award 500 credits to referrer
+                    await awardCredits(referrer_id, 500, 'earn_referral_given',
+                        'Referral reward: your friend placed their first order', parseInt(orderId));
+                    // Award 300 credits to the referred user (this user)
+                    await awardCredits(user_id, 300, 'earn_referral_received',
+                        'Welcome reward: 300 Bloom Credits for joining via referral', parseInt(orderId));
+                    // Mark referral as completed
+                    await pool.query(
+                        `UPDATE referrals SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE id = $1`,
+                        [referralId]
+                    );
+                    console.log(`Referral credits awarded: 500 to user ${referrer_id}, 300 to user ${user_id}`);
+                }
+            }
+        }
+
         // If subscription, create subscription record (for both authenticated and guest users)
         if (order.order_type === 'subscription') {
             const items = await pool.query(
@@ -228,7 +298,7 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
 
                 // Get plan details
                 const planResult = await pool.query(
-                    'SELECT price FROM plans WHERE id = $1',
+                    'SELECT name, price FROM plans WHERE id = $1',
                     [planId]
                 );
 
@@ -292,10 +362,10 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
                     const scheduleForDb = schedule ? (typeof schedule === 'string' ? schedule : JSON.stringify(schedule)) : null;
 
                     const subResult = await pool.query(
-                        `INSERT INTO subscriptions (user_id, customer_id, plan_id, price, delivery_days, status, start_date, end_date, custom_schedule, created_at)
-                         VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE, $7, $8, CURRENT_TIMESTAMP)
+                        `INSERT INTO subscriptions (user_id, plan_type, price, delivery_days, status, start_date, custom_schedule, created_at)
+                         VALUES ($1, $2, $3, $4, $5, CURRENT_DATE, $6, CURRENT_TIMESTAMP)
                          RETURNING id`,
-                        [resolvedUserId, customerId, planId, plan.price, JSON.stringify([]), 'active', endDate, scheduleForDb]
+                        [resolvedUserId, plan.name, plan.price, JSON.stringify([]), 'active', scheduleForDb]
                     );
 
                     const subscriptionId = subResult.rows[0].id;
@@ -402,6 +472,82 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
                     }
                 }
             }
+        }
+
+        // Send order confirmation email (non-blocking)
+        try {
+            const customerResult = await pool.query(
+                'SELECT name, email, phone, time_slot FROM customers WHERE id = $1',
+                [order.customer_id]
+            );
+            const customer = customerResult.rows[0];
+
+            if (customer?.email) {
+                const addrResult = await pool.query(
+                    `SELECT house_number, street, area, city, pin_code FROM addresses
+                     WHERE user_id = $1 ORDER BY id DESC LIMIT 1`,
+                    [user_id || -1]
+                );
+                const addr = addrResult.rows[0];
+                const addressStr = addr
+                    ? [addr.house_number, addr.street, addr.area, addr.city, addr.pin_code].filter(Boolean).join(', ')
+                    : undefined;
+
+                // Fetch order items for email
+                const itemsResult = await pool.query(
+                    `SELECT oi.item_type, oi.item_id, oi.quantity, oi.price, oi.schedule,
+                            p.name as plan_name, a.name as addon_name
+                     FROM order_items oi
+                     LEFT JOIN plans p ON oi.item_type = 'subscription' AND p.id = oi.item_id
+                     LEFT JOIN add_ons a ON oi.item_type = 'addon' AND a.id = oi.item_id
+                     WHERE oi.order_id = $1`,
+                    [orderId]
+                );
+
+                const planItem = itemsResult.rows.find((r: any) => r.item_type === 'subscription');
+                const addonItems = itemsResult.rows.filter((r: any) => r.item_type === 'addon');
+                const amountRupees = order.amount / 100;
+                const creditsEarned = Math.ceil(amountRupees / 10);
+
+                let planSchedule: string[] = [];
+                if (planItem?.schedule) {
+                    try {
+                        planSchedule = typeof planItem.schedule === 'string'
+                            ? JSON.parse(planItem.schedule) : planItem.schedule;
+                    } catch {}
+                }
+
+                const emailData: OrderConfirmationData = {
+                    customerName: customer.name,
+                    customerEmail: customer.email,
+                    customerPhone: customer.phone,
+                    customerAddress: addressStr,
+                    timeSlot: customer.time_slot || '5:30 AM – 7:30 AM',
+                    razorpayPaymentId: razorpayPaymentId,
+                    planName: planItem?.plan_name,
+                    planDeliveries: planSchedule.length || undefined,
+                    planPrice: planItem ? Math.round(planItem.price / 100) : undefined,
+                    planStartDate: planSchedule[0] || undefined,
+                    planEndDate: planSchedule[planSchedule.length - 1] || undefined,
+                    addons: addonItems.map((a: any) => {
+                        let sched: any = {};
+                        try { sched = typeof a.schedule === 'string' ? JSON.parse(a.schedule) : (a.schedule || {}); } catch {}
+                        const dates = sched.mode === 'different' ? (sched.customDates || []) : planSchedule;
+                        return {
+                            name: a.addon_name,
+                            deliveries: dates.length || a.quantity,
+                            price: Math.round(a.price / 100),
+                            customDates: sched.mode === 'different' ? dates : [],
+                        };
+                    }),
+                    total: amountRupees,
+                    creditsEarned,
+                };
+
+                sendOrderConfirmationEmail(emailData); // fire and forget
+            }
+        } catch (emailErr) {
+            console.error('Failed to send confirmation email:', emailErr);
         }
 
         res.json({

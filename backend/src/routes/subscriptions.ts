@@ -85,7 +85,7 @@ router.post('/subscribe', authenticateToken as any, requireEmailVerification as 
                     ? JSON.stringify(delivery_days)
                     : (delivery_days ?? '[]'),
                 custom_schedule ? JSON.stringify(custom_schedule) : null,
-                start_date ?? new Date().toISOString().slice(0, 10),
+                start_date ?? (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
                 calculatedEndDate,
                 pause_start_date ?? null,
                 pause_end_date ?? null,
@@ -168,9 +168,9 @@ router.post('/subscribe', authenticateToken as any, requireEmailVerification as 
         // Generate delivery schedule for next 30 days (non-blocking)
         const fromDate = sub.rows[0].start_date
             ? (sub.rows[0].start_date instanceof Date
-                ? sub.rows[0].start_date.toISOString().slice(0, 10)
+                ? (() => { const d = sub.rows[0].start_date; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })()
                 : String(sub.rows[0].start_date).slice(0, 10))
-            : new Date().toISOString().slice(0, 10);
+            : (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
 
         const toDate = new Date(fromDate);
         toDate.setUTCDate(toDate.getUTCDate() + 30);
@@ -204,18 +204,23 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
     try {
         const user_id = (req as any).user.id;
         const result = await pool.query(
-            `SELECT id, plan_id, status, price, delivery_days, start_date, end_date, custom_schedule, created_at
+            `SELECT id, plan_type, status, price, delivery_days, start_date, custom_schedule, created_at
              FROM subscriptions
              WHERE user_id = $1
              ORDER BY created_at DESC`,
             [user_id]
         );
 
-        // Helper to format dates
+        // Helper to format dates — use local date components to avoid UTC timezone shift
         const formatDate = (date: any) => {
             if (!date) return null;
             if (typeof date === 'string') return date.split('T')[0];
-            if (date instanceof Date) return date.toISOString().split('T')[0];
+            if (date instanceof Date) {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            }
             return String(date).split('T')[0];
         };
 
@@ -234,29 +239,39 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
                 }
             }
 
-            // Fetch add-ons for this subscription
+            // Fetch add-ons with delivery count and all delivery dates
             const addonsResult = await pool.query(
-                `SELECT sa.id, a.name, a.price, sa.one_off_date
+                `SELECT sa.id, a.name, a.price, sa.one_off_date,
+                        COUNT(add_dates.delivery_date) AS delivery_count,
+                        ARRAY_AGG(TO_CHAR(add_dates.delivery_date, 'YYYY-MM-DD') ORDER BY add_dates.delivery_date) FILTER (WHERE add_dates.delivery_date IS NOT NULL) AS delivery_dates
                  FROM subscription_add_ons sa
                  JOIN add_ons a ON a.id = sa.add_on_id
-                 WHERE sa.subscription_id = $1`,
+                 LEFT JOIN addon_delivery_dates add_dates ON add_dates.subscription_addon_id = sa.id
+                 WHERE sa.subscription_id = $1
+                 GROUP BY sa.id, a.name, a.price, sa.one_off_date`,
                 [row.id]
             );
 
-            const addOns = addonsResult.rows.map((addon) => ({
-                id: addon.id.toString(),
-                name: addon.name,
-                price: parseFloat(addon.price),
-                oneOffDate: formatDate(addon.one_off_date)
-            }));
+            const addOns = addonsResult.rows.map((addon) => {
+                const deliveryCount = parseInt(addon.delivery_count) || 1;
+                const deliveryDates: string[] = (addon.delivery_dates || []).filter(Boolean) as string[];
+                return {
+                    id: addon.id.toString(),
+                    name: addon.name,
+                    price: parseFloat(addon.price),
+                    deliveryCount,
+                    deliveryDates,
+                    oneOffDate: formatDate(addon.one_off_date)
+                };
+            });
 
             const basePrice = parseFloat(row.price);
-            const addOnsPrice = addOns.reduce((sum, addon) => sum + addon.price, 0);
+            const addOnsPrice = addOns.reduce((sum, addon) => sum + (addon.price * addon.deliveryCount), 0);
             const totalPrice = basePrice + addOnsPrice;
 
             return {
                 id: row.id.toString(),
-                planId: row.plan_id,
+                planType: row.plan_type,
                 status: row.status,
                 price: basePrice,
                 addOnsPrice: addOnsPrice,
@@ -265,7 +280,7 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
                 deliveryDays: row.delivery_days,
                 customSchedule: customSchedule,
                 startDate: formatDate(row.start_date),
-                endDate: formatDate(row.end_date),
+                endDate: null,
                 createdAt: formatDate(row.created_at)
             };
         }));
@@ -285,30 +300,28 @@ router.post('/:subscriptionId/pause', authenticateToken as any, async (req, res)
     try {
         const user_id = (req as any).user.id;
         const subscription_id = req.params.subscriptionId;
-        const { startDate, endDate } = req.body;
 
-        // Verify subscription belongs to user
         const verification = await pool.query(
-            'SELECT pause_dates FROM subscriptions WHERE id = $1 AND user_id = $2',
+            'SELECT id, status FROM subscriptions WHERE id = $1 AND user_id = $2',
             [subscription_id, user_id]
         );
-        if (verification.rows.length === 0) {
-            return res.status(404).json({ error: 'Subscription not found' });
-        }
+        if (verification.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
+        if (verification.rows[0].status === 'paused') return res.status(400).json({ error: 'Already paused' });
 
-        // Store pause date range
-        const pauseInfo = {
-            startDate: startDate || new Date().toISOString().split('T')[0],
-            endDate: endDate || null,
-            createdAt: new Date().toISOString()
-        };
+        // 5 PM IST cutoff: determine effective pause date
+        const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+        const hourIST = nowIST.getHours();
+        const daysToAdd = hourIST >= 17 ? 2 : 1; // after 5 PM → day after tomorrow, before → tomorrow
+        const effectiveDate = new Date(nowIST);
+        effectiveDate.setDate(effectiveDate.getDate() + daysToAdd);
+        const effectiveDateStr = `${effectiveDate.getFullYear()}-${String(effectiveDate.getMonth()+1).padStart(2,'0')}-${String(effectiveDate.getDate()).padStart(2,'0')}`;
 
         await pool.query(
-            "UPDATE subscriptions SET status = 'paused', pause_dates = $1 WHERE id = $2",
-            [JSON.stringify(pauseInfo), subscription_id]
+            "UPDATE subscriptions SET status = 'paused' WHERE id = $1",
+            [subscription_id]
         );
 
-        res.json({ message: 'Subscription paused', pauseInfo });
+        res.json({ message: 'Subscription paused', effectiveFrom: effectiveDateStr });
     } catch (err: any) {
         res.status(400).json({ error: err.message });
     }
@@ -320,14 +333,11 @@ router.post('/:subscriptionId/resume', authenticateToken as any, async (req, res
         const user_id = (req as any).user.id;
         const subscription_id = req.params.subscriptionId;
 
-        // Verify subscription belongs to user
         const verification = await pool.query(
-            'SELECT id FROM subscriptions WHERE id = $1 AND user_id = $2',
+            'SELECT id, status FROM subscriptions WHERE id = $1 AND user_id = $2',
             [subscription_id, user_id]
         );
-        if (verification.rows.length === 0) {
-            return res.status(404).json({ error: 'Subscription not found' });
-        }
+        if (verification.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
 
         await pool.query(
             "UPDATE subscriptions SET status = 'active' WHERE id = $1",
@@ -427,7 +437,7 @@ router.patch('/:subscriptionId/plan', authenticateToken as any, async (req, res)
         }
 
         // Get new plan price
-        const plans: Record<string, number> = { BASIC: 1499, PREMIUM: 2699, ELITE: 4499 };
+        const plans: Record<string, number> = { Traditional: 1770, Divine: 2670, Celestial: 5370 };
         const newPrice = plans[planType] || plans.BASIC;
 
         await pool.query(

@@ -86,7 +86,7 @@ export default function SubscriptionsTab({ token }: SubscriptionsTabProps) {
             const days = parseInt(subscription.delivery_days || '7');
             const nextDate = new Date(startDate);
             nextDate.setDate(nextDate.getDate() + days);
-            return nextDate.toISOString().split('T')[0];
+            return `${nextDate.getFullYear()}-${String(nextDate.getMonth()+1).padStart(2,'0')}-${String(nextDate.getDate()).padStart(2,'0')}`;
         } catch (error) {
             console.error('Error calculating next delivery date:', error);
             return 'N/A';

@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useCartUI } from "@/context/CartUIContext";
+import { useCart } from "@/context/CartContext";
 
 interface UserData {
   id: string;
@@ -10,14 +12,6 @@ interface UserData {
   email: string;
 }
 
-interface Referral {
-  id: string;
-  name: string;
-  email: string;
-  dateJoined: string;
-  status: "credited" | "pending";
-  creditEarned: number;
-}
 
 export default function ReferralsPage() {
   const router = useRouter();
@@ -25,9 +19,11 @@ export default function ReferralsPage() {
   const [referralCode, setReferralCode] = useState("");
   const [copied, setCopied] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showCart, setShowCart] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { setIsCartOpen } = useCartUI();
+  const { cart } = useCart();
+  const cartCount = cart.addons.reduce((s, a) => s + a.quantity, 0) + (cart.planId ? 1 : 0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,45 +42,13 @@ export default function ReferralsPage() {
       if (userData.referralCode) {
         setReferralCode(userData.referralCode);
       }
-      // Fetch referrals from API
-      fetchReferrals(token);
+      setLoading(false);
     } catch (error) {
       console.error("Error parsing user data:", error);
       router.push("/login");
     }
   }, []);
 
-  const fetchReferrals = async (token: string) => {
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/referrals/overview`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch referrals");
-      }
-
-      const data = await response.json();
-      setReferrals(
-        data.referrals?.map((ref: any) => ({
-          id: ref.referred_user_id,
-          name: ref.name || "Unknown",
-          email: ref.email || "N/A",
-          dateJoined: new Date(ref.created_at).toLocaleDateString("en-IN"),
-          status: ref.status === "completed" ? "credited" : "pending",
-          creditEarned: ref.status === "completed" ? 50 : 0,
-        })) || []
-      );
-    } catch (error) {
-      console.error("Error fetching referrals:", error);
-      setReferrals([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -98,9 +62,6 @@ export default function ReferralsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const totalEarnings = referrals.reduce((sum, ref) => sum + ref.creditEarned, 0);
-  const successfulReferrals = referrals.filter((ref) => ref.status === "credited").length;
-  const pendingCredit = referrals.filter((ref) => ref.status === "pending").length * 50;
 
   if (!user) {
     return null;
@@ -121,7 +82,7 @@ export default function ReferralsPage() {
     <div className="bg-surface text-on-surface font-body">
       {/* Header */}
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-16 bg-[#fff8f5]/80 backdrop-blur-md shadow-sm">
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center">
             <img
               alt="Bloomme Logo"
@@ -129,6 +90,37 @@ export default function ReferralsPage() {
               src="/images/backgroundlesslogo.png"
             />
           </Link>
+          {/* Mobile hamburger - second from left */}
+          <div className="relative md:hidden">
+            <button
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
+              onClick={() => { setMobileMenuOpen(!mobileMenuOpen); setShowProfile(false); }}
+            >
+              <span className="material-symbols-outlined">{mobileMenuOpen ? "close" : "menu"}</span>
+            </button>
+            {mobileMenuOpen && (
+              <div className="absolute left-0 top-full mt-1 w-52 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/10 py-2 z-50">
+                <a href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">dashboard</span>Dashboard
+                </a>
+                <a href="/dashboard/subscriptions" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">loyalty</span>Subscriptions
+                </a>
+                <a href="/dashboard/add-ons" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">featured_video</span>Add-ons
+                </a>
+                <a href="/dashboard/calendar" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">calendar_today</span>Calendar
+                </a>
+                <a href="/dashboard/referrals" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-primary bg-primary/5">
+                  <span className="material-symbols-outlined text-base">redeem</span>Referrals
+                </a>
+                <a href="/dashboard/settings" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">settings</span>Settings
+                </a>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-6">
@@ -151,7 +143,6 @@ export default function ReferralsPage() {
                 className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
                 onClick={() => {
                   setShowNotifications(!showNotifications);
-                  setShowCart(false);
                   setShowProfile(false);
                 }}
               >
@@ -164,51 +155,38 @@ export default function ReferralsPage() {
               )}
             </div>
 
-            {/* Shopping Cart Dropdown */}
-            <div className="relative">
-              <span
-                className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
-                onClick={() => {
-                  setShowCart(!showCart);
-                  setShowNotifications(false);
-                  setShowProfile(false);
-                }}
-              >
-                shopping_cart
-              </span>
-              {showCart && (
-                <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
-                  <p className="text-sm text-on-surface-variant text-center py-8">Your cart is empty</p>
-                </div>
+            {/* Cart */}
+            <button
+              className="relative min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"
+              onClick={() => { setIsCartOpen(true); setShowNotifications(false); setShowProfile(false); }}
+              aria-label="Shopping cart"
+            >
+              <span className="material-symbols-outlined">shopping_basket</span>
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-on-primary text-[9px] font-bold flex items-center justify-center">
+                  {cartCount}
+                </span>
               )}
-            </div>
+            </button>
 
             {/* Profile Dropdown */}
             <div className="relative">
               <div
-                className="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden cursor-pointer"
+                className="h-8 w-8 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-primary transition-all"
                 onClick={() => {
                   setShowProfile(!showProfile);
                   setShowNotifications(false);
-                  setShowCart(false);
+                  setMobileMenuOpen(false);
                 }}
               >
-                <img
-                  alt="User profile avatar"
-                  className="w-full h-full object-cover"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZGCW-2Yg-NfYjvjLMP5mjP8d1L0cygpIsoBCu_DLMevAPbeW6H-8_HIlvhViti-HMJICGXqq7FpY6YqmE2peGWZlqDr7Iirxtncmch1qEfWH_vLzdiOF1Luh1Oq8VDCwXD6GtPinM7VGqYjiq1HffL5N7vBJE_vxr2Xy1cZMqgaFj_5ZvqeEECObl0iBkzpNfMFjad91kXlqPIT_djKcN8y9MwSQ8KgXDQcN_UYeXU9gtRezXaNFlOkKD1SXQrJcINvMgsXgCwe-r"
-                />
+                <span className="text-white text-sm font-bold">{user?.name?.[0]?.toUpperCase()}</span>
               </div>
               {showProfile && (
                 <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-3 border-b border-outline-variant/10 pb-4">
-                      <div className="h-10 w-10 rounded-full bg-surface-container-highest overflow-hidden">
-                        <img
-                          alt="User profile"
-                          className="w-full h-full object-cover"
-                          src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZGCW-2Yg-NfYjvjLMP5mjP8d1L0cygpIsoBCu_DLMevAPbeW6H-8_HIlvhViti-HMJICGXqq7FpY6YqmE2peGWZlqDr7Iirxtncmch1qEfWH_vLzdiOF1Luh1Oq8VDCwXD6GtPinM7VGqYjiq1HffL5N7vBJE_vxr2Xy1cZMqgaFj_5ZvqeEECObl0iBkzpNfMFjad91kXlqPIT_djKcN8y9MwSQ8KgXDQcN_UYeXU9gtRezXaNFlOkKD1SXQrJcINvMgsXgCwe-r"
-                        />
+                      <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+                        <span className="text-white text-base font-bold">{user?.name?.[0]?.toUpperCase()}</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <p className="text-sm font-bold text-on-surface">{user?.name}</p>
@@ -289,28 +267,28 @@ export default function ReferralsPage() {
               <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-on-surface leading-none">
                 Spread the <span className="font-editorial italic text-primary">Beauty</span>,
                 <br />
-                Earn Rewards.
+                Earn Bloom Credits.
               </h1>
               <p className="text-xl text-on-surface-variant max-w-lg leading-relaxed">
-                Invite your inner circle to experience the digital florist's atelier. Every successful referral brings fresh blooms to their door and credit to your account.
+                Every rupee spent, every friend referred — it all becomes Bloom Credits. Real value you can use on any order.
               </p>
 
               {/* Steps */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8">
                 <div className="space-y-2">
                   <span className="text-primary font-editorial italic text-2xl">01.</span>
-                  <h3 className="font-bold uppercase text-[12px] tracking-widest">Share</h3>
-                  <p className="text-sm text-on-surface-variant">Send your unique code to friends and family.</p>
+                  <h3 className="font-bold uppercase text-[12px] tracking-widest">Spend & Earn</h3>
+                  <p className="text-sm text-on-surface-variant">Every ₹2 you spend earns 1 Bloom Credit — on plans, add-ons, everything.</p>
                 </div>
                 <div className="space-y-2">
                   <span className="text-primary font-editorial italic text-2xl">02.</span>
-                  <h3 className="font-bold uppercase text-[12px] tracking-widest">Sign Up</h3>
-                  <p className="text-sm text-on-surface-variant">They get ₹50 off their first arrangement.</p>
+                  <h3 className="font-bold uppercase text-[12px] tracking-widest">Refer & Both Win</h3>
+                  <p className="text-sm text-on-surface-variant">Share your code. When your friend places their first order, you get 500 credits (₹50) and they get 300 (₹30).</p>
                 </div>
                 <div className="space-y-2">
                   <span className="text-primary font-editorial italic text-2xl">03.</span>
-                  <h3 className="font-bold uppercase text-[12px] tracking-widest">Earn ₹50</h3>
-                  <p className="text-sm text-on-surface-variant">Receive credit in your Atelier wallet instantly.</p>
+                  <h3 className="font-bold uppercase text-[12px] tracking-widest">Redeem Anytime</h3>
+                  <p className="text-sm text-on-surface-variant">100 credits = ₹10. Use up to 20% off any order. Credits are valid for 12 months.</p>
                 </div>
               </div>
             </div>
@@ -323,7 +301,7 @@ export default function ReferralsPage() {
                 <div className="relative z-10 space-y-8">
                   <div className="text-center">
                     <h2 className="text-2xl font-bold text-on-surface">Your Invitation Link</h2>
-                    <p className="text-sm text-on-surface-variant mt-1">Exclusive Atelier Access</p>
+                    <p className="text-sm text-on-surface-variant mt-1">Exclusive Bloom Credits</p>
                   </div>
 
                   {/* QR Code */}
@@ -375,97 +353,6 @@ export default function ReferralsPage() {
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className="px-6 md:px-12 py-12 max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {/* Total Earnings */}
-            <div className="bg-surface-container-high/40 rounded-3xl p-8 border border-outline-variant/20">
-              <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Total Earnings</p>
-              <div className="flex items-end gap-2">
-                <span className="text-4xl font-bold text-on-surface">₹{totalEarnings}.00</span>
-                <span className="text-sm text-secondary font-bold mb-1">+₹{pendingCredit} pending</span>
-              </div>
-            </div>
-
-            {/* Active Referrals */}
-            <div className="bg-surface-container-high/40 rounded-3xl p-8 border border-outline-variant/20">
-              <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Successful Invites</p>
-              <div className="flex items-end gap-2">
-                <span className="text-4xl font-bold text-on-surface">{String(successfulReferrals).padStart(2, "0")}</span>
-                <span className="text-sm text-on-surface-variant mb-1">Friends</span>
-              </div>
-            </div>
-
-            {/* Next Tier */}
-            <div className="bg-primary-container/20 rounded-3xl p-8 border border-primary/10">
-              <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">Next Tier Goal</p>
-              <div className="w-full bg-surface-container-highest rounded-full h-2 mb-3 overflow-hidden">
-                <div className="bg-primary h-full w-[70%]"></div>
-              </div>
-              <p className="text-xs text-on-surface-variant">
-                Invite 1 more friend for a <strong>Free Midnight Lily</strong> bouquet
-              </p>
-            </div>
-          </div>
-
-          {/* Referral Table */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-on-surface">Referred Friends</h2>
-              <button className="text-sm font-bold text-primary underline decoration-2 underline-offset-4 hover:text-secondary transition-colors">
-                Download Report
-              </button>
-            </div>
-
-            <div className="overflow-hidden rounded-3xl bg-surface-container-lowest border border-outline-variant/10">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-surface-container-low/50">
-                    <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">User</th>
-                    <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Date Joined</th>
-                    <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Reward Status</th>
-                    <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-right">Credit Earned</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-outline-variant/10">
-                  {referrals.map((referral) => (
-                    <tr key={referral.id} className="group hover:bg-surface-container-low transition-colors">
-                      <td className="px-8 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-primary text-sm">
-                            {referral.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-on-surface">{referral.name}</p>
-                            <p className="text-xs text-on-surface-variant">{referral.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-8 py-5 text-sm text-on-surface-variant">{referral.dateJoined}</td>
-                      <td className="px-8 py-5">
-                        <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
-                            referral.status === "credited"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-surface-container-highest text-primary"
-                          }`}
-                        >
-                          {referral.status === "credited" ? "Credited" : "Pending"}
-                        </span>
-                      </td>
-                      <td className="px-8 py-5 text-right font-bold text-on-surface">
-                        ₹{referral.creditEarned.toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* Footer */}

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
+import { useCartUI } from "@/context/CartUIContext";
+import { useCart } from "@/context/CartContext";
 import PauseModal from "@/components/dashboard/modals/PauseModal";
 import SkipDatesModal from "@/components/dashboard/modals/SkipDatesModal";
 import ChangeScheduleModal from "@/components/dashboard/modals/ChangeScheduleModal";
@@ -16,15 +18,21 @@ interface UserData {
 }
 
 const PLAN_LABELS: Record<string, string> = {
-  BASIC: "Basic Plan",
-  PREMIUM: "Premium Plan",
-  ELITE: "Elite Plan",
+  Traditional: "Traditional",
+  Divine: "Divine",
+  Celestial: "Celestial",
 };
 
 const PLAN_DESCRIPTIONS: Record<string, string> = {
-  BASIC: "60–100g fresh flowers, 3 varieties",
-  PREMIUM: "150g premium flowers, Bloomme box",
-  ELITE: "200g exotic flowers, luxury box",
+  Traditional: "80–100g fresh devotional mix, 3 rotational variety",
+  Divine: "120–150g premium devotional mix, 3 premium rotational variety",
+  Celestial: "200g exotic offerings, complete florist's atelier",
+};
+
+const PLAN_IMAGES: Record<string, string> = {
+  Traditional: "/images/traditional.png",
+  Divine: "/images/divine.png",
+  Celestial: "/images/celestial.png",
 };
 
 type ModalType = "pause" | "skip" | "schedule" | "plan" | null;
@@ -34,11 +42,15 @@ export default function SubscriptionsPage() {
   const [user, setUser] = useState<UserData | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showCart, setShowCart] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const { setIsCartOpen } = useCartUI();
+  const { cart } = useCart();
+  const cartCount = cart.addons.reduce((s, a) => s + a.quantity, 0) + (cart.planId ? 1 : 0);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
   const [cancelConfirm, setCancelConfirm] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [priceInfoOpen, setPriceInfoOpen] = useState<string | null>(null);
 
   const subs = useSubscriptions(token);
 
@@ -124,62 +136,99 @@ export default function SubscriptionsPage() {
   return (
     <div className="bg-surface text-on-surface font-body">
       {/* Header */}
-      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-16 bg-[#fff8f5]/80 backdrop-blur-md shadow-sm">
-        <div className="flex items-center">
-          <Link href="/" className="flex items-center">
-            <img alt="Bloomme Logo" className="h-12 w-auto object-contain" src="/images/backgroundlesslogo.png" />
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-6">
-          <div className="hidden md:flex gap-8">
-            <Link className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="/dashboard">
-              Dashboard
+      <header className="fixed top-0 w-full z-50 bg-[#fff8f5]/80 backdrop-blur-md shadow-sm">
+        <div className="flex justify-between items-center px-6 h-16">
+          <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center">
+              <img alt="Bloomme Logo" className="h-12 w-auto object-contain" src="/images/backgroundlesslogo.png" />
             </Link>
-            <a className="text-[#C4A052] font-bold border-b-2 border-[#C4A052]" href="#">
-              Subscriptions
-            </a>
-            <Link className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="/contact">
-              Support
-            </Link>
+            {/* Mobile hamburger - second from left */}
+            <div className="relative md:hidden">
+              <button
+                className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
+                onClick={() => { setMobileMenuOpen(!mobileMenuOpen); setShowProfile(false); }}
+              >
+                <span className="material-symbols-outlined">{mobileMenuOpen ? "close" : "menu"}</span>
+              </button>
+              {mobileMenuOpen && (
+                <div className="absolute left-0 top-full mt-1 w-52 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/10 py-2 z-50">
+                  <a href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                    <span className="material-symbols-outlined text-base">dashboard</span>Dashboard
+                  </a>
+                  <a href="/dashboard/subscriptions" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-primary bg-primary/5">
+                    <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>loyalty</span>Subscriptions
+                  </a>
+                  <a href="/dashboard/add-ons" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                    <span className="material-symbols-outlined text-base">featured_video</span>Add-ons
+                  </a>
+                  <a href="/dashboard/calendar" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                    <span className="material-symbols-outlined text-base">calendar_today</span>Calendar
+                  </a>
+                  <a href="/dashboard/referrals" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                    <span className="material-symbols-outlined text-base">redeem</span>Referrals
+                  </a>
+                  <a href="/dashboard/settings" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                    <span className="material-symbols-outlined text-base">settings</span>Settings
+                  </a>
+                  <div className="border-t border-outline-variant/10 mt-1 pt-1">
+                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-error hover:bg-error/5 transition-colors">
+                      <span className="material-symbols-outlined text-base">logout</span>Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-4 relative">
+          <div className="flex items-center gap-3">
+            {/* Desktop nav */}
+            <div className="hidden md:flex gap-8 mr-4">
+              <Link className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="/dashboard">Dashboard</Link>
+              <a className="text-[#C4A052] font-bold border-b-2 border-[#C4A052]" href="#">Subscriptions</a>
+              <Link className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="/contact">Support</Link>
+            </div>
+
+            {/* Notifications */}
             <div className="relative">
-              <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
-                onClick={() => { setShowNotifications(!showNotifications); setShowCart(false); }}>
-                notifications
-              </span>
+              <button
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"
+                onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); }}
+                aria-label="Notifications"
+              >
+                <span className="material-symbols-outlined">notifications</span>
+              </button>
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
-                  <p className="text-sm text-on-surface-variant text-center py-8">No notifications</p>
+                <div className="absolute right-0 mt-2 w-56 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
+                  <p className="text-sm text-on-surface-variant text-center py-4">No notifications</p>
                 </div>
               )}
             </div>
 
-            <div className="relative">
-              <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
-                onClick={() => { setShowCart(!showCart); setShowNotifications(false); }}>
-                shopping_cart
-              </span>
-              {showCart && (
-                <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
-                  <p className="text-sm text-on-surface-variant text-center py-8">Your cart is empty</p>
-                </div>
+            {/* Cart */}
+            <button
+              className="relative min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"
+              onClick={() => { setIsCartOpen(true); setShowNotifications(false); }}
+              aria-label="Shopping cart"
+            >
+              <span className="material-symbols-outlined">shopping_basket</span>
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-on-primary text-[9px] font-bold flex items-center justify-center">
+                  {cartCount}
+                </span>
               )}
-            </div>
+            </button>
 
+            {/* Profile avatar */}
             <div className="relative">
               <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-primary transition-all"
-                onClick={() => { setShowProfile(!showProfile); setShowNotifications(false); setShowCart(false); }}>
+                onClick={() => { setShowProfile(!showProfile); setMobileMenuOpen(false); }}>
                 <span className="text-white text-sm font-bold">{user.name?.[0]?.toUpperCase()}</span>
               </div>
               {showProfile && (
                 <div className="absolute right-0 mt-2 w-48 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-3 z-50">
                   <p className="text-sm font-medium text-on-surface mb-3">{user?.name}</p>
                   <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-sm text-error hover:bg-error/10 rounded-lg transition-colors flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm">logout</span>
-                    Sign Out
+                    <span className="material-symbols-outlined text-sm">logout</span>Sign Out
                   </button>
                 </div>
               )}
@@ -223,7 +272,7 @@ export default function SubscriptionsPage() {
       </aside>
 
       {/* Main Content */}
-      <main className="md:ml-64 pt-24 px-12 pb-12 min-h-screen">
+      <main className="md:ml-64 pt-24 px-4 md:px-12 pb-12 min-h-screen">
         <header className="mb-12">
           <span className="font-accent italic text-xl text-primary mb-2 block">Your Floral Sanctuary</span>
           <h1 className="text-4xl font-bold text-on-surface tracking-tight">Active Subscriptions</h1>
@@ -255,67 +304,165 @@ export default function SubscriptionsPage() {
               View Plans
             </Link>
           </div>
-        ) : activeSubscriptions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <span className="material-symbols-outlined text-6xl text-outline mb-4">local_florist</span>
-            <h2 className="text-2xl font-bold text-on-surface mb-2">No active subscriptions</h2>
-            <p className="text-on-surface-variant mb-8">Your subscriptions are currently paused. Start a new subscription or resume an existing one.</p>
-            <Link href="/plans" className="bg-primary text-on-primary px-8 py-3 rounded-lg font-bold hover:scale-[1.02] transition-all">
-              Start Now
-            </Link>
-          </div>
         ) : (
           <div className="grid grid-cols-12 gap-8">
-            {/* Active Subscriptions */}
-            {activeSubscriptions.map((sub) => (
-              <div key={sub.id} className="col-span-12 lg:col-span-8 group relative bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(47,21,0,0.04)] border border-outline-variant/10">
-                <div className="flex flex-col md:flex-row">
-                  <div className="md:w-1/3 relative h-auto overflow-hidden bg-primary-container/20 flex items-center justify-center min-h-[200px]">
-                    <span className="material-symbols-outlined text-8xl text-primary opacity-30">local_florist</span>
-                    <div className="absolute bottom-6 left-6">
-                      <span className="bg-primary/90 backdrop-blur-sm text-on-primary text-[10px] uppercase tracking-widest px-3 py-1 rounded-full font-bold">
-                        {sub.planType}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-8 md:w-2/3 flex flex-col justify-between">
+            {subs.subscriptions.map((sub) => (
+              <div key={sub.id} className="col-span-12 group relative bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(47,21,0,0.04)] border border-outline-variant/10">
+                <div className="p-8 flex flex-col justify-between">
                     <div>
                       <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h2 className="text-3xl font-bold text-on-surface">{PLAN_LABELS[sub.planType] || sub.planType}</h2>
-                          <p className="text-on-surface-variant font-medium">{PLAN_DESCRIPTIONS[sub.planType] || ""}</p>
+                        <div className="flex items-center gap-4">
+                          {PLAN_IMAGES[sub.planType] && (
+                            <img
+                              src={PLAN_IMAGES[sub.planType]}
+                              alt={sub.planType}
+                              className="w-24 h-24 object-cover rounded-lg flex-shrink-0"
+                            />
+                          )}
+                          <div>
+                            <h2 className="text-3xl font-bold text-on-surface">{PLAN_LABELS[sub.planType] || sub.planType}</h2>
+                            <p className="text-on-surface-variant font-medium">{PLAN_DESCRIPTIONS[sub.planType] || ""}</p>
+                          </div>
                         </div>
-                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                          Active
-                        </span>
+                        {sub.status === "active" && (
+                          <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                            Active
+                          </span>
+                        )}
+                        {sub.status === "paused" && (
+                          <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold border border-amber-200 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            Paused
+                          </span>
+                        )}
+                        {sub.status === "cancelled" && (
+                          <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold border border-red-200 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                            Cancelled
+                          </span>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-2 gap-6 mt-8">
                         <div className="bg-surface-container-low p-4 rounded-lg">
-                          <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">Pricing</p>
-                          <div>
-                            <p className="text-xl font-bold text-on-surface">₹{(sub.totalPrice || sub.price).toLocaleString()}<span className="text-sm font-normal text-on-surface-variant">/month</span></p>
-                            {sub.addOnsPrice && sub.addOnsPrice > 0 && (
-                              <p className="text-xs text-on-surface-variant mt-1">
-                                Plan: ₹{sub.price.toLocaleString()} + Add-ons: ₹{sub.addOnsPrice.toLocaleString()}
-                              </p>
-                            )}
+                          <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">Total Paid</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xl font-bold text-on-surface">₹{(() => {
+                              const pDays = sub.customSchedule?.length || 30;
+                              const pTotal = Math.round(sub.price / 30) * pDays;
+                              const aTotal = (sub.addOns ?? []).reduce((s, a) => s + a.price * (a.deliveryCount ?? 1), 0);
+                              return (pTotal + aTotal).toLocaleString();
+                            })()}</p>
+                            <div className="relative">
+                              <button
+                                onClick={() => setPriceInfoOpen(priceInfoOpen === sub.id ? null : sub.id)}
+                                className="w-5 h-5 rounded-full border border-on-surface-variant/50 text-on-surface-variant text-[10px] font-bold flex items-center justify-center hover:bg-surface-container transition-colors flex-shrink-0"
+                              >i</button>
+                              {priceInfoOpen === sub.id && (() => {
+                                // Plan days: use customSchedule length if specific dates exist, else 30 (monthly default)
+                                const planDays = (sub.customSchedule && sub.customSchedule.length > 0)
+                                  ? sub.customSchedule.length
+                                  : 30;
+                                const hasPlan = sub.price > 0;
+                                const perDay = Math.round(sub.price / 30);
+                                const planTotal = perDay * planDays;
+                                const addonTotal = (sub.addOns ?? []).reduce((s, a) => s + a.price * (a.deliveryCount ?? 1), 0);
+                                const total = planTotal + addonTotal;
+
+                                // Each add-on has deliveryCount from backend (count of addon_delivery_dates rows)
+                                const addonEntries = (sub.addOns ?? []).map(
+                                  (addon) => [addon.name, { price: addon.price, count: addon.deliveryCount ?? 1 }] as const
+                                );
+                                const hasAddons = addonEntries.length > 0;
+
+
+                                return (
+                                  <div className="absolute left-0 top-7 w-72 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/10 p-4 z-50 text-sm">
+                                    {hasPlan && (
+                                      <div className="flex justify-between items-start py-1.5 border-b border-outline-variant/10">
+                                        <span className="text-on-surface-variant flex-shrink-0 mr-2">Plan</span>
+                                        <span className="text-right font-medium text-on-surface">
+                                          ₹{perDay}/day × {planDays} days
+                                          <br /><span className="text-xs text-on-surface-variant">= ₹{planTotal.toLocaleString()}</span>
+                                        </span>
+                                      </div>
+                                    )}
+                                    {addonEntries.map(([name, { price, count }]) => (
+                                      <div key={name} className="flex justify-between items-start py-1.5 border-b border-outline-variant/10">
+                                        <span className="text-on-surface-variant flex-shrink-0 mr-2 max-w-[6rem] leading-tight">{name}</span>
+                                        <span className="text-right font-medium text-on-surface">
+                                          ₹{price}/day × {count} {count === 1 ? "day" : "days"}
+                                          <br /><span className="text-xs text-on-surface-variant">= ₹{(price * count).toLocaleString()}</span>
+                                        </span>
+                                      </div>
+                                    ))}
+                                    {(hasPlan || hasAddons) && (
+                                      <div className="flex justify-between items-center pt-2 font-bold text-on-surface">
+                                        <span>Total</span>
+                                        <span>₹{total.toLocaleString()}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+                            </div>
                           </div>
                         </div>
                         <div className="bg-surface-container-low p-4 rounded-lg">
                           <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">Since</p>
                           <p className="text-base font-semibold text-on-surface">
-                            {sub.startDate ? new Date(sub.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                            {sub.startDate ? new Date(sub.startDate + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
                           </p>
                         </div>
-                        {sub.deliveryDays && sub.deliveryDays.length > 0 && (
-                          <div className="bg-surface-container-low p-4 rounded-lg col-span-2">
-                            <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">Delivery Days</p>
-                            <p className="text-base font-semibold text-on-surface">{Array.isArray(sub.deliveryDays) ? sub.deliveryDays.join(", ") : sub.deliveryDays}</p>
-                          </div>
-                        )}
+                        {/* Next Delivery Dates */}
+                        {(() => {
+                          const now = new Date();
+                          const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+                          const getNext = (dates: string[]) =>
+                            dates.filter(d => d >= today).sort()[0] ?? null;
+
+                          const formatNext = (date: string | null) => {
+                            if (!date) return "Completed";
+                            return new Date(date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+                          };
+
+                          const planNext = getNext(sub.customSchedule ?? []);
+                          const addonRows = (sub.addOns ?? []).map(a => ({
+                            name: a.name,
+                            next: getNext(a.deliveryDates ?? []),
+                          }));
+
+                          const hasAny = planNext !== null || addonRows.some(a => a.next !== null) || (sub.customSchedule ?? []).length > 0 || addonRows.length > 0;
+                          if (!hasAny) return null;
+
+                          return (
+                            <div className="bg-surface-container-low p-4 rounded-lg col-span-2">
+                              <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-3">Next Deliveries</p>
+                              <div className="space-y-2">
+                                {sub.customSchedule && sub.customSchedule.length > 0 && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-on-surface font-medium">
+                                      {PLAN_LABELS[sub.planType] || sub.planType} Plan
+                                    </span>
+                                    <span className={`text-sm font-semibold ${planNext ? "text-primary" : "text-on-surface-variant"}`}>
+                                      {formatNext(planNext)}
+                                    </span>
+                                  </div>
+                                )}
+                                {addonRows.map(({ name, next }) => (
+                                  <div key={name} className="flex items-center justify-between">
+                                    <span className="text-sm text-on-surface font-medium">{name}</span>
+                                    <span className={`text-sm font-semibold ${next ? "text-primary" : "text-on-surface-variant"}`}>
+                                      {formatNext(next)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         {sub.addOns && sub.addOns.length > 0 && (
                           <div className="bg-surface-container-low p-4 rounded-lg col-span-2">
@@ -341,104 +488,46 @@ export default function SubscriptionsPage() {
                     </div>
 
                     <div className="mt-10 space-y-3">
-                      {/* Primary Actions Row */}
                       <div className="flex flex-col md:flex-row gap-3">
-                        <button
-                          onClick={() => openModal("pause", sub.id)}
-                          disabled={subs.actionLoading === sub.id + ":pause"}
-                          className="flex-1 bg-surface-container-highest text-on-surface py-3 px-6 rounded-lg font-bold text-sm hover:bg-surface-variant transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          <span className="material-symbols-outlined text-sm">pause_circle</span>
-                          {subs.actionLoading === sub.id + ":pause" ? "Loading..." : "Pause"}
-                        </button>
-                        <button
-                          onClick={() => openModal("skip", sub.id)}
-                          disabled={subs.actionLoading === sub.id + ":skip"}
-                          className="flex-1 bg-surface-container-highest text-on-surface py-3 px-6 rounded-lg font-bold text-sm hover:bg-surface-variant transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          <span className="material-symbols-outlined text-sm">calendar_today</span>
-                          {subs.actionLoading === sub.id + ":skip" ? "Loading..." : "Skip Dates"}
-                        </button>
-                        <Link href="/dashboard/add-ons" className="flex-1 bg-primary text-on-primary py-3 px-6 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2">
-                          <span className="material-symbols-outlined text-sm">add_circle</span>
-                          Add Add-ons
-                        </Link>
-                      </div>
-
-                      {/* Secondary Actions Row */}
-                      <div className="flex flex-col md:flex-row gap-3">
-                        <button
-                          onClick={() => openModal("schedule", sub.id)}
-                          disabled={subs.actionLoading === sub.id + ":schedule"}
-                          className="flex-1 bg-surface-container-high text-on-surface py-2 px-4 rounded-lg font-semibold text-xs hover:bg-surface-variant transition-colors disabled:opacity-50 uppercase tracking-tight"
-                        >
-                          {subs.actionLoading === sub.id + ":schedule" ? "Loading..." : "Change Schedule"}
-                        </button>
-                        <button
-                          onClick={() => openModal("plan", sub.id)}
-                          disabled={subs.actionLoading === sub.id + ":plan"}
-                          className="flex-1 bg-surface-container-high text-on-surface py-2 px-4 rounded-lg font-semibold text-xs hover:bg-surface-variant transition-colors disabled:opacity-50 uppercase tracking-tight"
-                        >
-                          {subs.actionLoading === sub.id + ":plan" ? "Loading..." : "Change Plan"}
-                        </button>
+                        {sub.status === "active" ? (
+                          <button
+                            onClick={() => subs.pause(sub.id, { startDate: "", endDate: "" })}
+                            disabled={!!subs.actionLoading}
+                            className="flex-1 bg-surface-container-highest text-on-surface py-3 px-6 rounded-lg font-bold text-sm hover:bg-surface-variant transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+                            <span className="material-symbols-outlined text-sm">pause_circle</span>
+                            {subs.actionLoading === sub.id + ":pause" ? "Pausing..." : "Pause Subscription"}
+                          </button>
+                        ) : sub.status === "paused" ? (
+                          <button
+                            onClick={() => subs.resume(sub.id)}
+                            disabled={!!subs.actionLoading}
+                            className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-bold text-sm hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+                            <span className="material-symbols-outlined text-sm">play_circle</span>
+                            {subs.actionLoading === sub.id + ":resume" ? "Resuming..." : "Resume Subscription"}
+                          </button>
+                        ) : null}
                       </div>
 
                       {/* Cancel Button */}
-                      <button
-                        onClick={() => {
-                          setSelectedSubId(sub.id);
-                          setCancelConfirm(true);
-                        }}
-                        disabled={subs.actionLoading === sub.id + ":cancel"}
-                        className="w-full border-b-2 border-transparent hover:border-error text-error/60 py-2 font-semibold text-xs transition-all uppercase tracking-widest disabled:opacity-50"
-                      >
-                        {subs.actionLoading === sub.id + ":cancel" ? "Cancelling..." : "Cancel Plan"}
-                      </button>
+                      {sub.status !== "cancelled" && (
+                        <button
+                          onClick={() => {
+                            setSelectedSubId(sub.id);
+                            setCancelConfirm(true);
+                          }}
+                          disabled={!!subs.actionLoading}
+                          className="w-full border-b-2 border-transparent hover:border-error text-error/60 py-2 font-semibold text-xs transition-all uppercase tracking-widest disabled:opacity-50"
+                        >
+                          {subs.actionLoading === sub.id + ":cancel" ? "Cancelling..." : "Cancel Plan"}
+                        </button>
+                      )}
                     </div>
-                  </div>
                 </div>
               </div>
             ))}
 
-            {/* Stats Side Column */}
-            {activeSubscriptions.length > 0 && (
-              <div className="col-span-12 lg:col-span-4 space-y-8">
-                <div className="bg-surface-container p-6 rounded-xl border border-outline-variant/5">
-                  <h3 className="text-lg font-bold mb-4">Atelier Status</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-                        <span className="material-symbols-outlined text-primary">local_florist</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold">Farm to Doorstep</p>
-                        <p className="text-xs text-on-surface-variant">Sourced from Ooty Highlands</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-                        <span className="material-symbols-outlined text-secondary">verified</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold">Freshness Guaranteed</p>
-                        <p className="text-xs text-on-surface-variant">Delivered within 4 hours of harvest</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="relative rounded-xl overflow-hidden bg-on-surface p-6 text-on-primary">
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <span className="material-symbols-outlined text-6xl">card_giftcard</span>
-                  </div>
-                  <h3 className="text-lg font-bold mb-2">Invite a Friend</h3>
-                  <p className="text-xs text-surface-variant mb-4 opacity-80">Gift a week of freshness and get ₹200 off your next billing.</p>
-                  <Link href="/dashboard/referrals" className="bg-primary-container text-on-primary-container w-full py-2 rounded-lg text-xs font-bold hover:bg-white hover:text-on-surface transition-colors block text-center">
-                    Refer Now
-                  </Link>
-                </div>
-              </div>
-            )}
 
             {/* Paused Subscriptions */}
             {pausedSubscriptions.map((sub) => (
@@ -455,7 +544,7 @@ export default function SubscriptionsPage() {
                           Paused
                         </span>
                       </div>
-                      <p className="text-sm text-on-surface-variant">₹{(sub.totalPrice || sub.price).toLocaleString()}/month</p>
+                      <p className="text-sm text-on-surface-variant">₹{(sub.totalPrice || sub.price + (sub.addOnsPrice || 0)).toLocaleString()} total</p>
                     </div>
                   </div>
                   <button

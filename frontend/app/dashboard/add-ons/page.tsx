@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useCartUI } from "@/context/CartUIContext";
+import { useCart } from "@/context/CartContext";
 import { PRODUCTS } from "@/constants";
 
 interface UserData {
@@ -26,8 +28,11 @@ export default function AddOnsPage() {
   const [activeAddOns, setActiveAddOns] = useState<ActiveAddOn[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showCart, setShowCart] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { setIsCartOpen } = useCartUI();
+  const { cart } = useCart();
+  const cartCount = cart.addons.reduce((s, a) => s + a.quantity, 0) + (cart.planId ? 1 : 0);
 
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
@@ -93,7 +98,7 @@ export default function AddOnsPage() {
     <div className="bg-surface text-on-surface font-body">
       {/* Header */}
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-16 bg-[#fff8f5]/80 backdrop-blur-md shadow-sm">
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center">
             <img
               alt="Bloomme Logo"
@@ -101,6 +106,37 @@ export default function AddOnsPage() {
               src="/images/backgroundlesslogo.png"
             />
           </Link>
+          {/* Mobile hamburger - second from left */}
+          <div className="relative md:hidden">
+            <button
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
+              onClick={() => { setMobileMenuOpen(!mobileMenuOpen); setShowProfile(false); }}
+            >
+              <span className="material-symbols-outlined">{mobileMenuOpen ? "close" : "menu"}</span>
+            </button>
+            {mobileMenuOpen && (
+              <div className="absolute left-0 top-full mt-1 w-52 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/10 py-2 z-50">
+                <a href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">dashboard</span>Dashboard
+                </a>
+                <a href="/dashboard/subscriptions" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">loyalty</span>Subscriptions
+                </a>
+                <a href="/dashboard/add-ons" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-primary bg-primary/5">
+                  <span className="material-symbols-outlined text-base">featured_video</span>Add-ons
+                </a>
+                <a href="/dashboard/calendar" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">calendar_today</span>Calendar
+                </a>
+                <a href="/dashboard/referrals" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">redeem</span>Referrals
+                </a>
+                <a href="/dashboard/settings" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">settings</span>Settings
+                </a>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-6">
@@ -123,7 +159,6 @@ export default function AddOnsPage() {
                 className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
                 onClick={() => {
                   setShowNotifications(!showNotifications);
-                  setShowCart(false);
                 }}
               >
                 notifications
@@ -135,39 +170,31 @@ export default function AddOnsPage() {
               )}
             </div>
 
-            {/* Cart Dropdown */}
-            <div className="relative">
-              <span
-                className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors"
-                onClick={() => {
-                  setShowCart(!showCart);
-                  setShowNotifications(false);
-                }}
-              >
-                shopping_cart
-              </span>
-              {showCart && (
-                <div className="absolute right-0 mt-2 w-64 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-4 z-50">
-                  <p className="text-sm text-on-surface-variant text-center py-8">Your cart is empty</p>
-                </div>
+            {/* Cart */}
+            <button
+              className="relative min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"
+              onClick={() => { setIsCartOpen(true); setShowNotifications(false); }}
+              aria-label="Shopping cart"
+            >
+              <span className="material-symbols-outlined">shopping_basket</span>
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-on-primary text-[9px] font-bold flex items-center justify-center">
+                  {cartCount}
+                </span>
               )}
-            </div>
+            </button>
 
             {/* Profile Dropdown */}
             <div className="relative">
               <div
-                className="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                className="h-8 w-8 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-primary transition-all"
                 onClick={() => {
                   setShowProfile(!showProfile);
                   setShowNotifications(false);
-                  setShowCart(false);
+                  setMobileMenuOpen(false);
                 }}
               >
-                <img
-                  alt="User profile avatar"
-                  className="w-full h-full object-cover"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCj_6SqDxnawiUNEguNe52pFHVY8Azcgb-MnmxwswOzd_ywMWT_At6qKqd9nRvhhoHD_CdhbOt-xBRK9wWcUuNhINZJ68h1n9q7g0IT9giHUJhexCTsaqYSy7cZBrj6hxTQmJDj448V9qNrNWMBlNliYCa6a4VrlCniE5imWzpSy6vfNJcv_nltz03UMKFYi2iMCH2bwtLqNuDgSMV4lUZV-UbgHyql2sTuLBY_JCW6Wh42aD0esg5zERodh8vTDCuOjX9PWuw1TG1N"
-                />
+                <span className="text-white text-sm font-bold">{user?.name?.[0]?.toUpperCase()}</span>
               </div>
               {showProfile && (
                 <div className="absolute right-0 mt-2 w-48 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 p-3 z-50">

@@ -14,8 +14,9 @@ import { generateForAllActive } from '../services/scheduler';
 // Track the last UTC date when we ran the full generation
 let lastRunDate = '';
 
-function getUtcDate(): string {
-  return new Date().toISOString().slice(0, 10);
+function getISTDate(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function getUtcHour(): number {
@@ -23,7 +24,7 @@ function getUtcHour(): number {
 }
 
 async function runDailyJob(): Promise<void> {
-  const today = getUtcDate();
+  const today = getISTDate();
   const hour  = getUtcHour();
 
   // Only run between 00:00–01:00 UTC and only once per day

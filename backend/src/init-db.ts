@@ -21,6 +21,40 @@ const initDb = async () => {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
+            CREATE TABLE IF NOT EXISTS customers (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                email TEXT NOT NULL,
+                address TEXT,
+                city TEXT,
+                landmark TEXT,
+                notes TEXT,
+                time_slot TEXT DEFAULT '5:30 to 6:30',
+                building_type TEXT DEFAULT 'house',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS plans (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                tagline TEXT,
+                description TEXT,
+                price DECIMAL NOT NULL,
+                image_url TEXT,
+                features JSONB DEFAULT '[]',
+                is_popular BOOLEAN DEFAULT FALSE,
+                is_active BOOLEAN DEFAULT TRUE,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS add_ons (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                price DECIMAL NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS addresses (
                 id SERIAL PRIMARY KEY,
                 customer_id INTEGER NOT NULL REFERENCES customers(id),
@@ -52,12 +86,6 @@ const initDb = async () => {
                 notes TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS add_ons (
-                id SERIAL PRIMARY KEY,
-                name TEXT NOT NULL,
-                price DECIMAL NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS subscription_add_ons (
@@ -120,20 +148,6 @@ const initDb = async () => {
                 status TEXT DEFAULT 'active'
             );
 
-            CREATE TABLE IF NOT EXISTS plans (
-                id SERIAL PRIMARY KEY,
-                name TEXT NOT NULL,
-                tagline TEXT,
-                description TEXT,
-                price DECIMAL NOT NULL,
-                image_url TEXT,
-                features JSONB DEFAULT '[]',
-                is_popular BOOLEAN DEFAULT FALSE,
-                is_active BOOLEAN DEFAULT TRUE,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-
             CREATE TABLE IF NOT EXISTS app_config (
                 id SERIAL PRIMARY KEY,
                 key TEXT UNIQUE NOT NULL,
@@ -164,20 +178,6 @@ const initDb = async () => {
                 description TEXT,
                 price DECIMAL NOT NULL,
                 image_url TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS customers (
-                id SERIAL PRIMARY KEY,
-                name TEXT NOT NULL,
-                phone TEXT NOT NULL,
-                email TEXT NOT NULL,
-                address TEXT,
-                city TEXT,
-                landmark TEXT,
-                notes TEXT,
-                time_slot TEXT DEFAULT '5:30 to 6:30',
-                building_type TEXT DEFAULT 'house',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
@@ -259,6 +259,20 @@ const initDb = async () => {
             );
 
             CREATE INDEX IF NOT EXISTS idx_page_content_page_section ON page_content(page_name, section_name);
+
+            -- Add customer_id to orders for guest checkout tracking
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id);
+
+            -- Add schedule columns to order_items
+            ALTER TABLE order_items ADD COLUMN IF NOT EXISTS schedule JSONB;
+            ALTER TABLE order_items ADD COLUMN IF NOT EXISTS custom_schedule_dates DATE[];
+
+            -- Add email verification and password reset columns to users
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token TEXT;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_expires_at TIMESTAMPTZ;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token TEXT;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires_at TIMESTAMPTZ;
 
             -- Add columns to orders table for addon-only deliveries
             ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_date DATE;
