@@ -1,27 +1,29 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Navigation } from "@/components/common/Navigation";
 import { Footer } from "@/components/sections/Footer";
 
+function SearchParamsReader({ onParams }: { onParams: (name: string, email: string, phone: string) => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    onParams(
+      searchParams.get("name") || "",
+      searchParams.get("email") || "",
+      searchParams.get("phone") || "",
+    );
+  }, [searchParams]);
+  return null;
+}
+
 export default function SignupPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-
-  useEffect(() => {
-    const qName = searchParams.get("name");
-    const qEmail = searchParams.get("email");
-    const qPhone = searchParams.get("phone");
-    if (qName) setName(qName);
-    if (qEmail) setEmail(qEmail);
-    if (qPhone) setPhone(qPhone);
-  }, [searchParams]);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
@@ -139,6 +141,13 @@ export default function SignupPage() {
 
   return (
     <>
+      <Suspense fallback={null}>
+        <SearchParamsReader onParams={(n, e, p) => {
+          if (n) setName(n);
+          if (e) setEmail(e);
+          if (p) setPhone(p);
+        }} />
+      </Suspense>
       <Navigation />
       <main className="min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-12 bg-gradient-to-br from-surface via-surface to-surface-container-low pb-6">
         <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-0 overflow-hidden rounded-xl sm:rounded-2xl shadow-lg bg-surface-container-lowest mt-20 sm:mt-24">
