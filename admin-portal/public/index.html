@@ -1145,11 +1145,11 @@
                         <td>#${sub.id}</td>
                         <td>${sub.user_id || '-'}</td>
                         <td><span class="status-badge status-${sub.status}">${sub.status}</span></td>
-                        <td>${sub.plan_name || 'N/A'}</td>
+                        <td>${sub.plan_type || 'N/A'}</td>
                         <td>₹${sub.price}</td>
                         <td>${sub.delivery_count || 0}</td>
                         <td>${period}</td>
-                        <td>${sub.time_slot || '-'}</td>
+                        <td>${sub.city || '-'}</td>
                         <td>${new Date(sub.created_at).toLocaleDateString()}</td>
                         <td><button class="btn btn-sm" onclick="viewSubscriptionDetails(${sub.id})">View</button></td>
                     </tr>
@@ -1434,14 +1434,13 @@
                                 <p><strong>Name:</strong> ${sub.user_name || 'N/A'}</p>
                                 <p><strong>Email:</strong> ${sub.user_email || 'N/A'}</p>
                                 <p><strong>Phone:</strong> ${sub.user_phone || 'N/A'}</p>
-                                <p><strong>Type:</strong> ${sub.user_type || 'N/A'}</p>
+                                <p><strong>Type:</strong> ${sub.user_id ? 'Registered' : 'Guest'}</p>
                             </div>
 
                             <!-- Plan Details -->
                             <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #6b4c9a;">
                                 <h4>💳 Plan Details</h4>
-                                <p><strong>Plan Name:</strong> ${sub.plan_name || 'N/A'}</p>
-                                <p><strong>Plan Price:</strong> ₹${sub.plan_price || 'N/A'}</p>
+                                <p><strong>Plan Name:</strong> ${sub.plan_type || 'N/A'}</p>
                                 <p><strong>Subscription Price:</strong> ₹${sub.price || 'N/A'}</p>
                                 <p><strong>Status:</strong> <span class="status-badge status-${sub.status}">${sub.status}</span></p>
                             </div>
@@ -1450,20 +1449,18 @@
                             <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #6b4c9a;">
                                 <h4>📅 Schedule Information</h4>
                                 <p><strong>Start Date:</strong> ${new Date(sub.start_date).toLocaleDateString()}</p>
-                                <p><strong>End Date:</strong> ${sub.end_date ? new Date(sub.end_date).toLocaleDateString() : 'Ongoing'}</p>
-                                <p><strong>Time Slot:</strong> ${sub.time_slot || 'No specific slot'}</p>
+                                <p><strong>End Date:</strong> Ongoing</p>
                                 <p><strong>Total Deliveries:</strong> ${deliveries.length}</p>
-                                ${sub.pause_start_date ? `<p><strong>Paused:</strong> ${new Date(sub.pause_start_date).toLocaleDateString()} to ${sub.pause_end_date ? new Date(sub.pause_end_date).toLocaleDateString() : 'TBD'}</p>` : ''}
+                                ${sub.custom_schedule && sub.custom_schedule.length ? `<p><strong>Schedule Dates:</strong> ${sub.custom_schedule[0]} → ${sub.custom_schedule[sub.custom_schedule.length - 1]}</p>` : ''}
                             </div>
 
                             <!-- Address Information -->
                             <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #6b4c9a;">
                                 <h4>📍 Delivery Address</h4>
-                                <p><strong>Address:</strong> ${sub.address_line1 || ''} ${sub.address_line2 || ''}</p>
-                                <p><strong>Suburb/Area:</strong> ${sub.suburb || 'N/A'}</p>
-                                <p><strong>Postcode:</strong> ${sub.postcode || 'N/A'}</p>
-                                <p><strong>Building Type:</strong> ${sub.building_type || 'N/A'}</p>
-                                <p><strong>Delivery Notes:</strong> ${sub.delivery_notes || 'None'}</p>
+                                <p><strong>Address:</strong> ${[sub.house_number, sub.street, sub.area].filter(Boolean).join(', ') || 'N/A'}</p>
+                                <p><strong>City:</strong> ${sub.city || 'N/A'}</p>
+                                <p><strong>PIN Code:</strong> ${sub.pin_code || 'N/A'}</p>
+                                <p><strong>Delivery Notes:</strong> ${sub.instructions || 'None'}</p>
                             </div>
                         </div>
 

@@ -96,7 +96,7 @@ router.post('/signup', signupLimiter, async (req, res) => {
         console.log('User inserted successfully:', newUserId);
 
         // Send verification email
-        await sendVerificationEmail(email, verificationToken);
+        await sendVerificationEmail(email, verificationToken, name);
 
         // Record referral if referral code was provided
         if (referrerId) {
@@ -219,7 +219,7 @@ router.post('/verify-email', async (req, res) => {
         const hashedToken = hashToken(token);
 
         const user = await pool.query(
-            'SELECT id, email FROM users WHERE email_verification_token = $1 AND email_verification_expires_at > NOW()',
+            'SELECT id, name, phone, email, role, referral_code, referral_points, created_at FROM users WHERE email_verification_token = $1 AND email_verification_expires_at > NOW()',
             [hashedToken]
         );
 
@@ -227,15 +227,31 @@ router.post('/verify-email', async (req, res) => {
             return res.status(400).json({ error: 'Invalid or expired verification token.' });
         }
 
-        const userId = user.rows[0].id;
+        const userObj = user.rows[0];
 
-        // Mark email as verified
+        // Mark email as verified and clear token
         await pool.query(
             'UPDATE users SET email_verified = true, email_verification_token = NULL, email_verification_expires_at = NULL WHERE id = $1',
-            [userId]
+            [userObj.id]
         );
 
-        res.json({ message: 'Email verified successfully!' });
+        // Return a JWT so the frontend can auto-login
+        const jwtToken = jwt.sign({ id: userObj.id, email: userObj.email, role: userObj.role }, JWT_SECRET, { expiresIn: '1d' });
+
+        res.json({
+            message: 'Email verified successfully!',
+            token: jwtToken,
+            user: {
+                id: userObj.id,
+                name: userObj.name,
+                phone: userObj.phone,
+                email: userObj.email,
+                role: userObj.role,
+                referralCode: userObj.referral_code,
+                referralBalance: userObj.referral_points,
+                createdAt: userObj.created_at,
+            }
+        });
     } catch (err: any) {
         console.error('Email verification error:', err);
         res.status(400).json({ error: err.message });
@@ -253,13 +269,14 @@ router.post('/forgot-password', async (req, res) => {
             return res.status(400).json({ error: 'Email is required.' });
         }
 
-        const user = await pool.query('SELECT id, email FROM users WHERE email = $1', [email]);
+        const user = await pool.query('SELECT id, name, email FROM users WHERE email = $1', [email]);
 
         if (user.rows.length === 0) {
             return res.status(200).json({ message: 'If an account exists, a reset link has been sent.' });
         }
 
         const userId = user.rows[0].id;
+        const userName = user.rows[0].name;
         const resetToken = generateToken();
         const hashedResetToken = hashToken(resetToken);
         const resetExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
@@ -271,7 +288,7 @@ router.post('/forgot-password', async (req, res) => {
         );
 
         // Send reset email
-        await sendPasswordResetEmail(email, resetToken);
+        await sendPasswordResetEmail(email, resetToken, userName);
 
         res.json({ message: 'If an account exists, a reset link has been sent.' });
     } catch (err: any) {

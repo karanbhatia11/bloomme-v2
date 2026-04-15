@@ -153,7 +153,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="bg-surface text-on-surface font-body selection:bg-primary-fixed-dim selection:text-on-primary-fixed">
+      <body suppressHydrationWarning className="bg-surface text-on-surface font-body selection:bg-primary-fixed-dim selection:text-on-primary-fixed">
         <LayoutClient>{children}</LayoutClient>
       </body>
     </html>

@@ -18,6 +18,7 @@ export default function SignupPage() {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const pwd = e.target.value;
@@ -73,15 +74,42 @@ export default function SignupPage() {
         return;
       }
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      router.push("/dashboard");
+      setEmailSent(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error");
     } finally {
       setLoading(false);
     }
   };
+
+  if (emailSent) {
+    return (
+      <>
+        <Navigation />
+        <main className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-surface via-surface to-surface-container-low">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="w-full max-w-md bg-surface-container-lowest rounded-2xl p-8 shadow-lg border border-surface-container text-center"
+          >
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="material-symbols-outlined text-3xl text-primary">mark_email_read</span>
+            </div>
+            <h2 className="text-2xl font-bold font-headline text-on-surface mb-2">Check your inbox</h2>
+            <p className="text-on-surface-variant text-sm leading-relaxed mb-6">
+              We&apos;ve sent a verification link to <strong className="text-on-surface">{email}</strong>. Click it to activate your account and get started.
+            </p>
+            <p className="text-xs text-on-surface-variant">
+              Didn&apos;t receive it? Check your spam folder or{" "}
+              <Link href="/login" className="text-primary font-semibold hover:underline">sign in</Link>.
+            </p>
+          </motion.div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>

@@ -18,10 +18,9 @@ router.get('/stats', async (req, res) => {
         const activeSubs = await pool.query('SELECT COUNT(*) FROM subscriptions WHERE status = \'active\'');
 
         const planStats = await pool.query(`
-            SELECT p.name as plan_name, COUNT(*) as count
-            FROM subscriptions s
-            LEFT JOIN plans p ON s.plan_id = p.id
-            GROUP BY p.id, p.name
+            SELECT plan_type as plan_name, COUNT(*) as count
+            FROM subscriptions
+            GROUP BY plan_type
             ORDER BY COUNT(*) DESC
         `);
 
@@ -77,30 +76,19 @@ router.get('/subscriptions', async (req, res) => {
             SELECT
                 s.id,
                 s.user_id,
-                s.customer_id,
-                s.plan_id,
+                s.plan_type,
                 s.status,
                 s.price,
                 s.start_date,
-                s.end_date,
-                s.notes,
                 s.created_at,
-                COALESCE(u.name, c.name) as user_name,
-                COALESCE(u.email, c.email) as user_email,
-                COALESCE(u.phone, c.phone) as user_phone,
-                p.name as plan_name,
-                p.price as plan_price,
-                a.id as address_id,
-                a.time_slot,
-                COUNT(DISTINCT sdd.id) as delivery_count,
-                CASE WHEN s.user_id IS NULL THEN 'guest' ELSE 'registered' END as user_type
+                u.name as user_name,
+                u.email as user_email,
+                u.phone as user_phone,
+                (SELECT city FROM addresses WHERE user_id = s.user_id LIMIT 1) as city,
+                (SELECT pin_code FROM addresses WHERE user_id = s.user_id LIMIT 1) as pin_code,
+                (SELECT COUNT(*) FROM subscription_delivery_dates WHERE subscription_id = s.id) as delivery_count
             FROM subscriptions s
             LEFT JOIN users u ON s.user_id = u.id
-            LEFT JOIN customers c ON s.customer_id = c.id
-            LEFT JOIN plans p ON s.plan_id = p.id
-            LEFT JOIN addresses a ON c.id = a.customer_id
-            LEFT JOIN subscription_delivery_dates sdd ON s.id = sdd.subscription_id
-            GROUP BY s.id, u.id, c.id, p.id, a.id
             ORDER BY s.created_at DESC
         `);
         res.json(result.rows);
@@ -118,25 +106,19 @@ router.get('/subscriptions/:id/details', async (req, res) => {
         const subResult = await pool.query(`
             SELECT
                 s.*,
-                p.name as plan_name,
-                p.price as plan_price,
-                a.id as address_id,
-                a.time_slot,
-                a.address_line1,
-                a.address_line2,
-                a.suburb,
-                a.postcode,
-                a.delivery_notes,
-                a.building_type,
-                COALESCE(u.name, c.name) as user_name,
-                COALESCE(u.email, c.email) as user_email,
-                COALESCE(u.phone, c.phone) as user_phone,
-                CASE WHEN s.user_id IS NULL THEN 'guest' ELSE 'registered' END as user_type
+                u.name as user_name,
+                u.email as user_email,
+                u.phone as user_phone,
+                a.full_name,
+                a.house_number,
+                a.street,
+                a.area,
+                a.city,
+                a.pin_code,
+                a.instructions
             FROM subscriptions s
-            LEFT JOIN plans p ON s.plan_id = p.id
-            LEFT JOIN addresses a ON a.customer_id = s.customer_id
             LEFT JOIN users u ON s.user_id = u.id
-            LEFT JOIN customers c ON s.customer_id = c.id
+            LEFT JOIN addresses a ON a.user_id = s.user_id
             WHERE s.id = $1
             LIMIT 1
         `, [id]);
@@ -202,10 +184,10 @@ router.get('/subscriptions/:id/details', async (req, res) => {
                 created_at,
                 paid_at
             FROM orders
-            WHERE customer_id = $1
+            WHERE user_id = $1
             ORDER BY created_at DESC
             LIMIT 1
-        `, [subResult.rows[0].customer_id]);
+        `, [subResult.rows[0].user_id]);
 
         res.json({
             subscription: subResult.rows[0],
@@ -442,38 +424,33 @@ router.get('/delivery-manifest', async (req, res) => {
                     LEFT JOIN addon_delivery_dates add ON sa.id = add.subscription_addon_id
                     WHERE sa.subscription_id = s.id AND add.delivery_date = sdd.delivery_date
                 ) THEN 'sub+addons' ELSE 'subscription' END as delivery_type,
-                c.name as customer_name,
-                c.phone,
-                a.address_line1,
-                a.address_line2,
-                a.suburb,
-                a.postcode,
-                a.time_slot as delivery_slot,
-                p.name as plan_name,
-                p.price as plan_price,
+                u.name as customer_name,
+                u.phone,
+                a.house_number,
+                a.street,
+                a.area,
+                a.city,
+                a.pin_code,
+                NULL::text as delivery_slot,
+                s.plan_type as plan_name,
+                s.price as plan_price,
                 s.id as subscription_id,
                 NULL::integer as order_id,
                 COALESCE(d.status, 'scheduled') as delivery_status,
                 NULL::text as payment_status,
-                s.notes,
+                NULL::text as notes,
                 (SELECT COALESCE(SUM(ao.price), 0) FROM subscription_add_ons sa LEFT JOIN add_ons ao ON sa.add_on_id = ao.id WHERE sa.subscription_id = s.id) as addon_total,
-                COALESCE(p.price, 0) + (SELECT COALESCE(SUM(ao.price), 0) FROM subscription_add_ons sa LEFT JOIN add_ons ao ON sa.add_on_id = ao.id WHERE sa.subscription_id = s.id) as total_amount,
+                s.price + (SELECT COALESCE(SUM(ao.price), 0) FROM subscription_add_ons sa LEFT JOIN add_ons ao ON sa.add_on_id = ao.id WHERE sa.subscription_id = s.id) as total_amount,
                 (
-                    SELECT json_agg(json_build_object(
-                        'name', ao.name,
-                        'qty', ac.qty
-                    ))
+                    SELECT json_agg(json_build_object('name', ao.name, 'qty', 1))
                     FROM subscription_add_ons sa
                     LEFT JOIN add_ons ao ON sa.add_on_id = ao.id
-                    LEFT JOIN addon_counts ac ON sa.id = ac.subscription_addon_id AND ac.delivery_date = sdd.delivery_date
                     WHERE sa.subscription_id = s.id
-                    AND ac.qty IS NOT NULL
                 ) as addons
             FROM subscription_delivery_dates sdd
             LEFT JOIN subscriptions s ON sdd.subscription_id = s.id
-            LEFT JOIN customers c ON s.customer_id = c.id
-            LEFT JOIN addresses a ON c.id = a.customer_id
-            LEFT JOIN plans p ON s.plan_id = p.id
+            LEFT JOIN users u ON s.user_id = u.id
+            LEFT JOIN addresses a ON a.user_id = s.user_id
             LEFT JOIN deliveries d ON s.id = d.subscription_id AND sdd.delivery_date = d.delivery_date
             WHERE s.status = 'active'
             ${dateFilterSub}
@@ -487,12 +464,13 @@ router.get('/delivery-manifest', async (req, res) => {
                 TO_CHAR(o.delivery_date, 'Day') as delivery_day,
                 'addon_only' as order_type,
                 'addon_only' as delivery_type,
-                COALESCE(u.name, c.name) as customer_name,
-                COALESCE(u.phone, c.phone) as phone,
-                a.address_line1,
-                a.address_line2,
-                a.suburb,
-                a.postcode,
+                u.name as customer_name,
+                u.phone,
+                a.house_number,
+                a.street,
+                a.area,
+                a.city,
+                a.pin_code,
                 o.delivery_slot,
                 NULL::text as plan_name,
                 NULL::numeric as plan_price,
@@ -511,8 +489,7 @@ router.get('/delivery-manifest', async (req, res) => {
                  WHERE oi.order_id = o.id AND oi.item_type = 'addon') as addons
             FROM orders o
             LEFT JOIN users u ON o.user_id = u.id
-            LEFT JOIN customers c ON o.customer_id = c.id
-            LEFT JOIN addresses a ON c.id = a.customer_id
+            LEFT JOIN addresses a ON a.user_id = o.user_id
             WHERE o.delivery_date IS NOT NULL AND o.order_type = 'addon'
             ${dateFilterAddon}
 
@@ -569,18 +546,15 @@ router.get('/orders', async (req, res) => {
                 u.name as user_name,
                 u.email as user_email,
                 u.phone as user_phone,
-                c.name as customer_name,
-                c.phone as customer_phone,
-                c.email as customer_email,
-                a.address_line1,
-                a.address_line2,
-                a.suburb,
-                a.postcode,
-                a.delivery_notes
+                a.house_number,
+                a.street,
+                a.area,
+                a.city,
+                a.pin_code,
+                a.instructions as delivery_notes
             FROM orders o
             LEFT JOIN users u ON o.user_id = u.id
-            LEFT JOIN customers c ON o.customer_id = c.id
-            LEFT JOIN addresses a ON c.id = a.customer_id
+            LEFT JOIN addresses a ON a.user_id = o.user_id
             ORDER BY o.created_at DESC
         `);
         res.json(result.rows);

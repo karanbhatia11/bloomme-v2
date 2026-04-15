@@ -1,11 +1,15 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { Navigation } from '@/components/common/Navigation';
+import { Footer } from '@/components/sections/Footer';
 
 export function VerifyEmailForm() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const token = searchParams.get('token');
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [message, setMessage] = useState('');
@@ -27,74 +31,73 @@ export function VerifyEmailForm() {
 
                 const data = await response.json();
 
-                if (response.ok) {
+                if (response.ok && data.token) {
+                    // Auto-login and redirect to dashboard
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
                     setStatus('success');
-                    setMessage('Email verified successfully! You can now log in.');
+                    setTimeout(() => router.push('/dashboard'), 1500);
                 } else {
                     setStatus('error');
                     setMessage(data.error || 'Failed to verify email.');
                 }
-            } catch (err) {
+            } catch {
                 setStatus('error');
                 setMessage('An error occurred. Please try again.');
-                console.error('Verification error:', err);
             }
         };
 
         verifyEmail();
-    }, [token]);
+    }, [token, router]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-amber-50 px-4">
-            <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
-                <div className="text-center">
+        <>
+            <Navigation />
+            <main className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-surface via-surface to-surface-container-low">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="w-full max-w-md bg-surface-container-lowest rounded-2xl p-8 shadow-lg border border-surface-container text-center"
+                >
                     {status === 'loading' && (
                         <>
-                            <div className="animate-spin mb-4">
-                                <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full mx-auto"></div>
+                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+                                <span className="material-symbols-outlined text-3xl text-primary">hourglass_top</span>
                             </div>
-                            <h1 className="text-2xl font-bold text-gray-900">Verifying Email</h1>
-                            <p className="text-gray-600 mt-2">Please wait while we verify your email address...</p>
+                            <h1 className="text-2xl font-bold font-headline text-on-surface mb-2">Verifying your email…</h1>
+                            <p className="text-on-surface-variant text-sm">Just a moment.</p>
                         </>
                     )}
 
                     {status === 'success' && (
                         <>
-                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
+                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <span className="material-symbols-outlined text-3xl text-primary">check_circle</span>
                             </div>
-                            <h1 className="text-2xl font-bold text-gray-900">Email Verified!</h1>
-                            <p className="text-gray-600 mt-2">{message}</p>
-                            <Link
-                                href="/login"
-                                className="mt-6 block bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition"
-                            >
-                                Go to Login
-                            </Link>
+                            <h1 className="text-2xl font-bold font-headline text-on-surface mb-2">Email verified!</h1>
+                            <p className="text-on-surface-variant text-sm">Taking you to your dashboard…</p>
                         </>
                     )}
 
                     {status === 'error' && (
                         <>
-                            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                            <div className="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <span className="material-symbols-outlined text-3xl text-error">error</span>
                             </div>
-                            <h1 className="text-2xl font-bold text-gray-900">Verification Failed</h1>
-                            <p className="text-gray-600 mt-2">{message}</p>
+                            <h1 className="text-2xl font-bold font-headline text-on-surface mb-2">Verification failed</h1>
+                            <p className="text-on-surface-variant text-sm mb-6">{message}</p>
                             <Link
-                                href="/signup"
-                                className="mt-6 block bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+                                href="/login"
+                                className="inline-block bg-gradient-to-r from-primary to-primary-container text-on-primary px-6 py-3 rounded-lg font-bold text-sm"
                             >
-                                Sign Up Again
+                                Go to Login
                             </Link>
                         </>
                     )}
-                </div>
-            </div>
-        </div>
+                </motion.div>
+            </main>
+            <Footer />
+        </>
     );
 }
