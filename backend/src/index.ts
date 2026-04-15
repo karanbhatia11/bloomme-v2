@@ -31,6 +31,8 @@ dotenv.config();
 const app = express();
 const PORT = parseInt(process.env.PORT || '5000', 10);
 
+app.set('trust proxy', 1); // Trust first proxy (nginx) so rate limiting keys on real client IP
+
 // HTTPS enforcement - redirect if not using HTTPS (except in development)
 if (process.env.NODE_ENV === 'production') {
     app.use((req, res, next) => {
