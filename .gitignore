@@ -9,8 +9,9 @@ build/
 .next/
 out/
 
-# Environment variables
+# Environment variables — never commit any .env file
 .env
+.env.*
 .env.local
 .env.*.local
 

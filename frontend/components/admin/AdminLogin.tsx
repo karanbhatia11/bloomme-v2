@@ -17,13 +17,6 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
         setError('');
         setLoading(true);
 
-        // Hardcoded admin bypass
-        if (username === 'admin@bloomme.co.in' && password === 'Bloomme@Admin123') {
-            onLogin('hardcoded-admin-token');
-            setLoading(false);
-            return;
-        }
-
         try {
             // Try to login with email/username as email
             const response = await fetch('/api/auth/login', {

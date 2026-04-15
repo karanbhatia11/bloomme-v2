@@ -9,7 +9,8 @@ dotenv.config();
 const app = express();
 const PORT = process.env.ADMIN_PORT || 9000;
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
-const JWT_SECRET = process.env.JWT_SECRET || 'admin-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is not set');
 
 app.use(cors());
 app.use(express.json());
@@ -37,9 +38,12 @@ app.post('/api/auth/login', (req: Request, res: Response) => {
     try {
         const { username, password } = req.body;
 
-        // Admin credentials
-        const ADMIN_USERNAME = 'rushilpartner@gmail.com';
-        const ADMIN_PASSWORD = 'gauravpartner';
+        // Admin credentials — set ADMIN_USERNAME and ADMIN_PASSWORD in environment
+        const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
+        const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+        if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
+            return res.status(500).json({ error: 'Admin credentials not configured' });
+        }
 
         if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
             const token = jwt.sign(

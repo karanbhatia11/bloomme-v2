@@ -8,7 +8,8 @@ import { sendVerificationEmail, sendPasswordResetEmail } from '../utils/email';
 import { awardCredits } from './credits';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'bloom_secret_key';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is not set');
 
 router.post('/signup', signupLimiter, async (req, res) => {
     console.log('Signup request received:', req.body.email);
