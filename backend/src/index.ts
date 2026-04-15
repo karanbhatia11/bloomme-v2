@@ -22,6 +22,7 @@ import promoRoutes from './routes/promo';
 import calendarRoutes from './routes/calendar';
 import previewRoutes from './routes/preview';
 import creditsRoutes from './routes/credits';
+import contactRoutes from './routes/contact';
 import { startDeliveryJob } from './jobs/generateDeliveries';
 import path from 'path';
 
@@ -103,6 +104,7 @@ app.use('/api/promo', promoRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/preview', previewRoutes);
 app.use('/api/credits', creditsRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Serving uploaded files (using /api/uploads so it works seamlessly behind Nginx)
 app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));

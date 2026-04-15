@@ -19,7 +19,7 @@ export default function ContactPage() {
     name: "",
     email: "",
     phone: "",
-    subject: "Floral Subscription Inquiry",
+    subject: "Start a Subscription",
     message: "",
   });
 
@@ -81,7 +81,7 @@ export default function ContactPage() {
           name: "",
           email: "",
           phone: "",
-          subject: "Floral Subscription Inquiry",
+          subject: "Start a Subscription",
           message: "",
         });
         setTimeout(() => setSubmitStatus("idle"), 3000);
@@ -129,7 +129,7 @@ export default function ContactPage() {
             )}
           </h1>
           <p className="text-on-surface-variant max-w-lg text-lg leading-relaxed pt-4">
-            {intro.subtitle || "Whether you're planning a grand ceremony or a quiet gesture of love, our florists are here to guide your choice."}
+            {intro.subtitle || "Have a question about your subscription, a delivery, or our puja essentials? We're here to help."}
           </p>
         </motion.div>
 
@@ -199,9 +199,14 @@ export default function ContactPage() {
                   value={formData.subject}
                   onChange={handleChange}
                 >
-                  <option>Floral Subscription Inquiry</option>
-                  <option>Wedding & Events</option>
+                  <option>Start a Subscription</option>
+                  <option>Manage My Subscription</option>
+                  <option>Puja Add-On Inquiry</option>
+                  <option>Delivery Issue</option>
                   <option>Order Status</option>
+                  <option>Billing & Payments</option>
+                  <option>Bulk & Corporate Orders</option>
+                  <option>Feedback & Suggestions</option>
                   <option>Other</option>
                 </select>
               </div>
@@ -212,7 +217,7 @@ export default function ContactPage() {
                 </label>
                 <textarea
                   className="w-full bg-transparent border-0 border-b-2 border-outline-variant/30 py-4 text-lg focus:ring-0 placeholder:text-outline-variant transition-all resize-none focus:border-primary"
-                  placeholder="Tell us about your floral needs..."
+                  placeholder="Tell us how we can serve your daily puja. Share your delivery preferences, questions about our plans, or anything on your mind..."
                   rows={4}
                   name="message"
                   value={formData.message}
@@ -261,7 +266,7 @@ export default function ContactPage() {
             <div className="bg-surface-container-low p-12 rounded-[2.5rem] space-y-10">
               <div>
                 <h3 className="font-accent italic text-2xl text-secondary mb-8">
-                  Visit the Atelier
+                  Get in Touch
                 </h3>
                 <div className="space-y-8">
                   {/* Email */}
@@ -306,27 +311,16 @@ export default function ContactPage() {
                 <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant/40">
                   Instant Support
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <button className="flex flex-col items-center justify-center p-6 bg-surface-bright rounded-2xl group hover:bg-primary transition-all duration-300 active:scale-95">
-                    <span className="material-symbols-outlined text-primary group-hover:text-on-primary mb-2">
-                      chat_bubble
-                    </span>
-                    <span className="text-sm font-bold group-hover:text-on-primary transition-colors">
-                      Live Chat
-                    </span>
-                  </button>
-
-                  <Link
-                    href={WHATSAPP_URL}
-                    target="_blank"
-                    className="flex flex-col items-center justify-center p-6 bg-surface-bright rounded-2xl group hover:bg-[#25D366] transition-all duration-300 active:scale-95"
-                  >
-                    <span className="text-2xl mb-2">💬</span>
-                    <span className="text-sm font-bold group-hover:text-white transition-colors text-[#25D366] group-hover:text-white">
-                      WhatsApp
-                    </span>
-                  </Link>
-                </div>
+                <Link
+                  href={WHATSAPP_URL}
+                  target="_blank"
+                  className="flex flex-col items-center justify-center p-6 bg-surface-bright rounded-2xl group hover:bg-[#25D366] transition-all duration-300 active:scale-95"
+                >
+                  <span className="text-2xl mb-2">💬</span>
+                  <span className="text-sm font-bold group-hover:text-white transition-colors text-[#25D366]">
+                    WhatsApp
+                  </span>
+                </Link>
               </div>
             </div>
 
@@ -340,8 +334,8 @@ export default function ContactPage() {
             >
               <img
                 className="w-full h-full object-cover"
-                alt="Floral Shop Interior"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSTZkAX-0Wy1OmhCTTdGBPcQrbIydfCkpCmYDFdzVyNL0o_gDJ5tgAFe4tUR0HrY3hI7Ig18xzXrb9ZeovfgUBgL66KnFka14VB_Vgqi05UU1nI3DskLVpGRmcaXw_RY22k0iACM14ljKJm1fLiLK6bSpa-hSBqzTLj7xU4WIcPd-5J4DeTraZASAHSmdCIIG5wQ1DAJrOS3wKTNUx4dSURLJLTFcpnncJMwjf7bnOrS57qAkD6KsMNk_BHwE_lnnNxaiEMdWLZy4K"
+                alt="Bloomme Contact Us"
+                src="/images/ContactUs.jpeg"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-on-background/60 to-transparent flex items-end p-8">
                 <p className="text-surface-bright font-accent italic text-xl">

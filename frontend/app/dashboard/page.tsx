@@ -36,6 +36,9 @@ export default function DashboardPage() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackRating, setFeedbackRating] = useState(0);
   const { setIsCartOpen } = useCartUI();
   const { cart } = useCart();
   const cartCount = cart.addons.reduce((s, a) => s + a.quantity, 0) + (cart.planId ? 1 : 0);
@@ -128,6 +131,18 @@ export default function DashboardPage() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     router.push("/");
+  };
+
+  const handleFeedbackSubmit = () => {
+    if (!feedbackText.trim()) return;
+    const stars = feedbackRating > 0 ? `Rating: ${"★".repeat(feedbackRating)}${"☆".repeat(5 - feedbackRating)} (${feedbackRating}/5)\n` : "";
+    const userInfo = `Name: ${user?.name || "Customer"}\nEmail: ${user?.email || ""}${user?.phone ? `\nPhone: ${user.phone}` : ""}`;
+    const message = `*Bloomme Feedback*\n\n${stars}\n${feedbackText.trim()}\n\n${userInfo}`;
+    const waUrl = `https://wa.me/919950707995?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, "_blank");
+    setShowFeedback(false);
+    setFeedbackText("");
+    setFeedbackRating(0);
   };
 
   if (!user || loading) {
@@ -290,7 +305,7 @@ export default function DashboardPage() {
         </nav>
 
         <div className="mt-auto pt-4 flex flex-col gap-1 border-t border-outline-variant/10">
-          <button className="flex items-center gap-3 px-4 py-3 text-on-surface-variant font-medium text-sm hover:text-primary transition-all">
+          <button onClick={() => setShowFeedback(true)} className="flex items-center gap-3 px-4 py-3 text-on-surface-variant font-medium text-sm hover:text-primary transition-all">
             <span className="material-symbols-outlined">chat_bubble</span>
             Feedback
           </button>
@@ -496,6 +511,73 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Feedback Dialog */}
+      {showFeedback && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setShowFeedback(false)}>
+          <div
+            className="bg-surface w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-[#fffbf0] px-8 pt-8 pb-6 text-center border-b border-outline-variant/10">
+              <img src="/images/backgroundlesslogo.png" alt="Bloomme" className="h-10 mx-auto mb-3 object-contain" />
+              <p className="text-on-surface-variant text-sm italic">"Every petal matters. So does your voice."</p>
+            </div>
+
+            {/* Body */}
+            <div className="px-8 py-6 space-y-5">
+              {/* Star Rating */}
+              <div>
+                <p className="text-sm font-medium text-on-surface-variant mb-2">How are we doing?</p>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setFeedbackRating(star)}
+                      className={`text-2xl transition-transform hover:scale-110 ${star <= feedbackRating ? "text-[#e6a817]" : "text-outline-variant"}`}
+                    >
+                      {star <= feedbackRating ? "★" : "☆"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Message */}
+              <div>
+                <p className="text-sm font-medium text-on-surface-variant mb-2">Your feedback</p>
+                <textarea
+                  rows={4}
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  placeholder="Tell us what we're doing well, or how we can serve you better..."
+                  className="w-full bg-surface-container-low rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline-variant resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+
+              <p className="text-xs text-on-surface-variant/50">Your name, email and phone will be included so we can follow up.</p>
+            </div>
+
+            {/* Footer */}
+            <div className="px-8 pb-8 flex gap-3">
+              <button
+                onClick={() => { setShowFeedback(false); setFeedbackText(""); setFeedbackRating(0); }}
+                className="flex-1 py-3 rounded-xl border border-outline-variant text-on-surface-variant text-sm font-medium hover:bg-surface-container transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleFeedbackSubmit}
+                disabled={!feedbackText.trim()}
+                className="flex-1 py-3 rounded-xl bg-primary text-on-primary text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-base">send</span>
+                Send on WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
