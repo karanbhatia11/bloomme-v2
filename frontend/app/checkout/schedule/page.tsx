@@ -64,9 +64,9 @@ export default function CheckoutSchedulePage() {
 
   // ── Core UX state — stable defaults match SSR output (no localStorage reads here) ──
 
-  const [selectedDayNums, setSelectedDayNums] = useState<number[]>([0, 6]);
+  const [selectedDayNums, setSelectedDayNums] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
   const [deselectedDates, setDeselectedDates] = useState<string[]>([]);
-  const [preset, setPreset] = useState<string>("weekends");
+  const [preset, setPreset] = useState<string>("daily");
   const [hydrated, setHydrated] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -89,7 +89,7 @@ export default function CheckoutSchedulePage() {
 
   useEffect(() => {
     // Read cart deliveryDays from localStorage
-    let days = [0, 6];
+    let days = [0, 1, 2, 3, 4, 5, 6];
     try {
       const cartSaved = localStorage.getItem("bloomme_cart");
       if (cartSaved) {

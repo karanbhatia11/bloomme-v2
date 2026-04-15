@@ -73,7 +73,7 @@ export default function CheckoutPayPage() {
     }
     const to = (() => {
       const d = new Date(from + "T00:00:00");
-      d.setDate(d.getDate() + 30);
+      d.setDate(d.getDate() + 29);
       return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     })();
 
@@ -606,6 +606,8 @@ export default function CheckoutPayPage() {
             );
           })}
 
+          <p className="text-[10px] text-[#4d4638]/40 pt-2">Incl. all taxes</p>
+
           {creditsToRedeem > 0 && (
             <div className="flex items-center justify-between text-sm text-[#775a11] font-semibold pt-2">
               <span>Bloom Credits ({creditsToRedeem} credits)</span>
@@ -711,19 +713,31 @@ export default function CheckoutPayPage() {
 
         {/* Delivery Info */}
         {cart.customer && (
-          <div className="bg-[#ffdcc3]/20 rounded-3xl p-6 mb-6 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-[#4d4638]/60">Delivering To</h3>
-            <div className="flex items-start gap-3">
-              <span className="material-symbols-outlined text-[#775a11] mt-0.5 text-sm">location_on</span>
-              <div>
-                <p className="font-semibold text-[#2f1500]">{cart.customer.name}</p>
-                <p className="text-[#4d4638] text-sm">{cart.customer.address}, {cart.customer.city}</p>
-                <p className="text-[#4d4638] text-sm">+91 {cart.customer.phone}</p>
-              </div>
+          <div className="bg-[#ffdcc3]/20 rounded-3xl p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[#4d4638]/60">Delivering To</h3>
+              <Link href="/checkout/details" className="text-xs text-[#775a11] underline underline-offset-2">Edit</Link>
             </div>
-            <Link href="/checkout/details" className="text-xs text-[#775a11] underline underline-offset-2">
-              Edit details
-            </Link>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { icon: "person",      label: "Name",          value: (cart.customer as any).name },
+                { icon: "mail",        label: "Email",         value: (cart.customer as any).email },
+                { icon: "phone",       label: "Phone",         value: `+91 ${(cart.customer as any).phone}` },
+                { icon: "schedule",    label: "Time Slot",     value: (cart.customer as any).timeSlot },
+                { icon: "apartment",   label: "Building",      value: (cart.customer as any).buildingType },
+                { icon: "location_on", label: "Address",       value: [(cart.customer as any).addressLine1, (cart.customer as any).addressLine2].filter(Boolean).join(", ") },
+                { icon: "location_city", label: "Suburb / City", value: [(cart.customer as any).suburb, (cart.customer as any).postcode].filter(Boolean).join(" ") },
+                (cart.customer as any).deliveryNotes && { icon: "sticky_note_2", label: "Delivery Notes", value: (cart.customer as any).deliveryNotes },
+              ].filter(Boolean).map(({ icon, label, value }: any) => value ? (
+                <div key={label} className="flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-[#775a11] text-sm mt-0.5 flex-shrink-0">{icon}</span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#4d4638]/50">{label}</p>
+                    <p className="text-sm font-semibold text-[#2f1500] break-words">{value}</p>
+                  </div>
+                </div>
+              ) : null)}
+            </div>
           </div>
         )}
 
