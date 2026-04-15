@@ -19,6 +19,7 @@ export interface Subscription {
   addOns?: AddOn[];
   deliveryDays: string[];
   customSchedule?: string[] | null;
+  deliveryStatuses?: Record<string, string>;
   startDate: string | null;
   endDate?: string | null;
   createdAt: string;

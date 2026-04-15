@@ -7,6 +7,8 @@ import { sendOrderConfirmationEmail, OrderConfirmationData } from '../utils/emai
 
 const router = express.Router();
 
+const formatOrderId = (id: number): string => `BLM-${String(id).padStart(6, '0')}`;
+
 // Helper: Create real Razorpay order via API
 const createRazorpayOrder = async (amount: number): Promise<string> => {
     const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
@@ -80,17 +82,25 @@ router.post('/create', optionalAuth as any, async (req, res) => {
             return res.status(400).json({ error: err.message });
         }
 
-        // Insert customer first
+        // Upsert customer: if a customer with this email already exists, update and reuse;
+        // otherwise insert new. Always stamp user_id if authenticated.
         const customerResult = await pool.query(
-            `INSERT INTO customers (name, phone, email, time_slot, building_type)
-             VALUES ($1, $2, $3, $4, $5)
+            `INSERT INTO customers (name, phone, email, time_slot, building_type, user_id)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             ON CONFLICT (email) DO UPDATE
+               SET name        = EXCLUDED.name,
+                   phone       = EXCLUDED.phone,
+                   time_slot   = EXCLUDED.time_slot,
+                   building_type = EXCLUDED.building_type,
+                   user_id     = COALESCE(customers.user_id, EXCLUDED.user_id)
              RETURNING id`,
             [
                 customer.name,
                 customer.phone,
                 customer.email,
                 customer.timeSlot || '5:30 to 6:30',
-                customer.buildingType || 'house'
+                customer.buildingType || 'house',
+                user_id || null,
             ]
         );
 
@@ -180,6 +190,7 @@ router.post('/create', optionalAuth as any, async (req, res) => {
 
         res.status(201).json({
             orderId: orderId.toString(),
+            bloommeOrderId: formatOrderId(orderId),
             razorpayOrderId,
             amount: Math.round(total * 100),
             currency: 'INR'
@@ -518,6 +529,7 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
                 }
 
                 const emailData: OrderConfirmationData = {
+                    bloommeOrderId: formatOrderId(parseInt(orderId)),
                     customerName: customer.name,
                     customerEmail: customer.email,
                     customerPhone: customer.phone,
@@ -553,6 +565,7 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
         res.json({
             success: true,
             orderId: orderId.toString(),
+            bloommeOrderId: formatOrderId(parseInt(orderId)),
             status: 'paid'
         });
     } catch (err: any) {

@@ -269,6 +269,16 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
             const addOnsPrice = addOns.reduce((sum, addon) => sum + (addon.price * addon.deliveryCount), 0);
             const totalPrice = basePrice + addOnsPrice;
 
+            // Fetch delivery statuses from deliveries table
+            const deliveryStatusResult = await pool.query(
+                `SELECT delivery_date::text, status FROM deliveries WHERE subscription_id = $1`,
+                [row.id]
+            );
+            const deliveryStatuses: Record<string, string> = {};
+            for (const d of deliveryStatusResult.rows) {
+                deliveryStatuses[d.delivery_date.slice(0, 10)] = d.status;
+            }
+
             return {
                 id: row.id.toString(),
                 planType: row.plan_type,
@@ -279,6 +289,7 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
                 addOns: addOns,
                 deliveryDays: row.delivery_days,
                 customSchedule: customSchedule,
+                deliveryStatuses,
                 startDate: formatDate(row.start_date),
                 endDate: null,
                 createdAt: formatDate(row.created_at)

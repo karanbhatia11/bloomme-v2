@@ -251,7 +251,7 @@ export default function CheckoutPayPage() {
         return;
       }
 
-      const { orderId, razorpayOrderId } = await createOrderRes.json();
+      const { orderId, bloommeOrderId: devBloommeOrderId, razorpayOrderId } = await createOrderRes.json();
 
       // Step 2: Verify with dev data
       const verifyHeaders: Record<string, string> = {
@@ -278,7 +278,7 @@ export default function CheckoutPayPage() {
         // Only create subscription for logged-in users
         // Guests will create account after payment
         // if (!verifyData.isGuest) { await createSubscription(); } // subscription created in payments/verify
-        sessionStorage.setItem("confirmedOrder", JSON.stringify(buildOrderSummary(`dev_payment_${Date.now()}`)));
+        sessionStorage.setItem("confirmedOrder", JSON.stringify(buildOrderSummary(`dev_payment_${Date.now()}`, orderId, devBloommeOrderId)));
         clearCart();
         router.push("/checkout/confirmed");
       } else {
@@ -359,7 +359,7 @@ export default function CheckoutPayPage() {
       });
 
       if (!orderRes.ok) throw new Error("Failed to create order");
-      const { orderId, razorpayOrderId, amount, currency } = await orderRes.json();
+      const { orderId, bloommeOrderId: rzpBloommeOrderId, razorpayOrderId, amount, currency } = await orderRes.json();
 
       // Get Razorpay key from environment (this should be set in your NEXT_PUBLIC_ env var)
       const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
@@ -414,7 +414,7 @@ export default function CheckoutPayPage() {
             if (verifyRes.ok) {
               const verifyData = await verifyRes.json();
               // if (!verifyData.isGuest) { await createSubscription(); } // subscription created in payments/verify
-              sessionStorage.setItem("confirmedOrder", JSON.stringify(buildOrderSummary(response.razorpay_payment_id)));
+              sessionStorage.setItem("confirmedOrder", JSON.stringify(buildOrderSummary(response.razorpay_payment_id, orderId, rzpBloommeOrderId)));
               clearCart();
               router.push("/checkout/confirmed");
             } else {
@@ -448,7 +448,7 @@ export default function CheckoutPayPage() {
   const total = Math.max(0, baseTotal - creditDiscount);
   const maxRedeemableCredits = Math.min(bloomCredits, Math.floor((baseTotal * 0.20) / 0.10));
 
-  const buildOrderSummary = (razorpayPaymentId: string) => {
+  const buildOrderSummary = (razorpayPaymentId: string, orderId?: string | number, bloommeOrderId?: string) => {
     const addonItems = cart.addons.map(a => {
       const sched = cart.addonSchedules[a.id];
       const deliveryCount = (!sched || sched.mode === "same")
@@ -472,6 +472,7 @@ export default function CheckoutPayPage() {
       if (subDates.length > 0) { planStartDate = subDates[0]; planEndDate = subDates[subDates.length - 1]; }
     }
     return {
+      orderId: bloommeOrderId || (orderId ? `BLM-${String(orderId).padStart(6, '0')}` : null),
       razorpayPaymentId,
       planName: cart.planName || "",
       planPrice: (cart as any).adjustedPrice || cart.planPrice || 0,
@@ -745,13 +746,22 @@ export default function CheckoutPayPage() {
         {baseTotal > 0 && (
           <div className="flex items-center gap-3 bg-[#ffdcc3]/30 border border-[#c4a052]/20 rounded-2xl px-5 py-3 mb-4">
             <span className="material-symbols-outlined text-[#775a11] text-lg">stars</span>
-            <p className="text-sm text-[#2f1500]">
-              You'll earn{" "}
-              <span className="font-bold text-[#775a11]">
-                {Math.ceil(total / 10).toLocaleString()} Bloom Credits
-              </span>{" "}
-              <span className="text-[#4d4638]/60">(worth ₹{Math.ceil(Math.ceil(total / 10) * 0.1)}) on this order</span>
-            </p>
+            {localStorage.getItem("token") ? (
+              <p className="text-sm text-[#2f1500]">
+                You'll earn{" "}
+                <span className="font-bold text-[#775a11]">
+                  {Math.ceil(total / 10).toLocaleString()} Bloom Credits
+                </span>{" "}
+                <span className="text-[#4d4638]/60">(worth ₹{Math.ceil(Math.ceil(total / 10) * 0.1)}) on this order</span>
+              </p>
+            ) : (
+              <p className="text-sm text-[#2f1500]">
+                <a href="/signup" className="font-bold text-[#775a11] underline">Sign up</a>{" "}
+                to claim{" "}
+                <span className="font-bold text-[#775a11]">{Math.ceil(total / 10).toLocaleString()} Bloom Credits</span>{" "}
+                <span className="text-[#4d4638]/60">(worth ₹{Math.ceil(Math.ceil(total / 10) * 0.1)}) on this order</span>
+              </p>
+            )}
           </div>
         )}
 

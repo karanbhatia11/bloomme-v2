@@ -254,6 +254,75 @@ app.put('/api/admin/deliveries/mark-status', authenticateToken, async (req: any,
     }
 });
 
+// GET /api/admin/orders/:id/schedule
+app.get('/api/admin/orders/:id/schedule', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/orders/${req.params.id}/schedule`, {
+            headers: { 'Authorization': req.headers.authorization }
+        });
+        const data = await response.json();
+        res.status(response.status).json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/admin/orders/:id/deliveries/mark
+app.post('/api/admin/orders/:id/deliveries/mark', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/orders/${req.params.id}/deliveries/mark`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': req.headers.authorization },
+            body: JSON.stringify(req.body)
+        });
+        const data = await response.json();
+        res.status(response.status).json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/order-lookup
+app.get('/api/admin/order-lookup', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const id = req.query.id || '';
+        const response = await fetch(`${BACKEND_URL}/api/admin/order-lookup?id=${id}`, {
+            headers: { 'Authorization': req.headers.authorization }
+        });
+        const data = await response.json();
+        res.status(response.status).json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/customers
+app.get('/api/admin/customers', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/customers`, {
+            headers: { 'Authorization': req.headers.authorization }
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/customers/:id/profile
+app.get('/api/admin/customers/:id/profile', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const response = await fetch(`${BACKEND_URL}/api/admin/customers/${id}/profile`, {
+            headers: { 'Authorization': req.headers.authorization }
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Serve admin portal HTML for root and all unmatched routes (SPA routing)
 app.get('/', (req: Request, res: Response) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));

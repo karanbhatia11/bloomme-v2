@@ -5,6 +5,7 @@ import pool from '../db';
 import { loginLimiter, signupLimiter } from '../middleware/rateLimiter';
 import { generateToken, hashToken, verifyToken } from '../utils/crypto';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../utils/email';
+import { awardCredits } from './credits';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'bloom_secret_key';
@@ -94,6 +95,53 @@ router.post('/signup', signupLimiter, async (req, res) => {
         );
         const newUserId = newUser.rows[0].id;
         console.log('User inserted successfully:', newUserId);
+
+        // Link any existing guest customer records with this email to the new user
+        await pool.query(
+            `UPDATE customers SET user_id = $1 WHERE LOWER(email) = LOWER($2) AND user_id IS NULL`,
+            [newUserId, email]
+        );
+
+        // Claim guest subscriptions created from orders placed with this email
+        await pool.query(
+            `UPDATE subscriptions SET user_id = $1
+             WHERE user_id IS NULL
+               AND id IN (
+                 SELECT s.id
+                 FROM subscriptions s
+                 JOIN order_items oi ON oi.item_type = 'subscription'
+                 JOIN orders o ON o.id = oi.order_id
+                 JOIN customers c ON c.id = o.customer_id
+                 WHERE LOWER(c.email) = LOWER($2)
+                   AND s.user_id IS NULL
+                   AND ABS(EXTRACT(EPOCH FROM (s.created_at - o.created_at))) < 60
+               )`,
+            [newUserId, email]
+        );
+
+        // Award credits for any paid guest orders placed with this email
+        const guestOrders = await pool.query(
+            `SELECT o.id, o.amount FROM orders o
+             JOIN customers c ON c.id = o.customer_id
+             WHERE LOWER(c.email) = LOWER($1)
+               AND o.status = 'paid'
+               AND o.user_id IS NULL`,
+            [email]
+        );
+        if (guestOrders.rows.length > 0) {
+            let totalCredits = 0;
+            for (const order of guestOrders.rows) {
+                const credits = Math.ceil((order.amount / 100) / 10);
+                if (credits > 0) {
+                    await awardCredits(newUserId, credits, 'earn_purchase',
+                        `Credits claimed for guest order #${order.id}`, order.id);
+                    totalCredits += credits;
+                }
+                // Claim the order under the new user
+                await pool.query(`UPDATE orders SET user_id = $1 WHERE id = $2`, [newUserId, order.id]);
+            }
+            console.log(`Awarded ${totalCredits} retroactive credits to new user ${newUserId} for ${guestOrders.rows.length} guest order(s)`);
+        }
 
         // Send verification email
         await sendVerificationEmail(email, verificationToken, name);

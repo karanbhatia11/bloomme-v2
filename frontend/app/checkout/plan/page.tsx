@@ -14,7 +14,13 @@ const PLANS = [
     name: "Traditional",
     price: 59,
     icon: "eco",
-    description: "Essential daily blooms for prayer and peace. A simple touch of nature for your sanctuary.",
+    features: [
+      "80-100 gms Fresh Devotional Mix",
+      "3 Rotational Variety Flower Mix*",
+      "Consistent freshness, sourced daily",
+      "Ideal for quick and simple morning rituals",
+      "Carefully packed to maintain purity",
+    ],
     featured: false,
   },
   {
@@ -22,7 +28,13 @@ const PLANS = [
     name: "Divine",
     price: 89,
     icon: "auto_awesome",
-    description: "A premium curation of exotic marigolds and jasmine. Perfect for festive households and daily rituals.",
+    features: [
+      "120-150 gms Premium Devotional Mix",
+      "3 Premium Rotational Variety Flower Mix*",
+      "Enhanced variety for a more fulfilling puja",
+      "Balanced quantity for complete daily rituals",
+      "Designed for families with regular offerings",
+    ],
     featured: true,
   },
   {
@@ -30,7 +42,13 @@ const PLANS = [
     name: "Celestial",
     price: 179,
     icon: "star",
-    description: "The ultimate floral experience. Rare temple-grade blooms delivered fresh every dawn.",
+    features: [
+      "200gms Exotic Offerings",
+      "4 Exotic Rotational Flower Mix*",
+      "Premium selection with superior quality flowers",
+      "Perfect for special rituals and detailed puja",
+      "Elevates your daily devotion experience",
+    ],
     featured: false,
   },
 ];
@@ -109,7 +127,14 @@ export default function CheckoutPlanPage() {
                     <span className="text-5xl font-extrabold text-[#2f1500]">₹{plan.price}</span>
                     <span className="text-[#4d4638]">/day</span>
                   </div>
-                  <p className="text-[#2f1500] font-medium mb-8 leading-relaxed">{plan.description}</p>
+                  <ul className="space-y-2 mb-8">
+                    {plan.features.map((f, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-[#2f1500]">
+                        <span className="material-symbols-outlined text-base text-[#ab3500] flex-shrink-0 mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
                   <div className="mt-auto">
                     <button className={`w-full py-4 rounded-lg font-bold text-sm tracking-widest uppercase transition-all ${
                       isSelected
@@ -143,7 +168,14 @@ export default function CheckoutPlanPage() {
                   <span className="text-4xl font-extrabold text-[#2f1500]">₹{plan.price}</span>
                   <span className="text-[#4d4638]">/day</span>
                 </div>
-                <p className="text-[#4d4638] mb-8 leading-relaxed">{plan.description}</p>
+                <ul className="space-y-2 mb-8">
+                  {plan.features.map((f, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-[#4d4638]">
+                      <span className="material-symbols-outlined text-base text-[#775a11] flex-shrink-0 mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
                 <div className="mt-auto">
                   <button className={`w-full py-4 rounded-lg font-bold text-sm tracking-widest uppercase transition-colors ${
                     isSelected

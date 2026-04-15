@@ -77,6 +77,18 @@ export default function CheckoutDetailsPage() {
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setCustomer({ ...form });
+
+    if (form.createAccount && !isLoggedIn) {
+      const params = new URLSearchParams({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        redirect: "/checkout/pay",
+      });
+      router.push(`/signup?${params.toString()}`);
+      return;
+    }
+
     router.push("/checkout/pay");
   };
 

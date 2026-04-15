@@ -519,6 +519,7 @@ Bloomme Flowers | Faridabad, Haryana, India`;
 // ── Order Confirmation Email ───────────────────────────────────────────────────
 
 export interface OrderConfirmationData {
+    bloommeOrderId?: string;
     customerName: string;
     customerEmail: string;
     customerPhone?: string;
@@ -647,11 +648,12 @@ function getOrderConfirmationHtml(d: OrderConfirmationData): string {
         </tr>` : '';
 
     const deliveryRows = [
-        d.timeSlot        && { icon: '🕐', label: 'Time Slot',      value: d.timeSlot },
-        d.customerAddress && { icon: '📍', label: 'Address',         value: d.customerAddress },
-        d.customerPhone   && { icon: '📱', label: 'Phone',           value: `+91 ${d.customerPhone}` },
-        d.customerEmail   && { icon: '📧', label: 'Email',           value: d.customerEmail },
-        d.razorpayPaymentId && { icon: '🧾', label: 'Transaction ID', value: d.razorpayPaymentId },
+        d.bloommeOrderId    && { icon: '🔖', label: 'Order ID',        value: d.bloommeOrderId },
+        d.timeSlot          && { icon: '🕐', label: 'Time Slot',        value: d.timeSlot },
+        d.customerAddress   && { icon: '📍', label: 'Address',          value: d.customerAddress },
+        d.customerPhone     && { icon: '📱', label: 'Phone',            value: `+91 ${d.customerPhone}` },
+        d.customerEmail     && { icon: '📧', label: 'Email',            value: d.customerEmail },
+        d.razorpayPaymentId && { icon: '🧾', label: 'Transaction ID',   value: d.razorpayPaymentId },
     ].filter(Boolean).map((row: any) => `
         <tr>
           <td style="padding:10px 0;border-bottom:1px solid rgba(209,197,179,0.3);">

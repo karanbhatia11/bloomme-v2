@@ -14,6 +14,7 @@ interface AddonSummary {
 }
 
 interface OrderSummary {
+  orderId?: string | null;
   razorpayPaymentId: string;
   planName: string;
   planPrice: number;
@@ -55,12 +56,15 @@ export default function CheckoutConfirmedPage() {
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [ratingLoading, setRatingLoading] = useState(false);
 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   useEffect(() => {
     setMounted(true);
     try {
       const raw = sessionStorage.getItem("confirmedOrder");
       if (raw) setOrder(JSON.parse(raw));
     } catch {}
+    setIsLoggedIn(!!localStorage.getItem("token"));
   }, []);
 
   const handlePrint = () => window.print();
@@ -91,6 +95,11 @@ export default function CheckoutConfirmedPage() {
 
   return (
     <div className="min-h-screen bg-[#fff8f5] px-4 py-16 relative overflow-hidden print:bg-white print:py-4" style={{ fontFamily: "'Inter', sans-serif" }}>
+
+      {/* Logo top right */}
+      <div className="absolute top-5 left-6 z-20">
+        <img src="/images/backgroundlesslogo.png" alt="Bloomme" className="h-24 object-contain opacity-90" />
+      </div>
 
       {/* Decorative blobs — hidden in print */}
       <div className="print:hidden absolute top-[-80px] right-[-80px] w-72 h-72 bg-[#ffdcc3]/40 rounded-full blur-3xl pointer-events-none" />
@@ -193,8 +202,17 @@ export default function CheckoutConfirmedPage() {
             className="bg-gradient-to-r from-[#ffdcc3]/60 to-[#fff1e9] border border-[#c4a052]/30 rounded-2xl px-5 py-4 mb-5 flex items-center gap-3">
             <span className="material-symbols-outlined text-[#775a11] text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
             <div>
-              <p className="font-bold text-[#2f1500] text-sm">You earned {order.creditsEarned.toLocaleString()} Bloom Credits!</p>
-              <p className="text-xs text-[#4d4638]/60">Worth ₹{Math.ceil(order.creditsEarned * 0.10)}<sup className="text-[8px] ml-0.5">*</sup></p>
+              {isLoggedIn ? (
+                <>
+                  <p className="font-bold text-[#2f1500] text-sm">You earned {order.creditsEarned.toLocaleString()} Bloom Credits!</p>
+                  <p className="text-xs text-[#4d4638]/60">Worth ₹{Math.ceil(order.creditsEarned * 0.10)}<sup className="text-[8px] ml-0.5">*</sup></p>
+                </>
+              ) : (
+                <>
+                  <p className="font-bold text-[#2f1500] text-sm">Sign up to claim {order.creditsEarned.toLocaleString()} Bloom Credits</p>
+                  <p className="text-xs text-[#4d4638]/60">Worth ₹{Math.ceil(order.creditsEarned * 0.10)} — <a href="/signup" className="underline text-[#775a11]">Sign up now</a></p>
+                </>
+              )}
             </div>
           </motion.div>
         )}
@@ -209,6 +227,7 @@ export default function CheckoutConfirmedPage() {
             { icon: "location_on",  label: "Address",         value: order?.customer?.address && order?.customer?.city ? `${order.customer.address}, ${order.customer.city}` : null },
             { icon: "mail",         label: "Email",           value: order?.customer?.email || null },
             { icon: "phone",        label: "Phone",           value: order?.customer?.phone ? `+91 ${order.customer.phone}` : null },
+            { icon: "tag",          label: "Order ID",        value: order?.orderId || null },
             { icon: "receipt_long", label: "Transaction ID",  value: order?.razorpayPaymentId || null },
           ].filter(row => row.value).map(({ icon, label, value }) => (
             <div key={label} className="flex items-start gap-3">

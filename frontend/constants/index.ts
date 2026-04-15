@@ -118,6 +118,9 @@ export const SUBSCRIPTION_PLANS = [
     features: [
       "80-100 gms Fresh Devotional Mix",
       "3 Rotational Variety Flower Mix*",
+      "Consistent freshness, sourced daily",
+      "Ideal for quick and simple morning rituals",
+      "Carefully packed to maintain purity",
     ],
     disabled: [],
     cta: "Add to Cart",
@@ -133,6 +136,9 @@ export const SUBSCRIPTION_PLANS = [
     features: [
       "120-150 gms Premium Devotional Mix",
       "3 Premium Rotational Variety Flower Mix*",
+      "Enhanced variety for a more fulfilling puja",
+      "Balanced quantity for complete daily rituals",
+      "Designed for families with regular offerings",
     ],
     cta: "Add to Cart",
     highlighted: true,
@@ -147,6 +153,9 @@ export const SUBSCRIPTION_PLANS = [
     features: [
       "200gms Exotic Offerings",
       "4 Exotic Rotational Flower Mix*",
+      "Premium selection with superior quality flowers",
+      "Perfect for special rituals and detailed puja",
+      "Elevates your daily devotion experience",
     ],
     cta: "Add to Cart",
     highlighted: false,

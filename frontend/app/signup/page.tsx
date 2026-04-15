@@ -1,17 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Navigation } from "@/components/common/Navigation";
 import { Footer } from "@/components/sections/Footer";
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+
+  useEffect(() => {
+    const qName = searchParams.get("name");
+    const qEmail = searchParams.get("email");
+    const qPhone = searchParams.get("phone");
+    if (qName) setName(qName);
+    if (qEmail) setEmail(qEmail);
+    if (qPhone) setPhone(qPhone);
+  }, [searchParams]);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
@@ -19,6 +29,9 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const pwd = e.target.value;
@@ -42,6 +55,11 @@ export default function SignupPage() {
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      return;
+    }
+
+    if (!termsAccepted) {
+      setError("Please agree to the Terms of Service and Privacy Policy to continue.");
       return;
     }
 
@@ -100,10 +118,18 @@ export default function SignupPage() {
             <p className="text-on-surface-variant text-sm leading-relaxed mb-6">
               We&apos;ve sent a verification link to <strong className="text-on-surface">{email}</strong>. Click it to activate your account and get started.
             </p>
-            <p className="text-xs text-on-surface-variant">
+            <p className="text-xs text-on-surface-variant mb-6">
               Didn&apos;t receive it? Check your spam folder or{" "}
               <Link href="/login" className="text-primary font-semibold hover:underline">sign in</Link>.
             </p>
+            {searchParams.get("redirect") && (
+              <button
+                onClick={() => router.push(searchParams.get("redirect")!)}
+                className="w-full py-3 rounded-xl bg-primary text-on-primary font-semibold text-sm hover:opacity-90 transition-opacity"
+              >
+                Continue to checkout →
+              </button>
+            )}
           </motion.div>
         </main>
         <Footer />
@@ -211,14 +237,24 @@ export default function SignupPage() {
                   <label className="block text-sm font-semibold text-on-surface-variant">
                     Password
                   </label>
-                  <input
-                    className="w-full bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-lg px-4 py-3 transition-all placeholder:text-on-surface-variant/50"
-                    placeholder="••••••••"
-                    type="password"
-                    value={password}
-                    onChange={handlePasswordChange}
-                    disabled={loading}
-                  />
+                  <div className="relative">
+                    <input
+                      className="w-full bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-lg px-4 py-3 pr-12 transition-all placeholder:text-on-surface-variant/50"
+                      placeholder="••••••••"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={handlePasswordChange}
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors"
+                      tabIndex={-1}
+                    >
+                      <span className="material-symbols-outlined text-xl">{showPassword ? "visibility_off" : "visibility"}</span>
+                    </button>
+                  </div>
                   {/* Strength Bar */}
                   <div className="flex flex-col gap-1.5 mt-2">
                     <div className="flex gap-1 h-1.5 w-full rounded-full overflow-hidden bg-surface-container-high">
@@ -262,14 +298,24 @@ export default function SignupPage() {
                   <label className="block text-sm font-semibold text-on-surface-variant">
                     Confirm Password
                   </label>
-                  <input
-                    className="w-full bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-lg px-4 py-3 transition-all placeholder:text-on-surface-variant/50"
-                    placeholder="••••••••"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={loading}
-                  />
+                  <div className="relative">
+                    <input
+                      className="w-full bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-lg px-4 py-3 pr-12 transition-all placeholder:text-on-surface-variant/50"
+                      placeholder="••••••••"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors"
+                      tabIndex={-1}
+                    >
+                      <span className="material-symbols-outlined text-xl">{showConfirmPassword ? "visibility_off" : "visibility"}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -279,6 +325,8 @@ export default function SignupPage() {
                   <input
                     className="mt-1 rounded text-primary focus:ring-primary-container border-outline-variant bg-surface-container-low cursor-pointer"
                     type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
                   />
                   <span className="text-sm text-on-surface-variant leading-tight">
                     I agree to the{" "}
@@ -400,25 +448,6 @@ export default function SignupPage() {
               </ul>
             </div>
 
-            {/* Testimonial */}
-            <div className="mt-16 p-8 bg-surface-container-highest rounded-2xl">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center text-on-primary text-xl font-bold">
-                  AV
-                </div>
-                <div>
-                  <p className="font-bold text-on-surface leading-none">
-                    Amara Varma
-                  </p>
-                  <p className="text-xs text-primary font-semibold tracking-wide uppercase mt-1">
-                    Premium Member
-                  </p>
-                </div>
-              </div>
-              <p className="font-accent italic text-lg text-on-surface leading-relaxed">
-                &ldquo;Waking up to a fresh bouquet every Monday has completely transformed my home&apos;s energy. Bloomme is more than a service, it&apos;s a weekly ritual of joy.&rdquo;
-              </p>
-            </div>
           </motion.section>
         </div>
       </main>

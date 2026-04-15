@@ -624,4 +624,397 @@ router.put('/homepage-content/:section', async (req, res) => {
     }
 });
 
+// --- ORDER DELIVERY SCHEDULE ---
+
+// GET /api/admin/orders/:orderId/schedule
+router.get('/orders/:orderId/schedule', async (req, res) => {
+    const orderId = parseInt(req.params.orderId);
+    if (isNaN(orderId)) return res.status(400).json({ error: 'Invalid order ID' });
+
+    try {
+        // Get the order's customer and find linked subscriptions by customer email or user_id
+        const orderRow = await pool.query(
+            `SELECT o.user_id, o.customer_id, c.email FROM orders o
+             LEFT JOIN customers c ON c.id = o.customer_id
+             WHERE o.id = $1`, [orderId]
+        );
+        if (orderRow.rows.length === 0) return res.status(404).json({ error: 'Order not found' });
+        const { user_id, email } = orderRow.rows[0];
+
+        // Find subscriptions: by user_id, or by matching email to user, or by plan+time for guests
+        let subRows;
+        if (user_id) {
+            subRows = await pool.query(
+                `SELECT id AS subscription_id, status AS sub_status, plan_type, custom_schedule
+                 FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC`,
+                [user_id]
+            );
+        } else {
+            // Try via registered user with same email
+            subRows = await pool.query(
+                `SELECT s.id AS subscription_id, s.status AS sub_status, s.plan_type, s.custom_schedule
+                 FROM subscriptions s
+                 JOIN users u ON u.id = s.user_id
+                 WHERE LOWER(u.email) = LOWER($1)
+                 ORDER BY s.created_at DESC`,
+                [email]
+            );
+            // Fallback: guest subscriptions (user_id IS NULL) matching plan from this order, created near order time
+            if (subRows.rows.length === 0) {
+                subRows = await pool.query(
+                    `SELECT s.id AS subscription_id, s.status AS sub_status, s.plan_type, s.custom_schedule
+                     FROM subscriptions s
+                     JOIN order_items oi ON oi.order_id = $1 AND oi.item_type = 'subscription'
+                     JOIN plans p ON p.id = oi.item_id AND LOWER(p.name) = LOWER(s.plan_type)
+                     WHERE s.user_id IS NULL
+                     ORDER BY ABS(EXTRACT(EPOCH FROM (s.created_at - (SELECT paid_at FROM orders WHERE id = $1)))) ASC
+                     LIMIT 5`,
+                    [orderId]
+                );
+            }
+        }
+
+        const result = [];
+        const toDateStr = (d: any): string => {
+            if (!d) return '';
+            if (d instanceof Date) {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+            }
+            return String(d).slice(0, 10);
+        };
+
+        for (const sub of subRows.rows) {
+            const rawSched = typeof sub.custom_schedule === 'string'
+                ? JSON.parse(sub.custom_schedule) : (sub.custom_schedule || []);
+            const dates: string[] = rawSched.map(toDateStr).filter(Boolean);
+
+            const deliveryRows = await pool.query(
+                `SELECT delivery_date::text, status FROM deliveries WHERE subscription_id = $1`,
+                [sub.subscription_id]
+            );
+            const statusMap: Record<string, string> = {};
+            for (const row of deliveryRows.rows) {
+                statusMap[toDateStr(row.delivery_date)] = row.status;
+            }
+
+            result.push({
+                subscription_id: sub.subscription_id,
+                plan_type: sub.plan_type,
+                sub_status: sub.sub_status,
+                dates: dates.map((d: string) => ({
+                    date: d,
+                    status: statusMap[d] || 'pending',
+                })),
+            });
+        }
+
+        // Addon dates from order_items
+        const addonItems = await pool.query(
+            `SELECT a.name, oi.custom_schedule_dates, oi.schedule
+             FROM order_items oi
+             JOIN add_ons a ON a.id = oi.item_id
+             WHERE oi.order_id = $1 AND oi.item_type = 'addon'`, [orderId]
+        );
+
+        // Fetch existing addon delivery statuses for this order
+        const addonStatusRows = await pool.query(
+            `SELECT addon_name, delivery_date::text, status FROM addon_delivery_status WHERE order_id = $1`,
+            [orderId]
+        );
+        const addonStatusMap: Record<string, Record<string, string>> = {};
+        for (const row of addonStatusRows.rows) {
+            if (!addonStatusMap[row.addon_name]) addonStatusMap[row.addon_name] = {};
+            addonStatusMap[row.addon_name][toDateStr(row.delivery_date)] = row.status;
+        }
+
+        const addons = addonItems.rows.map((row: any) => {
+            let dates: string[] = [];
+            if (row.custom_schedule_dates) {
+                dates = row.custom_schedule_dates.map(toDateStr).filter(Boolean);
+            } else if (row.schedule) {
+                try {
+                    const sched = typeof row.schedule === 'string' ? JSON.parse(row.schedule) : row.schedule;
+                    if (Array.isArray(sched)) dates = sched.map(toDateStr).filter(Boolean);
+                    else if (sched?.customDates) dates = sched.customDates.map(toDateStr).filter(Boolean);
+                } catch {}
+            }
+            const statusMap = addonStatusMap[row.name] || {};
+            return {
+                name: row.name,
+                dates: dates.map((d: string) => ({ date: d, status: statusMap[d] || 'pending' })),
+            };
+        });
+
+        res.json({ subscriptions: result, addons });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/admin/orders/:orderId/deliveries/mark
+router.post('/orders/:orderId/deliveries/mark', async (req, res) => {
+    const orderId = parseInt(req.params.orderId);
+    const { subscriptionId, addonName, date, status } = req.body;
+    if (!date || !status) return res.status(400).json({ error: 'date and status required' });
+    if (!['delivered', 'not_delivered', 'pending'].includes(status)) return res.status(400).json({ error: 'Invalid status' });
+
+    try {
+        if (addonName) {
+            // Track add-on delivery status
+            await pool.query(`
+                INSERT INTO addon_delivery_status (order_id, addon_name, delivery_date, status, updated_at)
+                VALUES ($1, $2, $3::date, $4, CURRENT_TIMESTAMP)
+                ON CONFLICT (order_id, addon_name, delivery_date)
+                DO UPDATE SET status = $4, updated_at = CURRENT_TIMESTAMP
+            `, [orderId, addonName, date, status]);
+        } else if (subscriptionId) {
+            // Track subscription delivery status
+            await pool.query(`
+                INSERT INTO deliveries (subscription_id, delivery_date, status, updated_at)
+                VALUES ($1, $2::date, $3, CURRENT_TIMESTAMP)
+                ON CONFLICT (subscription_id, delivery_date)
+                DO UPDATE SET status = $3, updated_at = CURRENT_TIMESTAMP
+            `, [subscriptionId, date, status]);
+        } else {
+            return res.status(400).json({ error: 'subscriptionId or addonName required' });
+        }
+
+        res.json({ success: true });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- ORDER LOOKUP ---
+
+// GET /api/admin/order-lookup?id=BLM-000011
+router.get('/order-lookup', async (req, res) => {
+    const rawId = (req.query.id as string || '').trim();
+    if (!rawId) return res.status(400).json({ error: 'Order ID required' });
+
+    // Accept BLM-000011, BLM000011, or plain 11
+    const numeric = rawId.replace(/^BLM-?0*/i, '') || '0';
+    const orderId = parseInt(numeric, 10);
+    if (isNaN(orderId) || orderId <= 0) return res.status(400).json({ error: 'Invalid order ID format' });
+
+    try {
+        const orderRes = await pool.query(`
+            SELECT
+                o.id,
+                'BLM-' || LPAD(o.id::text, 6, '0') AS bloomme_order_id,
+                o.status, o.amount, o.currency, o.order_type,
+                o.promo_code, o.promo_discount, o.referral_discount,
+                o.razorpay_order_id, o.razorpay_payment_id,
+                o.created_at, o.paid_at,
+                c.name AS customer_name, c.email AS customer_email,
+                c.phone AS customer_phone, c.time_slot, c.building_type,
+                c.user_id,
+                u.name AS registered_name
+            FROM orders o
+            LEFT JOIN customers c ON c.id = o.customer_id
+            LEFT JOIN users u ON u.id = c.user_id
+            WHERE o.id = $1
+        `, [orderId]);
+
+        if (orderRes.rows.length === 0) return res.status(404).json({ error: `Order ${rawId} not found` });
+        const order = orderRes.rows[0];
+
+        // Items
+        const itemsRes = await pool.query(`
+            SELECT oi.item_type, oi.item_id, oi.quantity, oi.price,
+                   oi.schedule, oi.custom_schedule_dates,
+                   p.name AS plan_name, a.name AS addon_name
+            FROM order_items oi
+            LEFT JOIN plans p ON oi.item_type = 'subscription' AND p.id = oi.item_id
+            LEFT JOIN add_ons a ON oi.item_type = 'addon' AND a.id = oi.item_id
+            WHERE oi.order_id = $1
+        `, [orderId]);
+
+        // Address
+        const addrRes = order.user_id ? await pool.query(`
+            SELECT full_name, house_number, street, area, city, pin_code, instructions
+            FROM addresses WHERE user_id = $1 ORDER BY id DESC LIMIT 1
+        `, [order.user_id]) : { rows: [] };
+
+        // Credits used
+        const creditsRes = await pool.query(`
+            SELECT SUM(ABS(amount)) AS credits_used
+            FROM bloom_credit_transactions
+            WHERE order_id = $1 AND type = 'redeem'
+        `, [orderId]);
+
+        res.json({
+            order: {
+                ...order,
+                amount_rupees: order.amount / 100,
+                is_guest: !order.user_id,
+            },
+            items: itemsRes.rows.map((i: any) => ({
+                type: i.item_type,
+                name: i.plan_name || i.addon_name || `#${i.item_id}`,
+                quantity: i.quantity,
+                price_rupees: i.price / 100,
+                dates: i.custom_schedule_dates || (i.schedule ? (typeof i.schedule === 'string' ? JSON.parse(i.schedule) : i.schedule) : []),
+            })),
+            address: addrRes.rows[0] || null,
+            credits_used: parseInt(creditsRes.rows[0]?.credits_used || 0),
+        });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- CUSTOMER 360 ---
+
+// GET /api/admin/customers — list all customers with summary stats
+router.get('/customers', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT
+                customer_id,
+                name,
+                email,
+                phone,
+                user_id,
+                is_registered,
+                total_orders,
+                paid_orders,
+                ROUND(total_spent_paise / 100.0, 2) AS total_spent,
+                total_subscriptions,
+                active_subscriptions,
+                first_seen,
+                last_order_at
+            FROM customer_360
+            ORDER BY last_order_at DESC NULLS LAST, first_seen DESC
+        `);
+        res.json({ customers: result.rows });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/customers/:id/profile — full 360° profile for one customer
+router.get('/customers/:id/profile', async (req, res) => {
+    const customerId = parseInt(req.params.id);
+    if (isNaN(customerId)) return res.status(400).json({ error: 'Invalid customer ID' });
+
+    try {
+        // Identity
+        const identityRes = await pool.query(`
+            SELECT
+                c.id AS customer_id, c.name, c.email, c.phone,
+                c.building_type, c.time_slot, c.created_at AS first_seen,
+                c.user_id,
+                u.name AS registered_name, u.email AS registered_email,
+                u.referral_code, u.created_at AS registered_at
+            FROM customers c
+            LEFT JOIN users u ON c.user_id = u.id
+            WHERE c.id = $1
+        `, [customerId]);
+
+        if (identityRes.rows.length === 0) return res.status(404).json({ error: 'Customer not found' });
+        const identity = identityRes.rows[0];
+
+        // Orders + items
+        const ordersRes = await pool.query(`
+            SELECT
+                o.id, o.razorpay_order_id, o.razorpay_payment_id,
+                o.amount, o.status, o.order_type,
+                o.promo_code, o.promo_discount, o.referral_discount,
+                o.created_at, o.paid_at,
+                json_agg(json_build_object(
+                    'item_type', oi.item_type,
+                    'item_id',   oi.item_id,
+                    'quantity',  oi.quantity,
+                    'price',     oi.price
+                ) ORDER BY oi.id) FILTER (WHERE oi.id IS NOT NULL) AS items
+            FROM orders o
+            LEFT JOIN order_items oi ON oi.order_id = o.id
+            WHERE o.customer_id = $1
+            GROUP BY o.id
+            ORDER BY o.created_at DESC
+        `, [customerId]);
+
+        // Subscriptions
+        const subsRes = identity.user_id ? await pool.query(`
+            SELECT
+                s.id, s.plan_type, s.status, s.price,
+                s.delivery_days, s.custom_schedule,
+                s.start_date, s.created_at AS created_at,
+                json_agg(json_build_object(
+                    'name', a.name,
+                    'price', a.price
+                ) ORDER BY a.id) FILTER (WHERE a.id IS NOT NULL) AS addons
+            FROM subscriptions s
+            LEFT JOIN subscription_add_ons sa ON sa.subscription_id = s.id
+            LEFT JOIN add_ons a ON a.id = sa.add_on_id
+            WHERE s.user_id = $1
+            GROUP BY s.id, s.created_at
+            ORDER BY s.created_at DESC
+        `, [identity.user_id]) : { rows: [] };
+
+        // Addresses
+        const addressesRes = identity.user_id ? await pool.query(`
+            SELECT id, full_name, phone, house_number, street, area, city, pin_code, instructions
+            FROM addresses WHERE user_id = $1 ORDER BY id DESC
+        `, [identity.user_id]) : { rows: [] };
+
+        // Deliveries
+        const deliveriesRes = identity.user_id ? await pool.query(`
+            SELECT d.id, d.subscription_id, d.delivery_date, d.status, d.updated_at
+            FROM deliveries d
+            JOIN subscriptions s ON s.id = d.subscription_id
+            WHERE s.user_id = $1
+            ORDER BY d.delivery_date DESC
+            LIMIT 50
+        `, [identity.user_id]) : { rows: [] };
+
+        // Bloom Credits
+        const creditsRes = identity.user_id ? await pool.query(`
+            SELECT
+                COALESCE(SUM(amount) FILTER (WHERE expires_at > NOW() OR expires_at IS NULL), 0) AS balance,
+                json_agg(json_build_object(
+                    'amount', amount,
+                    'type', type,
+                    'description', description,
+                    'created_at', created_at,
+                    'expires_at', expires_at
+                ) ORDER BY created_at DESC) FILTER (WHERE TRUE) AS transactions
+            FROM bloom_credit_transactions
+            WHERE user_id = $1
+        `, [identity.user_id]) : { rows: [{ balance: 0, transactions: [] }] };
+
+        // Referrals
+        const referralsRes = identity.user_id ? await pool.query(`
+            SELECT r.id, r.status, r.created_at, r.completed_at,
+                u.name AS referred_name, u.email AS referred_email
+            FROM referrals r
+            LEFT JOIN users u ON u.id = r.referred_user_id
+            WHERE r.referrer_id = $1
+            ORDER BY r.created_at DESC
+        `, [identity.user_id]) : { rows: [] };
+
+        res.json({
+            identity: {
+                ...identity,
+                is_registered: !!identity.user_id,
+            },
+            orders: ordersRes.rows,
+            subscriptions: subsRes.rows,
+            addresses: addressesRes.rows,
+            deliveries: deliveriesRes.rows,
+            credits: {
+                balance: parseInt(creditsRes.rows[0]?.balance || 0),
+                transactions: creditsRes.rows[0]?.transactions || [],
+            },
+            referrals: referralsRes.rows,
+        });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 export default router;

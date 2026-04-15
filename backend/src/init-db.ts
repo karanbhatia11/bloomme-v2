@@ -286,6 +286,61 @@ const initDb = async () => {
             CREATE INDEX IF NOT EXISTS idx_orders_delivery_date ON orders(delivery_date);
             CREATE UNIQUE INDEX IF NOT EXISTS idx_deliveries_subscription_date ON deliveries(subscription_id, delivery_date);
 
+            -- Track delivery status for add-on items
+            CREATE TABLE IF NOT EXISTS addon_delivery_status (
+                id SERIAL PRIMARY KEY,
+                order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+                addon_name TEXT NOT NULL,
+                delivery_date DATE NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(order_id, addon_name, delivery_date)
+            );
+
+            -- Unique email constraint on customers (needed for upsert on checkout)
+            DO $$ BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint WHERE conname = 'customers_email_unique'
+                ) THEN
+                    ALTER TABLE customers ADD CONSTRAINT customers_email_unique UNIQUE (email);
+                END IF;
+            END $$;
+
+            -- Link customers to registered users
+            ALTER TABLE customers ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id);
+            CREATE INDEX IF NOT EXISTS idx_customers_user_id ON customers(user_id);
+            CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);
+
+            -- One-time backfill: link existing customers to users by email
+            UPDATE customers c
+            SET user_id = u.id
+            FROM users u
+            WHERE LOWER(c.email) = LOWER(u.email)
+              AND c.user_id IS NULL;
+
+            -- Unified customer 360 view
+            CREATE OR REPLACE VIEW customer_360 AS
+            SELECT
+                c.id                                                        AS customer_id,
+                c.name,
+                c.email,
+                c.phone,
+                c.user_id,
+                c.building_type,
+                c.time_slot,
+                c.created_at                                                AS first_seen,
+                CASE WHEN c.user_id IS NOT NULL THEN TRUE ELSE FALSE END    AS is_registered,
+                COUNT(DISTINCT o.id)                                        AS total_orders,
+                COUNT(DISTINCT CASE WHEN o.status = 'paid' THEN o.id END)   AS paid_orders,
+                COALESCE(SUM(CASE WHEN o.status = 'paid' THEN o.amount ELSE 0 END), 0) AS total_spent_paise,
+                COUNT(DISTINCT s.id)                                        AS total_subscriptions,
+                COUNT(DISTINCT CASE WHEN s.status = 'active' THEN s.id END) AS active_subscriptions,
+                MAX(o.paid_at)                                              AS last_order_at
+            FROM customers c
+            LEFT JOIN orders o ON o.customer_id = c.id
+            LEFT JOIN subscriptions s ON s.user_id = c.user_id
+            GROUP BY c.id;
+
             -- Initial App Config
             INSERT INTO app_config (key, value) VALUES ('site_mode', '{"mode": "coming_soon"}') ON CONFLICT (key) DO NOTHING;
         `);

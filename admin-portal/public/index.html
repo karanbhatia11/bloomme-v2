@@ -407,6 +407,8 @@
                     <button class="tab-btn" onclick="switchTab('subscriptions')">💳 Subscriptions</button>
                     <button class="tab-btn" onclick="switchTab('addons')">🎁 Add-Ons</button>
                     <button class="tab-btn" onclick="switchTab('search')">🔍 Search</button>
+                    <button class="tab-btn" onclick="switchTab('orderlookup')">📦 Orders</button>
+                    <button class="tab-btn" onclick="switchTab('customer360')">🧾 Customer 360</button>
                 </div>
 
                 <!-- Dashboard Tab -->
@@ -443,6 +445,23 @@
                 <div id="addons-tab" class="tab-content">
                     <h2>Add-Ons Management</h2>
                     <div id="addonsTable"></div>
+                </div>
+
+                <!-- Order Lookup Tab -->
+                <div id="orderlookup-tab" class="tab-content">
+                    <h2>Order Lookup</h2>
+                    <div style="display:flex;gap:10px;margin-bottom:24px;">
+                        <input type="text" id="orderLookupInput" placeholder="Enter Order ID — e.g. BLM-000011" style="padding:10px 16px;width:320px;font-size:15px;border:1px solid #ddd;border-radius:8px;">
+                        <button onclick="lookupOrder()" style="padding:10px 20px;background:#775a11;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">Search</button>
+                    </div>
+                    <div id="orderLookupResult"></div>
+                </div>
+
+                <!-- Customer 360 Tab -->
+                <div id="customer360-tab" class="tab-content">
+                    <h2>Customer 360</h2>
+                    <div id="customer360List"></div>
+                    <div id="customer360Profile" style="display:none; margin-top:24px;"></div>
                 </div>
 
                 <!-- Search Tab -->
@@ -523,6 +542,8 @@
             if (tabName === 'orders') loadOrders();
             if (tabName === 'subscriptions') loadSubscriptions();
             if (tabName === 'addons') loadAddOns();
+            if (tabName === 'customer360') loadCustomer360();
+            if (tabName === 'orderlookup') document.getElementById('orderLookupInput').focus();
         }
 
         async function loadDashboard() {
@@ -1536,6 +1557,385 @@
                 resultsDiv.innerHTML = html;
             } catch (error) {
                 resultsDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        // --- ORDER LOOKUP ---
+        document.getElementById('orderLookupInput')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') lookupOrder();
+        });
+
+        async function lookupOrder() {
+            const id = document.getElementById('orderLookupInput').value.trim();
+            const resultDiv = document.getElementById('orderLookupResult');
+            if (!id) { resultDiv.innerHTML = '<p style="color:#888">Enter an order ID to search.</p>'; return; }
+            resultDiv.innerHTML = '<div class="loading">Looking up order...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/admin/order-lookup?id=${encodeURIComponent(id)}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const d = await res.json();
+                if (!res.ok) { resultDiv.innerHTML = `<div class="error">${d.error}</div>`; return; }
+
+                const { order, items, address, credits_used } = d;
+                const statusColor = order.status === 'paid' ? '#065f46' : order.status === 'pending' ? '#92400e' : '#991b1b';
+                const statusBg = order.status === 'paid' ? '#d1fae5' : order.status === 'pending' ? '#fef3c7' : '#fee2e2';
+
+                const numericOrderId = id.replace(/^BLM-?0*/i, '') || '0';
+                resultDiv.innerHTML = `
+                    <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;flex:1;min-width:320px;">
+
+                        <!-- Header -->
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                            <div>
+                                <h3 style="margin:0;font-size:20px;">${order.bloomme_order_id}</h3>
+                                <p style="margin:4px 0 0;color:#6b7280;font-size:13px;">${new Date(order.created_at).toLocaleString('en-IN')}</p>
+                            </div>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <span style="padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;background:${statusBg};color:${statusColor};">${order.status.toUpperCase()}</span>
+                                <span style="padding:4px 12px;border-radius:99px;font-size:12px;background:${order.is_guest ? '#fef3c7' : '#ede9fe'};color:${order.is_guest ? '#92400e' : '#5b21b6'};">${order.is_guest ? 'Guest' : 'Registered'}</span>
+                            </div>
+                        </div>
+
+                        <!-- Customer -->
+                        <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:16px;">
+                            <p style="font-size:11px;color:#6b7280;text-transform:uppercase;font-weight:700;margin:0 0 8px;">Customer</p>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">
+                                <div><span style="color:#6b7280">Name:</span> <strong>${order.customer_name || '—'}</strong></div>
+                                <div><span style="color:#6b7280">Email:</span> ${order.customer_email || '—'}</div>
+                                <div><span style="color:#6b7280">Phone:</span> ${order.customer_phone || '—'}</div>
+                                <div><span style="color:#6b7280">Time Slot:</span> ${order.time_slot || '—'}</div>
+                                ${address ? `<div style="grid-column:span 2"><span style="color:#6b7280">Address:</span> ${[address.house_number, address.street, address.area, address.city, address.pin_code].filter(Boolean).join(', ')}</div>` : ''}
+                                ${address?.instructions ? `<div style="grid-column:span 2"><span style="color:#6b7280">Notes:</span> <em>${address.instructions}</em></div>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Order Items -->
+                        <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:16px;">
+                            <p style="font-size:11px;color:#6b7280;text-transform:uppercase;font-weight:700;margin:0 0 8px;">Items</p>
+                            ${items.map(i => `
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px;">
+                                    <div>
+                                        <span style="display:inline-block;padding:1px 8px;border-radius:4px;font-size:10px;font-weight:700;background:${i.type === 'subscription' ? '#ede9fe' : '#fef3c7'};color:${i.type === 'subscription' ? '#5b21b6' : '#92400e'};margin-right:6px;">${i.type}</span>
+                                        <strong>${i.name}</strong>
+                                        ${Array.isArray(i.dates) && i.dates.length > 0 ? `<span style="color:#6b7280;font-size:11px;margin-left:6px;">${i.dates.length} deliveries</span>` : ''}
+                                    </div>
+                                    <strong>₹${Number(i.price_rupees).toLocaleString('en-IN')}</strong>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <!-- Payment Summary -->
+                        <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:16px;">
+                            <p style="font-size:11px;color:#6b7280;text-transform:uppercase;font-weight:700;margin:0 0 8px;">Payment</p>
+                            <div style="font-size:13px;space-y:4px;">
+                                ${order.promo_code ? `<div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#6b7280">Promo (${order.promo_code})</span><span>-₹${Number(order.promo_discount).toLocaleString('en-IN')}</span></div>` : ''}
+                                ${order.referral_discount > 0 ? `<div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#6b7280">Referral Discount</span><span>-₹${Number(order.referral_discount).toLocaleString('en-IN')}</span></div>` : ''}
+                                ${credits_used > 0 ? `<div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#6b7280">Credits Used</span><span>-${credits_used} credits (₹${(credits_used * 0.10).toFixed(0)})</span></div>` : ''}
+                                <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid #e2e8f0;font-weight:700;font-size:15px;"><span>Total Paid</span><span>₹${Number(order.amount_rupees).toLocaleString('en-IN')}</span></div>
+                                <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#6b7280">Status</span><span style="font-weight:600;color:${statusColor}">${order.status === 'paid' ? '✅ Paid' : order.status === 'pending' ? '⏳ Pending' : '❌ ' + order.status}</span></div>
+                                ${order.razorpay_payment_id ? `<div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#6b7280">Transaction ID</span><span style="font-size:12px;font-family:monospace;">${order.razorpay_payment_id}</span></div>` : ''}
+                                ${order.paid_at ? `<div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#6b7280">Paid At</span><span>${new Date(order.paid_at).toLocaleString('en-IN')}</span></div>` : ''}
+                            </div>
+                        </div>
+
+                    </div>
+                    </div>
+                    <div id="schedulePanel" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;width:340px;flex-shrink:0;">
+                        <p style="font-size:11px;color:#6b7280;text-transform:uppercase;font-weight:700;margin:0 0 10px;">Delivery Schedule</p>
+                        <div id="schedulePanelContent"><div class="loading">Loading schedule...</div></div>
+                    </div>
+                    </div>
+                `;
+
+                // Load schedule into right panel
+                (async () => {
+                    const schedPanel = document.getElementById('schedulePanelContent');
+                    try {
+                        const schedRes = await fetch(`${API_URL}/admin/orders/${numericOrderId}/schedule`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const sched = await schedRes.json();
+                        if (!schedRes.ok) { schedPanel.innerHTML = `<div class="error">${sched.error}</div>`; return; }
+
+                        const fmtD = d => { try { return new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }); } catch { return d; } };
+                        const statusStyle = s => s === 'delivered' ? 'background:#d1fae5;color:#065f46' : s === 'not_delivered' ? 'background:#fee2e2;color:#991b1b' : 'background:#f3f4f6;color:#6b7280';
+
+                        let html = '';
+                        for (const sub of (sched.subscriptions || [])) {
+                            html += `<div style="margin-bottom:14px;">
+                                <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-bottom:6px;border-bottom:2px solid #e2e8f0;">
+                                    <strong style="font-size:12px;">${sub.plan_type}</strong>
+                                    <span style="padding:1px 8px;border-radius:99px;font-size:10px;font-weight:700;background:${sub.sub_status==='active'?'#d1fae5':sub.sub_status==='paused'?'#e0e7ff':'#fee2e2'};color:${sub.sub_status==='active'?'#065f46':sub.sub_status==='paused'?'#3730a3':'#991b1b'}">${sub.sub_status.toUpperCase()}</span>
+                                </div>`;
+                            for (const d of sub.dates) {
+                                html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f3f4f6;gap:6px;">
+                                    <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+                                        <span style="font-size:12px;color:#374151;white-space:nowrap;">${fmtD(d.date)}</span>
+                                        <span id="ds-${sub.subscription_id}-${d.date}" style="padding:1px 7px;border-radius:99px;font-size:10px;font-weight:600;white-space:nowrap;${statusStyle(d.status)}">${d.status.replace('_',' ')}</span>
+                                    </div>
+                                    <div style="display:flex;gap:3px;flex-shrink:0;">
+                                        <button onclick="markDelivery(${numericOrderId},${sub.subscription_id},'${d.date}','delivered',this)" title="Mark delivered" style="padding:3px 7px;font-size:11px;border:none;border-radius:4px;background:#059669;color:white;cursor:pointer;font-weight:700;">✓</button>
+                                        <button onclick="markDelivery(${numericOrderId},${sub.subscription_id},'${d.date}','not_delivered',this)" title="Not delivered" style="padding:3px 7px;font-size:11px;border:none;border-radius:4px;background:#dc2626;color:white;cursor:pointer;font-weight:700;">✗</button>
+                                    </div>
+                                </div>`;
+                            }
+                            html += '</div>';
+                        }
+
+                        for (const addon of (sched.addons || []).filter(a => a.dates.length > 0)) {
+                            html += `<div style="margin-top:12px;padding-top:12px;border-top:2px solid #e2e8f0;">
+                                <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                                    <strong style="font-size:12px;color:#92400e;">Add-On: ${addon.name}</strong>
+                                </div>`;
+                            for (const d of addon.dates) {
+                                html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f3f4f6;gap:6px;">
+                                    <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+                                        <span style="font-size:12px;color:#374151;white-space:nowrap;">${fmtD(d.date)}</span>
+                                        <span id="ds-addon-${addon.name.replace(/\s/g,'-')}-${d.date}" style="padding:1px 7px;border-radius:99px;font-size:10px;font-weight:600;white-space:nowrap;${statusStyle(d.status)}">${d.status.replace('_',' ')}</span>
+                                    </div>
+                                    <div style="display:flex;gap:3px;flex-shrink:0;">
+                                        <button onclick="markAddonDelivery(${numericOrderId},'${addon.name.replace(/'/g,"\\'")}','${d.date}','delivered',this)" title="Mark delivered" style="padding:3px 7px;font-size:11px;border:none;border-radius:4px;background:#059669;color:white;cursor:pointer;font-weight:700;">✓</button>
+                                        <button onclick="markAddonDelivery(${numericOrderId},'${addon.name.replace(/'/g,"\\'")}','${d.date}','not_delivered',this)" title="Not delivered" style="padding:3px 7px;font-size:11px;border:none;border-radius:4px;background:#dc2626;color:white;cursor:pointer;font-weight:700;">✗</button>
+                                    </div>
+                                </div>`;
+                            }
+                            html += '</div>';
+                        }
+
+                        if (!html) html = '<p style="color:#6b7280;font-size:13px;">No delivery schedule found for this order.</p>';
+                        schedPanel.innerHTML = html;
+                    } catch(e) {
+                        schedPanel.innerHTML = `<div class="error">Failed: ${e.message}</div>`;
+                    }
+                })();
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            }
+        }
+
+        async function markAddonDelivery(orderId, addonName, date, status, btn) {
+            btn.disabled = true; btn.style.opacity = '0.5';
+            try {
+                const res = await fetch(`${API_URL}/admin/orders/${orderId}/deliveries/mark`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ addonName, date, status })
+                });
+                if (res.ok) {
+                    const badgeId = `ds-addon-${addonName.replace(/\s/g,'-')}-${date}`;
+                    const badge = document.getElementById(badgeId);
+                    if (badge) {
+                        badge.textContent = status.replace('_', ' ');
+                        badge.style.cssText = `padding:1px 7px;border-radius:99px;font-size:10px;font-weight:600;white-space:nowrap;${status === 'delivered' ? 'background:#d1fae5;color:#065f46' : 'background:#fee2e2;color:#991b1b'}`;
+                    }
+                } else { alert('Failed to update addon delivery status'); }
+            } catch(e) { alert('Error: ' + e.message); }
+            btn.disabled = false; btn.style.opacity = '1';
+        }
+
+        async function markDelivery(orderId, subscriptionId, date, status, btn) {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            try {
+                const res = await fetch(`${API_URL}/admin/orders/${orderId}/deliveries/mark`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ subscriptionId, date, status })
+                });
+                if (res.ok) {
+                    const badge = document.getElementById(`ds-${subscriptionId}-${date}`);
+                    if (badge) {
+                        badge.textContent = status.replace('_', ' ');
+                        badge.style.cssText = `padding:1px 8px;border-radius:99px;font-size:10px;font-weight:700;${
+                            status === 'delivered' ? 'background:#d1fae5;color:#065f46'
+                            : 'background:#fee2e2;color:#991b1b'
+                        }`;
+                    }
+                } else {
+                    alert('Failed to update delivery status');
+                }
+            } catch(e) {
+                alert('Error: ' + e.message);
+            }
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+
+        // --- CUSTOMER 360 ---
+        async function loadCustomer360() {
+            const listDiv = document.getElementById('customer360List');
+            const profileDiv = document.getElementById('customer360Profile');
+            profileDiv.style.display = 'none';
+            listDiv.innerHTML = '<div class="loading">Loading customers...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/admin/customers`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                const customers = data.customers || [];
+
+                if (customers.length === 0) {
+                    listDiv.innerHTML = '<p>No customers found.</p>';
+                    return;
+                }
+
+                listDiv.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Type</th>
+                                <th>Orders</th>
+                                <th>Total Spent</th>
+                                <th>Subscriptions</th>
+                                <th>Active Subs</th>
+                                <th>Last Order</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${customers.map(c => `
+                                <tr>
+                                    <td>${c.name}</td>
+                                    <td>${c.email}</td>
+                                    <td>${c.phone || '—'}</td>
+                                    <td><span style="padding:2px 8px;border-radius:99px;font-size:11px;background:${c.is_registered ? '#d1fae5' : '#fef3c7'};color:${c.is_registered ? '#065f46' : '#92400e'}">${c.is_registered ? 'Registered' : 'Guest'}</span></td>
+                                    <td>${c.paid_orders}/${c.total_orders}</td>
+                                    <td>₹${Number(c.total_spent).toLocaleString('en-IN')}</td>
+                                    <td>${c.total_subscriptions}</td>
+                                    <td>${c.active_subscriptions}</td>
+                                    <td>${c.last_order_at ? new Date(c.last_order_at).toLocaleDateString('en-IN') : '—'}</td>
+                                    <td><button onclick="loadCustomerProfile(${c.customer_id})" style="padding:4px 12px;cursor:pointer;background:#4f46e5;color:white;border:none;border-radius:6px;font-size:12px;">View 360</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (err) {
+                listDiv.innerHTML = `<div class="error">Failed to load: ${err.message}</div>`;
+            }
+        }
+
+        async function loadCustomerProfile(customerId) {
+            const profileDiv = document.getElementById('customer360Profile');
+            profileDiv.style.display = 'block';
+            profileDiv.innerHTML = '<div class="loading">Loading profile...</div>';
+            profileDiv.scrollIntoView({ behavior: 'smooth' });
+
+            try {
+                const res = await fetch(`${API_URL}/admin/customers/${customerId}/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const d = await res.json();
+                const { identity, orders, subscriptions, addresses, deliveries, credits, referrals } = d;
+
+                profileDiv.innerHTML = `
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                            <h3 style="margin:0;">🧾 ${identity.name} — Full Profile</h3>
+                            <button onclick="document.getElementById('customer360Profile').style.display='none'" style="padding:4px 12px;cursor:pointer;background:#6b7280;color:white;border:none;border-radius:6px;">✕ Close</button>
+                        </div>
+
+                        <!-- Identity -->
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px;background:white;padding:16px;border-radius:8px;border:1px solid #e2e8f0;">
+                            <div><div style="font-size:11px;color:#6b7280;text-transform:uppercase;">Email</div><div>${identity.email}</div></div>
+                            <div><div style="font-size:11px;color:#6b7280;text-transform:uppercase;">Phone</div><div>${identity.phone || '—'}</div></div>
+                            <div><div style="font-size:11px;color:#6b7280;text-transform:uppercase;">Type</div><div>${identity.is_registered ? '✅ Registered' : '👤 Guest'}</div></div>
+                            <div><div style="font-size:11px;color:#6b7280;text-transform:uppercase;">Time Slot</div><div>${identity.time_slot || '—'}</div></div>
+                            <div><div style="font-size:11px;color:#6b7280;text-transform:uppercase;">Referral Code</div><div>${identity.referral_code || '—'}</div></div>
+                            <div><div style="font-size:11px;color:#6b7280;text-transform:uppercase;">Bloom Credits</div><div>⭐ ${credits.balance}</div></div>
+                            <div><div style="font-size:11px;color:#6b7280;text-transform:uppercase;">First Seen</div><div>${new Date(identity.first_seen).toLocaleDateString('en-IN')}</div></div>
+                            <div><div style="font-size:11px;color:#6b7280;text-transform:uppercase;">Registered On</div><div>${identity.registered_at ? new Date(identity.registered_at).toLocaleDateString('en-IN') : '—'}</div></div>
+                        </div>
+
+                        <!-- Orders -->
+                        <h4 style="margin:16px 0 8px;">Orders (${orders.length})</h4>
+                        ${orders.length === 0 ? '<p style="color:#6b7280">No orders</p>' : `
+                        <table>
+                            <thead><tr><th>ID</th><th>Type</th><th>Amount</th><th>Status</th><th>Items</th><th>Date</th></tr></thead>
+                            <tbody>${orders.map(o => `
+                                <tr>
+                                    <td>#${o.id}</td>
+                                    <td>${o.order_type || '—'}</td>
+                                    <td>₹${(o.amount / 100).toLocaleString('en-IN')}</td>
+                                    <td><span style="padding:2px 8px;border-radius:99px;font-size:11px;background:${o.status === 'paid' ? '#d1fae5' : '#fef3c7'};color:${o.status === 'paid' ? '#065f46' : '#92400e'}">${o.status}</span></td>
+                                    <td>${(o.items || []).map(i => `${i.item_type} #${i.item_id}`).join(', ') || '—'}</td>
+                                    <td>${new Date(o.created_at).toLocaleDateString('en-IN')}</td>
+                                </tr>
+                            `).join('')}</tbody>
+                        </table>`}
+
+                        <!-- Subscriptions -->
+                        <h4 style="margin:16px 0 8px;">Subscriptions (${subscriptions.length})</h4>
+                        ${subscriptions.length === 0 ? '<p style="color:#6b7280">No subscriptions</p>' : `
+                        <table>
+                            <thead><tr><th>ID</th><th>Plan</th><th>Status</th><th>Price</th><th>Add-Ons</th><th>Start Date</th></tr></thead>
+                            <tbody>${subscriptions.map(s => `
+                                <tr>
+                                    <td>#${s.id}</td>
+                                    <td>${s.plan_type}</td>
+                                    <td><span style="padding:2px 8px;border-radius:99px;font-size:11px;background:${s.status === 'active' ? '#d1fae5' : '#fee2e2'};color:${s.status === 'active' ? '#065f46' : '#991b1b'}">${s.status}</span></td>
+                                    <td>₹${Number(s.price).toLocaleString('en-IN')}</td>
+                                    <td>${(s.addons || []).map(a => a.name).join(', ') || '—'}</td>
+                                    <td>${s.start_date || '—'}</td>
+                                </tr>
+                            `).join('')}</tbody>
+                        </table>`}
+
+                        <!-- Addresses -->
+                        <h4 style="margin:16px 0 8px;">Saved Addresses (${addresses.length})</h4>
+                        ${addresses.length === 0 ? '<p style="color:#6b7280">No saved addresses</p>' : `
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
+                            ${addresses.map(a => `
+                                <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:13px;">
+                                    <strong>${a.full_name}</strong> · ${a.phone}<br>
+                                    ${a.house_number}, ${a.street}, ${a.area}<br>
+                                    ${a.city} — ${a.pin_code}<br>
+                                    ${a.instructions ? `<em style="color:#6b7280">${a.instructions}</em>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>`}
+
+                        <!-- Deliveries -->
+                        <h4 style="margin:16px 0 8px;">Recent Deliveries (last 50)</h4>
+                        ${deliveries.length === 0 ? '<p style="color:#6b7280">No deliveries</p>' : `
+                        <table>
+                            <thead><tr><th>Sub ID</th><th>Date</th><th>Status</th></tr></thead>
+                            <tbody>${deliveries.slice(0,10).map(d => `
+                                <tr>
+                                    <td>#${d.subscription_id}</td>
+                                    <td>${d.delivery_date}</td>
+                                    <td><span style="padding:2px 8px;border-radius:99px;font-size:11px;background:${d.status === 'delivered' ? '#d1fae5' : '#f3f4f6'};color:${d.status === 'delivered' ? '#065f46' : '#374151'}">${d.status}</span></td>
+                                </tr>
+                            `).join('')}</tbody>
+                        </table>`}
+
+                        <!-- Referrals -->
+                        ${referrals.length > 0 ? `
+                        <h4 style="margin:16px 0 8px;">Referrals (${referrals.length})</h4>
+                        <table>
+                            <thead><tr><th>Referred</th><th>Email</th><th>Status</th><th>Date</th></tr></thead>
+                            <tbody>${referrals.map(r => `
+                                <tr>
+                                    <td>${r.referred_name || '—'}</td>
+                                    <td>${r.referred_email || '—'}</td>
+                                    <td>${r.status}</td>
+                                    <td>${new Date(r.created_at).toLocaleDateString('en-IN')}</td>
+                                </tr>
+                            `).join('')}</tbody>
+                        </table>` : ''}
+                    </div>
+                `;
+            } catch (err) {
+                profileDiv.innerHTML = `<div class="error">Failed to load profile: ${err.message}</div>`;
             }
         }
 

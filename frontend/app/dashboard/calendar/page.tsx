@@ -89,6 +89,14 @@ export default function CalendarPage() {
     ? subs.subscriptions.filter(s => s.id === selectedSubId)
     : subs.subscriptions;
 
+  // Build delivery status map: date → 'delivered' | 'not_delivered' | 'pending'
+  const deliveryStatusMap: Record<string, string> = {};
+  for (const sub of visibleSubs) {
+    for (const [date, status] of Object.entries(sub.deliveryStatuses ?? {})) {
+      deliveryStatusMap[date] = status as string;
+    }
+  }
+
   for (const sub of visibleSubs) {
     const isActive = sub.status === "active";
     const isPaused = sub.status === "paused";
@@ -312,27 +320,38 @@ export default function CalendarPage() {
                   const dateStr = dayToDateStr(day);
                   const info = dateMap[dateStr];
                   const isToday = dateStr === todayStr;
-                  const hasActive = (info?.activePlans ?? []).length > 0;
-                  const hasPaused = (info?.pausedPlans ?? []).length > 0;
-                  const hasAddon  = (info?.addons ?? []).length > 0;
-                  const hasAny    = hasActive || hasPaused || hasAddon;
+                  const hasActive   = (info?.activePlans ?? []).length > 0;
+                  const hasPaused   = (info?.pausedPlans ?? []).length > 0;
+                  const hasAddon    = (info?.addons ?? []).length > 0;
+                  const hasAny      = hasActive || hasPaused || hasAddon;
+                  const dlvStatus   = deliveryStatusMap[dateStr];
+                  const isDelivered = dlvStatus === "delivered";
+                  const isMissed    = dlvStatus === "not_delivered";
 
                   return (
                     <div key={day} className={`aspect-square relative group flex flex-col items-center justify-center rounded-lg text-xs transition-all cursor-default
                       ${isToday ? "ring-2 ring-primary ring-offset-1" : ""}
-                      ${hasActive  ? "bg-[#ffdcc3]/60 border border-[#c4a052]/60 hover:bg-[#ffdcc3]" :
-                        hasPaused  ? "bg-surface-container-high border border-outline-variant/30 hover:bg-surface-container-highest" :
-                        hasAddon   ? "bg-purple-50 border border-purple-200 hover:bg-purple-100" :
+                      ${isDelivered ? "bg-green-100 border border-green-400" :
+                        isMissed    ? "bg-red-100 border border-red-400" :
+                        hasActive   ? "bg-[#ffdcc3]/60 border border-[#c4a052]/60 hover:bg-[#ffdcc3]" :
+                        hasPaused   ? "bg-surface-container-high border border-outline-variant/30 hover:bg-surface-container-highest" :
+                        hasAddon    ? "bg-purple-50 border border-purple-200 hover:bg-purple-100" :
                         "bg-surface-container border border-transparent hover:border-outline-variant/20"}
                     `}>
-                      <span className={`font-bold leading-none ${isToday ? "text-primary" : hasAny ? "text-on-surface" : "text-on-surface-variant"}`}>
+                      <span className={`font-bold leading-none ${isToday ? "text-primary" : isDelivered ? "text-green-800" : isMissed ? "text-red-800" : hasAny ? "text-on-surface" : "text-on-surface-variant"}`}>
                         {day}
                       </span>
 
                       {/* Icons row */}
                       {hasAny && (
                         <div className="flex items-center gap-0.5 mt-0.5">
-                          {(hasActive || hasPaused) && (
+                          {isDelivered && (
+                            <span className="material-symbols-outlined leading-none text-green-600" style={{ fontSize: "10px", fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                          )}
+                          {isMissed && (
+                            <span className="material-symbols-outlined leading-none text-red-500" style={{ fontSize: "10px", fontVariationSettings: "'FILL' 1" }}>cancel</span>
+                          )}
+                          {!isDelivered && !isMissed && (hasActive || hasPaused) && (
                             <span className="material-symbols-outlined leading-none text-[#775a11]" style={{ fontSize: "10px", fontVariationSettings: "'FILL' 1" }}>
                               local_florist
                             </span>
