@@ -21,6 +21,7 @@ function SearchParamsReader({ onParams }: { onParams: (name: string, email: stri
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
