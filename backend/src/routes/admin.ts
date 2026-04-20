@@ -787,6 +787,7 @@ router.get('/orders/:orderId/schedule', async (req, res) => {
                     const statusMap = addonStatusMap[name] || {};
                     addons.push({
                         name,
+                        cancelled: false,
                         dates: dates.map((d: string) => ({ date: d, status: statusMap[d] || 'pending' })),
                     });
                 }
