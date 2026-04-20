@@ -16,8 +16,8 @@ interface HeroContent {
 }
 
 const DEFAULT_HERO: HeroContent = {
-  title: "Daily Fresh Puja Flowers & Essentials Delivered at Your Doorsteps.",
-  subtitle: "Fresh flowers and puja essentials delivered every morning before your puja begins.",
+  title: "Daily Fresh Puja Flowers & Essentials Delivered in Faridabad.",
+  subtitle: "Fresh flowers and puja essentials delivered to your doorstep in Faridabad every morning before your puja begins.",
   cta_text: "YOUR DAILY DEVOTION, STARTING FROM ONLY ₹59/DAY",
   image_url: "/images/HeroSectionTest_1.png",
   metadata: {

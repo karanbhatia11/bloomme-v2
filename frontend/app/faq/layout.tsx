@@ -1,14 +1,14 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "FAQ — Bloomme Puja Flower Delivery",
+  title: "Puja Flower Delivery FAQ — Bloomme Faridabad",
   description:
-    "Answers to common questions about Bloomme's puja flower subscription: delivery times, pausing, freshness, and pricing.",
+    "Common questions about Bloomme's daily puja flower subscription in Faridabad: delivery times (5:30–7:30 AM), how to pause, freshness guarantee, and pricing from ₹59/day.",
   alternates: { canonical: "https://bloomme.co.in/faq" },
   openGraph: {
-    title: "FAQ — Bloomme Puja Flower Delivery",
+    title: "Puja Flower Delivery FAQ — Bloomme Faridabad",
     description:
-      "Answers to common questions about Bloomme's puja flower subscription: delivery times, pausing, freshness, and pricing.",
+      "Common questions about Bloomme's daily puja flower subscription in Faridabad: delivery times, pausing, freshness, and pricing from ₹59/day.",
     url: "https://bloomme.co.in/faq",
     siteName: "Bloomme",
     images: [{ url: "https://bloomme.co.in/images/backgroundlesslogo.png", width: 1200, height: 630 }],
@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "FAQ — Bloomme Puja Flower Delivery",
-    description: "Common questions about Bloomme's puja flower subscription, delivery times, and pricing.",
+    title: "Puja Flower Delivery FAQ — Bloomme Faridabad",
+    description: "Common questions about puja flower delivery in Faridabad: times, pausing, freshness, pricing.",
     images: ["https://bloomme.co.in/images/backgroundlesslogo.png"],
   },
 };

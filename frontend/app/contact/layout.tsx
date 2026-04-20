@@ -1,14 +1,14 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Contact Bloomme — Get in Touch",
+  title: "Contact Bloomme — Puja Flower Delivery Support | Faridabad",
   description:
-    "Reach out to Bloomme for support, partnership, or feedback. We deliver daily puja flowers across Faridabad, Haryana.",
+    "Contact Bloomme for subscription support, partnerships, or feedback. Daily puja flower delivery in Faridabad, Haryana. Email, phone, or WhatsApp.",
   alternates: { canonical: "https://bloomme.co.in/contact" },
   openGraph: {
-    title: "Contact Bloomme — Get in Touch",
+    title: "Contact Bloomme — Puja Flower Delivery Support | Faridabad",
     description:
-      "Reach out to Bloomme for support, partnership, or feedback. We deliver daily puja flowers across Faridabad, Haryana.",
+      "Contact Bloomme for subscription support or feedback. Daily puja flower delivery in Faridabad, Haryana.",
     url: "https://bloomme.co.in/contact",
     siteName: "Bloomme",
     images: [{ url: "https://bloomme.co.in/images/backgroundlesslogo.png", width: 1200, height: 630 }],
@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Contact Bloomme — Get in Touch",
-    description: "Reach out to Bloomme for support, partnership, or feedback.",
+    title: "Contact Bloomme — Puja Flower Delivery Support | Faridabad",
+    description: "Reach out to Bloomme for subscription support, partnerships, or feedback.",
     images: ["https://bloomme.co.in/images/backgroundlesslogo.png"],
   },
 };

@@ -1,14 +1,14 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About Bloomme | Our Story and Mission",
+  title: "About Bloomme — Puja Flower Delivery in Faridabad | Our Story",
   description:
-    "How Bloomme is bringing daily fresh puja flower delivery to devotees in Faridabad. Learn our mission to make every morning ritual effortless.",
+    "Bloomme delivers fresh puja flowers every morning in Faridabad before sunrise. Learn how we're replacing unreliable local vendors with a guaranteed subscription service from ₹59/day.",
   alternates: { canonical: "https://bloomme.co.in/about" },
   openGraph: {
-    title: "About Bloomme | Our Story and Mission",
+    title: "About Bloomme — Puja Flower Delivery in Faridabad | Our Story",
     description:
-      "How Bloomme is bringing daily fresh puja flowers to devotees. Meet the team and learn our mission to connect homes to the divine.",
+      "Bloomme delivers fresh puja flowers every morning in Faridabad before sunrise. Learn how we're replacing unreliable vendors with guaranteed subscription delivery.",
     url: "https://bloomme.co.in/about",
     siteName: "Bloomme",
     images: [{ url: "https://bloomme.co.in/images/backgroundlesslogo.png", width: 1200, height: 630 }],
@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "About Bloomme | Our Story and Mission",
-    description: "How Bloomme is bringing daily fresh puja flowers to devotees.",
+    title: "About Bloomme — Puja Flower Delivery in Faridabad | Our Story",
+    description: "How Bloomme is replacing unreliable vendors with guaranteed daily puja flower delivery in Faridabad.",
     images: ["https://bloomme.co.in/images/backgroundlesslogo.png"],
   },
 };

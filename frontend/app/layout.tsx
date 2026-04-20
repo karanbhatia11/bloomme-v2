@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   description:
     "Fresh puja flowers & essentials delivered to your doorstep between 5:30–7:30 AM every day. Subscribe from ₹59/day. Serving Faridabad.",
   keywords:
-    "puja flowers, daily flower delivery, flower subscription, puja essentials, Faridabad flower delivery",
+    "puja flowers Faridabad, daily puja flower delivery, flower subscription Faridabad, pooja phool delivery, marigold delivery Faridabad, puja essentials, morning flower delivery, daily flower subscription India",
   metadataBase: new URL("https://bloomme.co.in"),
   alternates: {
     canonical: "/",
@@ -116,10 +116,18 @@ export default function RootLayout({
                   priceRange: "₹59–₹179/day",
                   address: {
                     "@type": "PostalAddress",
+                    streetAddress: "NIT, Sector 15",
                     addressLocality: "Faridabad",
                     addressRegion: "Haryana",
+                    postalCode: "121001",
                     addressCountry: "IN",
                   },
+                  geo: {
+                    "@type": "GeoCoordinates",
+                    latitude: 28.4089,
+                    longitude: 77.3178,
+                  },
+                  hasMap: "https://maps.google.com/?q=Faridabad,Haryana,India",
                   openingHoursSpecification: {
                     "@type": "OpeningHoursSpecification",
                     dayOfWeek: [
