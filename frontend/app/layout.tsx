@@ -63,6 +63,13 @@ export default function RootLayout({
     <html lang="en" className={`${ebGaramond.variable} ${playfairDisplay.variable}`}>
       <head>
         <link rel="icon" href="/favicon.ico" />
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-K1RVJKPSRM" />
+        <script dangerouslySetInnerHTML={{ __html: `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-K1RVJKPSRM');
+        ` }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
