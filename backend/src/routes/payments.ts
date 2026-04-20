@@ -74,12 +74,16 @@ router.post('/create', optionalAuth as any, async (req, res) => {
             return res.status(400).json({ error: 'Customer details required' });
         }
 
-        // Create real Razorpay order
+        // Create Razorpay order (skip in development)
         let razorpayOrderId: string;
-        try {
-            razorpayOrderId = await createRazorpayOrder(total);
-        } catch (err: any) {
-            return res.status(400).json({ error: err.message });
+        if (process.env.NODE_ENV === 'development') {
+            razorpayOrderId = `rzp_dev_${Date.now()}`;
+        } else {
+            try {
+                razorpayOrderId = await createRazorpayOrder(total);
+            } catch (err: any) {
+                return res.status(400).json({ error: err.message });
+            }
         }
 
         // Upsert customer: if a customer with this email already exists, update and reuse;
@@ -93,7 +97,7 @@ router.post('/create', optionalAuth as any, async (req, res) => {
                    time_slot   = EXCLUDED.time_slot,
                    building_type = EXCLUDED.building_type,
                    user_id     = COALESCE(customers.user_id, EXCLUDED.user_id)
-             RETURNING id`,
+             RETURNING id, user_id`,
             [
                 customer.name,
                 customer.phone,
@@ -105,6 +109,8 @@ router.post('/create', optionalAuth as any, async (req, res) => {
         );
 
         const customerId = customerResult.rows[0].id;
+        // If the customer record already had a user_id (existing user checking out as guest), use it
+        const effectiveUserId = customerResult.rows[0].user_id || user_id;
 
         // Insert address linked to user (if authenticated) or standalone (if guest)
         if (customer.addressLine1 && customer.suburb && customer.postcode) {
@@ -131,7 +137,7 @@ router.post('/create', optionalAuth as any, async (req, res) => {
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP)
              RETURNING id`,
             [
-                user_id,
+                effectiveUserId,
                 customerId,
                 razorpayOrderId,
                 Math.round(total * 100),
@@ -339,7 +345,9 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
                             );
                             if (existingUserResult.rows.length > 0) {
                                 resolvedUserId = existingUserResult.rows[0].id;
-                                console.log(`Auto-linked guest subscription to user ${resolvedUserId} (email: ${customerEmail})`);
+                                // Also update the order record so it shows up in their dashboard
+                                await pool.query('UPDATE orders SET user_id = $1 WHERE id = $2', [resolvedUserId, orderId]);
+                                console.log(`Auto-linked guest order + subscription to user ${resolvedUserId} (email: ${customerEmail})`);
                             }
                         }
                     }

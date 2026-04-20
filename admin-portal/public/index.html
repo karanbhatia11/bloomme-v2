@@ -361,6 +361,20 @@
             color: #004085;
         }
 
+        .dlv-btn {
+            padding: 3px 7px;
+            font-size: 11px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: opacity 0.15s, transform 0.1s;
+        }
+        .dlv-btn:hover { opacity: 0.8; transform: scale(1.05); }
+        .dlv-btn:active { opacity: 0.6; }
+        .dlv-btn-ok  { background: #059669; color: white; }
+        .dlv-btn-fail { background: #dc2626; color: white; }
+
         /* Totals row */
         .totals-row {
             background: #f9f9f9;
@@ -1593,9 +1607,10 @@
                                 <h3 style="margin:0;font-size:20px;">${order.bloomme_order_id}</h3>
                                 <p style="margin:4px 0 0;color:#6b7280;font-size:13px;">${new Date(order.created_at).toLocaleString('en-IN')}</p>
                             </div>
-                            <div style="display:flex;gap:8px;align-items:center;">
+                            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                                 <span style="padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;background:${statusBg};color:${statusColor};">${order.status.toUpperCase()}</span>
                                 <span style="padding:4px 12px;border-radius:99px;font-size:12px;background:${order.is_guest ? '#fef3c7' : '#ede9fe'};color:${order.is_guest ? '#92400e' : '#5b21b6'};">${order.is_guest ? 'Guest' : 'Registered'}</span>
+                                <button onclick="cancelOrderAddons(${numericOrderId})" style="padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;cursor:pointer;" title="Remove all subscription add-ons for this order">Cancel Add-Ons</button>
                             </div>
                         </div>
 
@@ -1661,7 +1676,7 @@
                         if (!schedRes.ok) { schedPanel.innerHTML = `<div class="error">${sched.error}</div>`; return; }
 
                         const fmtD = d => { try { return new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }); } catch { return d; } };
-                        const statusStyle = s => s === 'delivered' ? 'background:#d1fae5;color:#065f46' : s === 'not_delivered' ? 'background:#fee2e2;color:#991b1b' : 'background:#f3f4f6;color:#6b7280';
+                        const statusStyle = s => s === 'delivered' ? 'background:#d1fae5;color:#065f46' : (s === 'not_delivered' || s === 'failed') ? 'background:#fee2e2;color:#991b1b' : 'background:#f3f4f6;color:#6b7280';
 
                         let html = '';
                         for (const sub of (sched.subscriptions || [])) {
@@ -1677,8 +1692,8 @@
                                         <span id="ds-${sub.subscription_id}-${d.date}" style="padding:1px 7px;border-radius:99px;font-size:10px;font-weight:600;white-space:nowrap;${statusStyle(d.status)}">${d.status.replace('_',' ')}</span>
                                     </div>
                                     <div style="display:flex;gap:3px;flex-shrink:0;">
-                                        <button onclick="markDelivery(${numericOrderId},${sub.subscription_id},'${d.date}','delivered',this)" title="Mark delivered" style="padding:3px 7px;font-size:11px;border:none;border-radius:4px;background:#059669;color:white;cursor:pointer;font-weight:700;">✓</button>
-                                        <button onclick="markDelivery(${numericOrderId},${sub.subscription_id},'${d.date}','not_delivered',this)" title="Not delivered" style="padding:3px 7px;font-size:11px;border:none;border-radius:4px;background:#dc2626;color:white;cursor:pointer;font-weight:700;">✗</button>
+                                        <button onclick="markDelivery(${numericOrderId},${sub.subscription_id},'${d.date}','delivered',this)" title="Mark delivered" class="dlv-btn dlv-btn-ok">✓</button>
+                                        <button onclick="markDelivery(${numericOrderId},${sub.subscription_id},'${d.date}','not_delivered',this)" title="Not delivered" class="dlv-btn dlv-btn-fail">✗</button>
                                     </div>
                                 </div>`;
                             }
@@ -1686,20 +1701,23 @@
                         }
 
                         for (const addon of (sched.addons || []).filter(a => a.dates.length > 0)) {
-                            html += `<div style="margin-top:12px;padding-top:12px;border-top:2px solid #e2e8f0;">
+                            const addonCancelled = addon.cancelled === true;
+                            html += `<div style="margin-top:12px;padding-top:12px;border-top:2px solid #e2e8f0;${addonCancelled ? 'opacity:0.6;' : ''}">
                                 <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                                    <strong style="font-size:12px;color:#92400e;">Add-On: ${addon.name}</strong>
+                                    <strong style="font-size:12px;color:${addonCancelled ? '#6b7280' : '#92400e'};${addonCancelled ? 'text-decoration:line-through;' : ''}">Add-On: ${addon.name}</strong>
+                                    ${addonCancelled ? '<span style="padding:1px 8px;border-radius:99px;font-size:10px;font-weight:700;background:#fee2e2;color:#991b1b;">CANCELLED</span>' : ''}
                                 </div>`;
                             for (const d of addon.dates) {
+                                const isCancelled = d.status === 'cancelled';
                                 html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f3f4f6;gap:6px;">
                                     <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
-                                        <span style="font-size:12px;color:#374151;white-space:nowrap;">${fmtD(d.date)}</span>
-                                        <span id="ds-addon-${addon.name.replace(/\s/g,'-')}-${d.date}" style="padding:1px 7px;border-radius:99px;font-size:10px;font-weight:600;white-space:nowrap;${statusStyle(d.status)}">${d.status.replace('_',' ')}</span>
+                                        <span style="font-size:12px;color:${isCancelled ? '#9ca3af' : '#374151'};white-space:nowrap;${isCancelled ? 'text-decoration:line-through;' : ''}">${fmtD(d.date)}</span>
+                                        <span style="padding:1px 7px;border-radius:99px;font-size:10px;font-weight:600;white-space:nowrap;${isCancelled ? 'background:#f3f4f6;color:#6b7280;' : statusStyle(d.status)}">${isCancelled ? 'cancelled' : d.status.replace('_',' ')}</span>
                                     </div>
-                                    <div style="display:flex;gap:3px;flex-shrink:0;">
-                                        <button onclick="markAddonDelivery(${numericOrderId},'${addon.name.replace(/'/g,"\\'")}','${d.date}','delivered',this)" title="Mark delivered" style="padding:3px 7px;font-size:11px;border:none;border-radius:4px;background:#059669;color:white;cursor:pointer;font-weight:700;">✓</button>
-                                        <button onclick="markAddonDelivery(${numericOrderId},'${addon.name.replace(/'/g,"\\'")}','${d.date}','not_delivered',this)" title="Not delivered" style="padding:3px 7px;font-size:11px;border:none;border-radius:4px;background:#dc2626;color:white;cursor:pointer;font-weight:700;">✗</button>
-                                    </div>
+                                    ${!isCancelled ? `<div style="display:flex;gap:3px;flex-shrink:0;">
+                                        <button onclick="markAddonDelivery(${numericOrderId},'${addon.name.replace(/'/g,"\\'")}','${d.date}','delivered',this)" title="Mark delivered" class="dlv-btn dlv-btn-ok">✓</button>
+                                        <button onclick="markAddonDelivery(${numericOrderId},'${addon.name.replace(/'/g,"\\'")}','${d.date}','not_delivered',this)" title="Not delivered" class="dlv-btn dlv-btn-fail">✗</button>
+                                    </div>` : ''}
                                 </div>`;
                             }
                             html += '</div>';
@@ -1713,6 +1731,25 @@
                 })();
             } catch (err) {
                 resultDiv.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            }
+        }
+
+        async function cancelOrderAddons(orderId) {
+            if (!confirm('Cancel all subscription add-ons for this order? This cannot be undone.')) return;
+            try {
+                const res = await fetch(`${API_URL}/admin/orders/${orderId}/cancel-addons`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const d = await res.json();
+                if (res.ok) {
+                    alert(`Done — ${d.deletedAddons} add-on(s) removed.`);
+                    lookupOrder(); // refresh the view
+                } else {
+                    alert('Error: ' + d.error);
+                }
+            } catch (e) {
+                alert('Request failed: ' + e.message);
             }
         }
 

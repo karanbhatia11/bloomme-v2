@@ -641,25 +641,31 @@ router.get('/orders/:orderId/schedule', async (req, res) => {
         if (orderRow.rows.length === 0) return res.status(404).json({ error: 'Order not found' });
         const { user_id, email } = orderRow.rows[0];
 
-        // Find subscriptions: by user_id, or by matching email to user, or by plan+time for guests
+        // Find the single subscription linked to this order — closest in time, matching plan
         let subRows;
         if (user_id) {
             subRows = await pool.query(
-                `SELECT id AS subscription_id, status AS sub_status, plan_type, custom_schedule
-                 FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC`,
-                [user_id]
+                `SELECT s.id AS subscription_id, s.status AS sub_status, s.plan_type, s.custom_schedule
+                 FROM subscriptions s
+                 JOIN order_items oi ON oi.order_id = $1 AND oi.item_type = 'subscription'
+                 JOIN plans p ON p.id = oi.item_id AND LOWER(p.name) = LOWER(s.plan_type)
+                 WHERE s.user_id = $2
+                 ORDER BY ABS(EXTRACT(EPOCH FROM (s.created_at - (SELECT COALESCE(paid_at, created_at) FROM orders WHERE id = $1)))) ASC
+                 LIMIT 1`,
+                [orderId, user_id]
             );
         } else {
-            // Try via registered user with same email
             subRows = await pool.query(
                 `SELECT s.id AS subscription_id, s.status AS sub_status, s.plan_type, s.custom_schedule
                  FROM subscriptions s
                  JOIN users u ON u.id = s.user_id
+                 JOIN order_items oi ON oi.order_id = $2 AND oi.item_type = 'subscription'
+                 JOIN plans p ON p.id = oi.item_id AND LOWER(p.name) = LOWER(s.plan_type)
                  WHERE LOWER(u.email) = LOWER($1)
-                 ORDER BY s.created_at DESC`,
-                [email]
+                 ORDER BY ABS(EXTRACT(EPOCH FROM (s.created_at - (SELECT COALESCE(paid_at, created_at) FROM orders WHERE id = $2)))) ASC
+                 LIMIT 1`,
+                [email, orderId]
             );
-            // Fallback: guest subscriptions (user_id IS NULL) matching plan from this order, created near order time
             if (subRows.rows.length === 0) {
                 subRows = await pool.query(
                     `SELECT s.id AS subscription_id, s.status AS sub_status, s.plan_type, s.custom_schedule
@@ -668,7 +674,7 @@ router.get('/orders/:orderId/schedule', async (req, res) => {
                      JOIN plans p ON p.id = oi.item_id AND LOWER(p.name) = LOWER(s.plan_type)
                      WHERE s.user_id IS NULL
                      ORDER BY ABS(EXTRACT(EPOCH FROM (s.created_at - (SELECT paid_at FROM orders WHERE id = $1)))) ASC
-                     LIMIT 5`,
+                     LIMIT 1`,
                     [orderId]
                 );
             }
@@ -711,9 +717,9 @@ router.get('/orders/:orderId/schedule', async (req, res) => {
             });
         }
 
-        // Addon dates from order_items
+        // Addon dates from order_items (including cancelled items)
         const addonItems = await pool.query(
-            `SELECT a.name, oi.custom_schedule_dates, oi.schedule
+            `SELECT a.name, oi.custom_schedule_dates, oi.schedule, oi.status AS item_status
              FROM order_items oi
              JOIN add_ons a ON a.id = oi.item_id
              WHERE oi.order_id = $1 AND oi.item_type = 'addon'`, [orderId]
@@ -741,12 +747,51 @@ router.get('/orders/:orderId/schedule', async (req, res) => {
                     else if (sched?.customDates) dates = sched.customDates.map(toDateStr).filter(Boolean);
                 } catch {}
             }
+            const isCancelled = row.item_status === 'cancelled';
             const statusMap = addonStatusMap[row.name] || {};
             return {
                 name: row.name,
-                dates: dates.map((d: string) => ({ date: d, status: statusMap[d] || 'pending' })),
+                cancelled: isCancelled,
+                dates: dates.map((d: string) => ({
+                    date: d,
+                    status: isCancelled ? 'cancelled' : (statusMap[d] || 'pending'),
+                })),
             };
         });
+
+        // Fallback: also pull add-on dates from subscription_add_ons → addon_delivery_dates
+        // (covers subscription orders where add-ons aren't in order_items)
+        // Scoped to only subscriptions linked to this order to avoid showing data from other orders
+        if (user_id && result.length > 0) {
+            const linkedSubIds = result.map((s: any) => s.subscription_id);
+            const subAddonRows = await pool.query(
+                `SELECT a.name, TO_CHAR(add_dates.delivery_date, 'YYYY-MM-DD') as delivery_date
+                 FROM subscription_add_ons sa
+                 JOIN add_ons a ON a.id = sa.add_on_id
+                 JOIN addon_delivery_dates add_dates ON add_dates.subscription_addon_id = sa.id
+                 WHERE sa.subscription_id = ANY($1::int[])
+                 ORDER BY a.name, add_dates.delivery_date`,
+                [linkedSubIds]
+            );
+
+            // Group by addon name
+            const subAddonMap: Record<string, string[]> = {};
+            for (const row of subAddonRows.rows) {
+                if (!subAddonMap[row.name]) subAddonMap[row.name] = [];
+                subAddonMap[row.name].push(row.delivery_date);
+            }
+
+            for (const [name, dates] of Object.entries(subAddonMap)) {
+                // Only add if not already covered by order_items
+                if (!addons.find((a: any) => a.name === name)) {
+                    const statusMap = addonStatusMap[name] || {};
+                    addons.push({
+                        name,
+                        dates: dates.map((d: string) => ({ date: d, status: statusMap[d] || 'pending' })),
+                    });
+                }
+            }
+        }
 
         res.json({ subscriptions: result, addons });
     } catch (err: any) {
@@ -761,6 +806,9 @@ router.post('/orders/:orderId/deliveries/mark', async (req, res) => {
     if (!date || !status) return res.status(400).json({ error: 'date and status required' });
     if (!['delivered', 'not_delivered', 'pending'].includes(status)) return res.status(400).json({ error: 'Invalid status' });
 
+    // 'not_delivered' maps to 'failed' at the DB level (CHECK constraint allows: pending|delivered|skipped|failed)
+    const dbStatus = status === 'not_delivered' ? 'failed' : status;
+
     try {
         if (addonName) {
             // Track add-on delivery status
@@ -769,7 +817,7 @@ router.post('/orders/:orderId/deliveries/mark', async (req, res) => {
                 VALUES ($1, $2, $3::date, $4, CURRENT_TIMESTAMP)
                 ON CONFLICT (order_id, addon_name, delivery_date)
                 DO UPDATE SET status = $4, updated_at = CURRENT_TIMESTAMP
-            `, [orderId, addonName, date, status]);
+            `, [orderId, addonName, date, dbStatus]);
         } else if (subscriptionId) {
             // Track subscription delivery status
             await pool.query(`
@@ -777,12 +825,64 @@ router.post('/orders/:orderId/deliveries/mark', async (req, res) => {
                 VALUES ($1, $2::date, $3, CURRENT_TIMESTAMP)
                 ON CONFLICT (subscription_id, delivery_date)
                 DO UPDATE SET status = $3, updated_at = CURRENT_TIMESTAMP
-            `, [subscriptionId, date, status]);
+            `, [subscriptionId, date, dbStatus]);
         } else {
             return res.status(400).json({ error: 'subscriptionId or addonName required' });
         }
 
         res.json({ success: true });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/admin/orders/:orderId/cancel-addons
+// Cancel (delete) all subscription add-ons linked to this order's subscription(s)
+router.post('/orders/:orderId/cancel-addons', async (req, res) => {
+    const orderId = parseInt(req.params.orderId);
+    if (isNaN(orderId)) return res.status(400).json({ error: 'Invalid order ID' });
+
+    try {
+        const orderRow = await pool.query(
+            `SELECT o.user_id FROM orders o WHERE o.id = $1`, [orderId]
+        );
+        if (orderRow.rows.length === 0) return res.status(404).json({ error: 'Order not found' });
+        const { user_id } = orderRow.rows[0];
+        if (!user_id) return res.status(400).json({ error: 'Guest order — no linked subscriptions' });
+
+        // Find subscriptions for this order (same logic as schedule endpoint)
+        const subRows = await pool.query(
+            `SELECT s.id AS subscription_id
+             FROM subscriptions s
+             JOIN order_items oi ON oi.order_id = $1 AND oi.item_type = 'subscription'
+             JOIN plans p ON p.id = oi.item_id AND LOWER(p.name) = LOWER(s.plan_type)
+             WHERE s.user_id = $2`,
+            [orderId, user_id]
+        );
+
+        if (subRows.rows.length === 0) {
+            return res.status(404).json({ error: 'No subscription found for this order' });
+        }
+
+        const subIds = subRows.rows.map((r: any) => r.subscription_id);
+
+        // Mark subscription add-ons as cancelled (keep rows for history)
+        const result = await pool.query(
+            `UPDATE subscription_add_ons SET status = 'cancelled'
+             WHERE subscription_id = ANY($1::int[]) RETURNING id`,
+            [subIds]
+        );
+
+        // Mark addon order_items as cancelled (only for standalone addon orders)
+        await pool.query(
+            `UPDATE order_items oi SET status = 'cancelled'
+             FROM orders o
+             WHERE oi.order_id = o.id AND o.id = $1
+               AND oi.item_type = 'addon' AND o.order_type = 'addon'`,
+            [orderId]
+        );
+
+        res.json({ success: true, cancelledAddons: result.rowCount, subscriptionIds: subIds });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }

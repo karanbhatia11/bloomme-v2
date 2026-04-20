@@ -217,6 +217,26 @@ export default function CheckoutConfirmedPage() {
           </motion.div>
         )}
 
+        {/* ── CREATE ACCOUNT CTA (guests only) ───────────────── */}
+        {mounted && !isLoggedIn && (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+            className="bg-gradient-to-br from-[#2f1500] to-[#775a11] rounded-3xl p-6 mb-5 print:hidden">
+            <div className="flex items-start gap-3 mb-4">
+              <span className="material-symbols-outlined text-[#c4a052] text-2xl mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>account_circle</span>
+              <div>
+                <p className="font-bold text-white text-sm">Save this order to your account</p>
+                <p className="text-white/60 text-xs mt-0.5">Track deliveries, manage your subscription & claim your Bloom Credits</p>
+              </div>
+            </div>
+            <Link
+              href={`/signup?name=${encodeURIComponent(order?.customer?.name || '')}&email=${encodeURIComponent(order?.customer?.email || '')}&phone=${encodeURIComponent(order?.customer?.phone || '')}`}
+              className="block w-full text-center py-3 rounded-2xl bg-[#c4a052] text-[#2f1500] font-bold text-sm hover:bg-[#d4b060] transition-colors"
+            >
+              Create Free Account
+            </Link>
+          </motion.div>
+        )}
+
         {/* ── DELIVERY DETAILS ────────────────────────────────── */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}
           className="bg-[#fff1e9] rounded-3xl p-6 mb-5 space-y-4">
@@ -306,15 +326,24 @@ export default function CheckoutConfirmedPage() {
               <span className="material-symbols-outlined text-sm">print</span>
               Print
             </button>
-            <Link href="/dashboard"
-              className="flex-[2] py-4 rounded-2xl bg-gradient-to-r from-[#775a11] to-[#c4a052] text-white font-bold text-sm text-center flex items-center justify-center shadow-[0_12px_30px_rgba(119,90,17,0.2)] hover:scale-[1.02] active:scale-95 transition-all">
-              View Dashboard
-            </Link>
+            {isLoggedIn ? (
+              <Link href="/dashboard"
+                className="flex-[2] py-4 rounded-2xl bg-gradient-to-r from-[#775a11] to-[#c4a052] text-white font-bold text-sm text-center flex items-center justify-center shadow-[0_12px_30px_rgba(119,90,17,0.2)] hover:scale-[1.02] active:scale-95 transition-all">
+                View Dashboard
+              </Link>
+            ) : (
+              <Link href="/"
+                className="flex-[2] py-4 rounded-2xl bg-gradient-to-r from-[#775a11] to-[#c4a052] text-white font-bold text-sm text-center flex items-center justify-center shadow-[0_12px_30px_rgba(119,90,17,0.2)] hover:scale-[1.02] active:scale-95 transition-all">
+                Back to Home
+              </Link>
+            )}
           </div>
-          <Link href="/"
-            className="w-full py-3 rounded-2xl border-2 border-[#d1c5b3] text-[#4d4638] font-semibold text-sm text-center hover:border-[#c4a052] hover:text-[#775a11] transition-all">
-            Back to Home
-          </Link>
+          {isLoggedIn && (
+            <Link href="/"
+              className="w-full py-3 rounded-2xl border-2 border-[#d1c5b3] text-[#4d4638] font-semibold text-sm text-center hover:border-[#c4a052] hover:text-[#775a11] transition-all">
+              Back to Home
+            </Link>
+          )}
         </motion.div>
 
         <p className="text-center font-['Playfair_Display'] italic text-[#c4a052] text-sm mt-8 print:hidden">

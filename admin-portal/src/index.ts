@@ -286,6 +286,20 @@ app.post('/api/admin/orders/:id/deliveries/mark', authenticateToken, async (req:
     }
 });
 
+// POST /api/admin/orders/:id/cancel-addons
+app.post('/api/admin/orders/:id/cancel-addons', authenticateToken, async (req: any, res: Response) => {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/orders/${req.params.id}/cancel-addons`, {
+            method: 'POST',
+            headers: { 'Authorization': req.headers.authorization as string }
+        });
+        const data = await response.json();
+        res.status(response.status).json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET /api/admin/order-lookup
 app.get('/api/admin/order-lookup', authenticateToken, async (req: any, res: Response) => {
     try {

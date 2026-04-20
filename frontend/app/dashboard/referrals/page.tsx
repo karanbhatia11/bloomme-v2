@@ -12,6 +12,21 @@ interface UserData {
   email: string;
 }
 
+interface CreditTransaction {
+  id: number;
+  amount: number;
+  type: string;
+  description: string;
+  expires_at: string | null;
+  created_at: string;
+}
+
+const TYPE_META: Record<string, { icon: string; label: string; color: string }> = {
+  earn_purchase:          { icon: "shopping_basket", label: "Purchase",          color: "text-[#775a11] bg-[#ffdcc3]" },
+  earn_referral_given:    { icon: "redeem",          label: "Referral Given",    color: "text-purple-700 bg-purple-100" },
+  earn_referral_received: { icon: "card_giftcard",   label: "Referral Bonus",    color: "text-green-700 bg-green-100" },
+  redeem:                 { icon: "payments",         label: "Redeemed",          color: "text-red-600 bg-red-100" },
+};
 
 export default function ReferralsPage() {
   const router = useRouter();
@@ -25,6 +40,9 @@ export default function ReferralsPage() {
   const { cart } = useCart();
   const cartCount = cart.addons.reduce((s, a) => s + a.quantity, 0) + (cart.planId ? 1 : 0);
   const [loading, setLoading] = useState(true);
+  const [balance, setBalance] = useState(0);
+  const [history, setHistory] = useState<CreditTransaction[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -38,13 +56,23 @@ export default function ReferralsPage() {
     try {
       const userData = JSON.parse(userStr);
       setUser(userData);
-      // Read referral code from localStorage (same as dashboard)
-      if (userData.referralCode) {
-        setReferralCode(userData.referralCode);
-      }
+      if (userData.referralCode) setReferralCode(userData.referralCode);
       setLoading(false);
-    } catch (error) {
-      console.error("Error parsing user data:", error);
+
+      const headers = { Authorization: `Bearer ${token}` };
+
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/credits/balance`, { headers })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setBalance(d.credits); })
+        .catch(() => {});
+
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/credits/history`, { headers })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setHistory(d.transactions); })
+        .catch(() => {})
+        .finally(() => setHistoryLoading(false));
+
+    } catch {
       router.push("/login");
     }
   }, []);
@@ -349,6 +377,70 @@ export default function ReferralsPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── CREDITS HISTORY ─────────────────────────────────── */}
+        <section className="px-6 md:px-12 pb-12">
+          <div className="max-w-7xl mx-auto space-y-6">
+
+            {/* Summary cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: "Current Balance", value: balance, suffix: "credits", sub: `₹${Math.floor(balance * 0.10)} value` },
+                { label: "Earned from Orders", value: history.filter(t => t.type === "earn_purchase").reduce((s, t) => s + t.amount, 0), suffix: "credits", sub: "purchases" },
+                { label: "Earned from Referrals", value: history.filter(t => t.type.startsWith("earn_referral")).reduce((s, t) => s + t.amount, 0), suffix: "credits", sub: "referrals" },
+                { label: "Total Redeemed", value: Math.abs(history.filter(t => t.type === "redeem").reduce((s, t) => s + t.amount, 0)), suffix: "credits", sub: "used" },
+              ].map(({ label, value, suffix, sub }) => (
+                <div key={label} className="bg-[#fff1e9] rounded-2xl p-5 border border-[#d1c5b3]/30">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#4d4638]/50 mb-1">{label}</p>
+                  <p className="text-2xl font-extrabold text-[#2f1500]">{value.toLocaleString()} <span className="text-sm font-semibold text-[#775a11]">{suffix}</span></p>
+                  <p className="text-xs text-[#4d4638]/50 mt-0.5">{sub}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Transaction list */}
+            <div className="bg-white rounded-3xl border border-[#d1c5b3]/30 overflow-hidden">
+              <div className="px-6 py-5 border-b border-[#d1c5b3]/30">
+                <h2 className="font-bold text-[#2f1500] text-base">Points History</h2>
+                <p className="text-xs text-[#4d4638]/50 mt-0.5">All your Bloom Credit transactions</p>
+              </div>
+
+              {historyLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#775a11]" />
+                </div>
+              ) : history.length === 0 ? (
+                <div className="text-center py-16">
+                  <span className="material-symbols-outlined text-4xl text-[#d1c5b3] mb-3 block">stars</span>
+                  <p className="text-sm text-[#4d4638]/50">No transactions yet. Place your first order to start earning.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-[#d1c5b3]/20">
+                  {history.map((tx) => {
+                    const meta = TYPE_META[tx.type] ?? { icon: "circle", label: tx.type, color: "text-gray-600 bg-gray-100" };
+                    const date = new Date(tx.created_at);
+                    const dateStr = date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+                    const isEarn = tx.amount > 0;
+                    return (
+                      <div key={tx.id} className="flex items-center gap-4 px-6 py-4 hover:bg-[#fff8f5] transition-colors">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${meta.color}`}>
+                          <span className="material-symbols-outlined text-sm">{meta.icon}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-[#2f1500] truncate">{tx.description}</p>
+                          <p className="text-xs text-[#4d4638]/50 mt-0.5">{meta.label} · {dateStr}</p>
+                        </div>
+                        <p className={`text-base font-extrabold flex-shrink-0 ${isEarn ? "text-green-600" : "text-red-500"}`}>
+                          {isEarn ? "+" : ""}{tx.amount.toLocaleString()}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </section>

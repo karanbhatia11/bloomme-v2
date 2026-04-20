@@ -43,16 +43,30 @@ router.get('/active', authenticateToken as any, requireEmailVerification as any,
         );
         console.log('[Addons Active] From addon orders (all statuses):', addonResult.rows);
 
+        // Fetch latest delivery status per addon_name for this user's orders
+        const statusResult = await pool.query(
+            `SELECT DISTINCT ON (ads.addon_name) ads.addon_name, ads.status, ads.delivery_date
+             FROM addon_delivery_status ads
+             JOIN orders o ON ads.order_id = o.id
+             WHERE o.user_id = $1
+             ORDER BY ads.addon_name, ads.delivery_date DESC`,
+            [user_id]
+        );
+        const statusMap = new Map(statusResult.rows.map((r: any) => [r.addon_name, { status: r.status, date: r.delivery_date }]));
+
         // Combine results, removing duplicates
         const addOnMap = new Map();
 
         [...subResult.rows, ...addonResult.rows].forEach((row) => {
             const key = row.add_on_id.toString();
             if (!addOnMap.has(key)) {
+                const latestDelivery = statusMap.get(row.name) || null;
                 addOnMap.set(key, {
                     id: key,
                     name: row.name,
                     price: parseFloat(row.price),
+                    latestDeliveryStatus: latestDelivery?.status || null,
+                    latestDeliveryDate: latestDelivery?.date || null,
                 });
             }
         });

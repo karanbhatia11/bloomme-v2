@@ -239,16 +239,16 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
                 }
             }
 
-            // Fetch add-ons with delivery count and all delivery dates
+            // Fetch add-ons with delivery count, dates, and cancellation status
             const addonsResult = await pool.query(
-                `SELECT sa.id, a.name, a.price, sa.one_off_date,
+                `SELECT sa.id, a.name, a.price, sa.one_off_date, sa.status AS addon_status,
                         COUNT(add_dates.delivery_date) AS delivery_count,
                         ARRAY_AGG(TO_CHAR(add_dates.delivery_date, 'YYYY-MM-DD') ORDER BY add_dates.delivery_date) FILTER (WHERE add_dates.delivery_date IS NOT NULL) AS delivery_dates
                  FROM subscription_add_ons sa
                  JOIN add_ons a ON a.id = sa.add_on_id
                  LEFT JOIN addon_delivery_dates add_dates ON add_dates.subscription_addon_id = sa.id
                  WHERE sa.subscription_id = $1
-                 GROUP BY sa.id, a.name, a.price, sa.one_off_date`,
+                 GROUP BY sa.id, a.name, a.price, sa.one_off_date, sa.status`,
                 [row.id]
             );
 
@@ -261,7 +261,8 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
                     price: parseFloat(addon.price),
                     deliveryCount,
                     deliveryDates,
-                    oneOffDate: formatDate(addon.one_off_date)
+                    oneOffDate: formatDate(addon.one_off_date),
+                    cancelled: addon.addon_status === 'cancelled',
                 };
             });
 
@@ -269,7 +270,7 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
             const addOnsPrice = addOns.reduce((sum, addon) => sum + (addon.price * addon.deliveryCount), 0);
             const totalPrice = basePrice + addOnsPrice;
 
-            // Fetch delivery statuses from deliveries table
+            // Fetch delivery statuses from deliveries table (subscription deliveries)
             const deliveryStatusResult = await pool.query(
                 `SELECT delivery_date::text, status FROM deliveries WHERE subscription_id = $1`,
                 [row.id]
@@ -277,6 +278,20 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
             const deliveryStatuses: Record<string, string> = {};
             for (const d of deliveryStatusResult.rows) {
                 deliveryStatuses[d.delivery_date.slice(0, 10)] = d.status;
+            }
+
+            // Fetch addon delivery statuses from addon_delivery_status table (add-on orders)
+            const addonStatusResult = await pool.query(
+                `SELECT DISTINCT ON (ads.delivery_date) ads.delivery_date::text, ads.status
+                 FROM addon_delivery_status ads
+                 JOIN orders o ON ads.order_id = o.id
+                 WHERE o.user_id = $1
+                 ORDER BY ads.delivery_date, ads.updated_at DESC`,
+                [user_id]
+            );
+            for (const d of addonStatusResult.rows) {
+                const date = d.delivery_date.slice(0, 10);
+                if (!deliveryStatuses[date]) deliveryStatuses[date] = d.status;
             }
 
             return {
@@ -303,6 +318,163 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
     } catch (err: any) {
         console.error('Get subscriptions error:', err);
         res.status(400).json({ error: err.message });
+    }
+});
+
+// GET /api/subs/my-addon-orders
+// Get standalone addon orders with delivery dates (for calendar display)
+router.get('/my-addon-orders', authenticateToken as any, async (req, res) => {
+    try {
+        const user_id = (req as any).user.id;
+
+        const toDateStr = (d: any): string => {
+            if (!d) return '';
+            if (typeof d === 'string') return d.slice(0, 10);
+            if (d instanceof Date) {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+            }
+            return String(d).slice(0, 10);
+        };
+
+        // Only standalone addon-only orders (subscription+addon orders are handled via my-subscriptions)
+        const ordersResult = await pool.query(
+            `SELECT DISTINCT o.id, 'BLM-' || LPAD(o.id::text, 6, '0') AS bloomme_order_id,
+                    o.status, o.delivery_status, o.created_at
+             FROM orders o
+             JOIN order_items oi ON oi.order_id = o.id
+               AND oi.item_type = 'addon'
+               AND (oi.custom_schedule_dates IS NOT NULL OR oi.schedule IS NOT NULL)
+             WHERE o.user_id = $1
+               AND o.order_type = 'addon'
+               AND o.status IN ('paid', 'pending')
+             ORDER BY o.created_at DESC`,
+            [user_id]
+        );
+
+        const addonOrders = await Promise.all(ordersResult.rows.map(async (order) => {
+            const itemsResult = await pool.query(
+                `SELECT a.name, oi.custom_schedule_dates, oi.schedule, oi.status AS item_status
+                 FROM order_items oi
+                 JOIN add_ons a ON a.id = oi.item_id
+                 WHERE oi.order_id = $1 AND oi.item_type = 'addon'`,
+                [order.id]
+            );
+
+            const statusResult = await pool.query(
+                `SELECT addon_name, delivery_date::text, status
+                 FROM addon_delivery_status
+                 WHERE order_id = $1`,
+                [order.id]
+            );
+            const statusMap: Record<string, Record<string, string>> = {};
+            for (const row of statusResult.rows) {
+                if (!statusMap[row.addon_name]) statusMap[row.addon_name] = {};
+                statusMap[row.addon_name][toDateStr(row.delivery_date)] = row.status;
+            }
+
+            const items = itemsResult.rows.map((item: any) => {
+                let dates: string[] = [];
+                if (item.custom_schedule_dates && Array.isArray(item.custom_schedule_dates)) {
+                    dates = item.custom_schedule_dates.map(toDateStr).filter(Boolean);
+                } else if (item.schedule) {
+                    try {
+                        const sched = typeof item.schedule === 'string' ? JSON.parse(item.schedule) : item.schedule;
+                        if (Array.isArray(sched)) dates = sched.map(toDateStr).filter(Boolean);
+                        else if (sched?.customDates) dates = sched.customDates.map(toDateStr).filter(Boolean);
+                    } catch {}
+                }
+                const isCancelled = item.item_status === 'cancelled';
+                const addonStatuses = statusMap[item.name] || {};
+                return {
+                    name: item.name,
+                    cancelled: isCancelled,
+                    dates: dates.map((d: string) => ({
+                        date: d,
+                        status: isCancelled ? 'cancelled' : (addonStatuses[d] || 'pending'),
+                    })),
+                };
+            });
+
+            return {
+                orderId: order.id.toString(),
+                bloommeOrderId: order.bloomme_order_id,
+                deliveryStatus: order.delivery_status || 'active',
+                createdAt: order.created_at,
+                items,
+            };
+        }));
+
+        res.json({ addonOrders });
+    } catch (err: any) {
+        console.error('Get addon orders error:', err);
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// POST /api/subs/addon-orders/:orderId/cancel
+router.post('/addon-orders/:orderId/cancel', authenticateToken as any, async (req, res) => {
+    try {
+        const user_id = (req as any).user.id;
+        const { orderId } = req.params;
+        const check = await pool.query(
+            `SELECT id FROM orders WHERE id = $1 AND user_id = $2 AND order_type = 'addon'`,
+            [orderId, user_id]
+        );
+        if (check.rows.length === 0) return res.status(404).json({ error: 'Order not found' });
+        await pool.query(
+            `UPDATE orders SET delivery_status = 'cancelled' WHERE id = $1`,
+            [orderId]
+        );
+        await pool.query(
+            `UPDATE order_items SET status = 'cancelled' WHERE order_id = $1 AND item_type = 'addon'`,
+            [orderId]
+        );
+        res.json({ success: true });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/subs/addon-orders/:orderId/pause
+router.post('/addon-orders/:orderId/pause', authenticateToken as any, async (req, res) => {
+    try {
+        const user_id = (req as any).user.id;
+        const { orderId } = req.params;
+        const check = await pool.query(
+            `SELECT id FROM orders WHERE id = $1 AND user_id = $2 AND order_type = 'addon'`,
+            [orderId, user_id]
+        );
+        if (check.rows.length === 0) return res.status(404).json({ error: 'Order not found' });
+        await pool.query(
+            `UPDATE orders SET delivery_status = 'paused' WHERE id = $1`,
+            [orderId]
+        );
+        res.json({ success: true });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/subs/addon-orders/:orderId/resume
+router.post('/addon-orders/:orderId/resume', authenticateToken as any, async (req, res) => {
+    try {
+        const user_id = (req as any).user.id;
+        const { orderId } = req.params;
+        const check = await pool.query(
+            `SELECT id FROM orders WHERE id = $1 AND user_id = $2 AND order_type = 'addon'`,
+            [orderId, user_id]
+        );
+        if (check.rows.length === 0) return res.status(404).json({ error: 'Order not found' });
+        await pool.query(
+            `UPDATE orders SET delivery_status = 'active' WHERE id = $1`,
+            [orderId]
+        );
+        res.json({ success: true });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -470,12 +642,19 @@ router.post('/:subscriptionId/cancel', authenticateToken as any, async (req, res
 
         // Verify subscription belongs to user
         const verification = await pool.query(
-            'SELECT id FROM subscriptions WHERE id = $1 AND user_id = $2',
+            'SELECT id, plan_type, created_at FROM subscriptions WHERE id = $1 AND user_id = $2',
             [subscription_id, user_id]
         );
         if (verification.rows.length === 0) {
             return res.status(404).json({ error: 'Subscription not found' });
         }
+        const { plan_type, created_at: sub_created_at } = verification.rows[0];
+
+        // Mark subscription add-ons as cancelled (keep rows for calendar history)
+        await pool.query(
+            `UPDATE subscription_add_ons SET status = 'cancelled' WHERE subscription_id = $1`,
+            [subscription_id]
+        );
 
         await pool.query(
             "UPDATE subscriptions SET status = 'cancelled' WHERE id = $1",

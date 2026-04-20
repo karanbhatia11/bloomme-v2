@@ -19,6 +19,8 @@ interface ActiveAddOn {
   price: number;
   image?: string;
   description?: string;
+  latestDeliveryStatus?: string | null;
+  latestDeliveryDate?: string | null;
 }
 
 export default function AddOnsPage() {
@@ -303,6 +305,18 @@ export default function AddOnsPage() {
                             <p className="text-sm text-on-surface-variant">{addon.description}</p>
                           )}
                           <p className="text-primary font-bold mt-1">₹{addon.price}</p>
+                          {addon.latestDeliveryStatus && (
+                            <span className={`inline-flex items-center gap-1 mt-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                              addon.latestDeliveryStatus === 'delivered'
+                                ? 'bg-green-100 text-green-700'
+                                : addon.latestDeliveryStatus === 'failed'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-surface-container text-on-surface-variant'
+                            }`}>
+                              {addon.latestDeliveryStatus === 'delivered' ? '✓ Delivered' : addon.latestDeliveryStatus === 'failed' ? '✕ Not Delivered' : addon.latestDeliveryStatus}
+                              {addon.latestDeliveryDate && ` · ${new Date(addon.latestDeliveryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-6">

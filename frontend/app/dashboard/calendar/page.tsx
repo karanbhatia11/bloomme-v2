@@ -14,9 +14,22 @@ interface UserData {
 }
 
 interface DateInfo {
-  activePlans: string[]; // plan type names
-  pausedPlans: string[]; // plan type names
-  addons: string[];      // addon names
+  activePlans: string[];
+  pausedPlans: string[];
+  addons: string[];
+  cancelledAddons: string[];
+}
+
+interface AddonOrderItem {
+  name: string;
+  cancelled: boolean;
+  dates: { date: string; status: string }[];
+}
+
+interface AddonOrder {
+  orderId: string;
+  bloommeOrderId: string;
+  items: AddonOrderItem[];
 }
 
 const PLAN_COLORS: Record<string, string> = {
@@ -46,7 +59,8 @@ export default function CalendarPage() {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
-  const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
+  const [selectedPillId, setSelectedPillId] = useState<string>("");
+  const [addonOrders, setAddonOrders] = useState<AddonOrder[]>([]);
 
   const subs = useSubscriptions(token);
 
@@ -61,8 +75,21 @@ export default function CalendarPage() {
   }, []);
 
   useEffect(() => {
-    if (token) subs.fetch();
+    if (!token) return;
+    subs.fetch();
+    fetch("/api/subs/my-addon-orders", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => setAddonOrders(d.addonOrders || []))
+      .catch(() => {});
   }, [token]);
+
+  // Default pill: most recent non-cancelled subscription, or "addons" if none
+  useEffect(() => {
+    if (selectedPillId) return; // already set
+    const activeSub = subs.subscriptions.find(s => s.status !== "cancelled");
+    if (activeSub) setSelectedPillId(activeSub.id);
+    else if (addonOrders.length > 0) setSelectedPillId("addons");
+  }, [subs.subscriptions, addonOrders]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -75,25 +102,41 @@ export default function CalendarPage() {
   // ── Build date map — filtered by selected subscription if any ───────────────
   const dateMap: Record<string, DateInfo> = {};
 
-  const addDate = (date: string, isActive: boolean, planType?: string, addonName?: string) => {
-    if (!dateMap[date]) dateMap[date] = { activePlans: [], pausedPlans: [], addons: [] };
+  const addDate = (date: string, isActive: boolean, planType?: string, addonName?: string, addonCancelled?: boolean) => {
+    if (!dateMap[date]) dateMap[date] = { activePlans: [], pausedPlans: [], addons: [], cancelledAddons: [] };
     if (addonName) {
-      if (!dateMap[date].addons.includes(addonName)) dateMap[date].addons.push(addonName);
+      if (addonCancelled) {
+        if (!dateMap[date].cancelledAddons.includes(addonName)) dateMap[date].cancelledAddons.push(addonName);
+      } else {
+        if (!dateMap[date].addons.includes(addonName)) dateMap[date].addons.push(addonName);
+      }
     } else if (planType) {
       if (isActive && !dateMap[date].activePlans.includes(planType)) dateMap[date].activePlans.push(planType);
       if (!isActive && !dateMap[date].pausedPlans.includes(planType)) dateMap[date].pausedPlans.push(planType);
     }
   };
 
-  const visibleSubs = selectedSubId
-    ? subs.subscriptions.filter(s => s.id === selectedSubId)
-    : subs.subscriptions;
+  const showAddonOrders = selectedPillId === "addons";
+  const visibleSubs = selectedPillId && selectedPillId !== "addons"
+    ? subs.subscriptions.filter(s => s.id === selectedPillId)
+    : [];
 
-  // Build delivery status map: date → 'delivered' | 'not_delivered' | 'pending'
+  // Build delivery status map from active/paused subs only (avoids stale colours from cancelled subs)
   const deliveryStatusMap: Record<string, string> = {};
   for (const sub of visibleSubs) {
+    if (sub.status !== "active" && sub.status !== "paused") continue;
     for (const [date, status] of Object.entries(sub.deliveryStatuses ?? {})) {
       deliveryStatusMap[date] = status as string;
+    }
+  }
+  // Also include standalone addon order delivery statuses (when pill is active)
+  if (showAddonOrders) {
+    for (const order of addonOrders) {
+      for (const item of order.items) {
+        for (const { date, status } of item.dates) {
+          if (!deliveryStatusMap[date]) deliveryStatusMap[date] = status;
+        }
+      }
     }
   }
 
@@ -107,7 +150,18 @@ export default function CalendarPage() {
     }
     for (const addon of sub.addOns ?? []) {
       for (const date of addon.deliveryDates ?? []) {
-        addDate(date, isActive, undefined, addon.name);
+        addDate(date, isActive, undefined, addon.name, (addon as any).cancelled);
+      }
+    }
+  }
+
+  // Add standalone addon order dates to calendar (when pill is active)
+  if (showAddonOrders) {
+    for (const order of addonOrders) {
+      for (const item of order.items) {
+        for (const { date } of item.dates) {
+          addDate(date, true, undefined, item.name, item.cancelled);
+        }
       }
     }
   }
@@ -237,30 +291,18 @@ export default function CalendarPage() {
           <div className="flex gap-2 mb-8">
             {[1,2].map(i => <div key={i} className="h-8 w-32 bg-surface-container animate-pulse rounded-full" />)}
           </div>
-        ) : subs.subscriptions.length === 0 ? (
+        ) : subs.subscriptions.filter(s => s.status !== "cancelled").length === 0 && addonOrders.length === 0 ? (
           <div className="mb-8 p-4 bg-surface-container-low rounded-xl text-sm text-on-surface-variant">
-            No subscriptions found. <Link href="/checkout/plan" className="text-primary font-semibold underline">Start one →</Link>
+            No active subscriptions or orders found. <Link href="/checkout/plan" className="text-primary font-semibold underline">Start one →</Link>
           </div>
         ) : (
           <div className="flex flex-wrap gap-2 mb-8">
-            {/* All pill */}
-            <button
-              onClick={() => setSelectedSubId(null)}
-              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                selectedSubId === null
-                  ? "bg-[#2f1500] text-white border-[#2f1500] shadow-md"
-                  : "bg-surface-container border-outline-variant text-on-surface-variant hover:border-on-surface-variant"
-              }`}
-            >
-              All
-            </button>
-
             {subs.subscriptions.filter(s => s.status !== "cancelled").map(sub => {
-              const isSelected = selectedSubId === sub.id;
+              const isSelected = selectedPillId === sub.id;
               return (
                 <button
                   key={sub.id}
-                  onClick={() => setSelectedSubId(isSelected ? null : sub.id)}
+                  onClick={() => setSelectedPillId(sub.id)}
                   className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all shadow-sm ${
                     isSelected
                       ? "ring-2 ring-offset-1 ring-[#775a11] " + (PLAN_COLORS[sub.planType] ?? "bg-surface-container border-outline-variant text-on-surface")
@@ -276,6 +318,20 @@ export default function CalendarPage() {
                 </button>
               );
             })}
+            {addonOrders.length > 0 && (
+              <button
+                onClick={() => setSelectedPillId("addons")}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all shadow-sm ${
+                  selectedPillId === "addons"
+                    ? "ring-2 ring-offset-1 ring-[#775a11] bg-purple-50 border-purple-300 text-purple-800"
+                    : "opacity-70 hover:opacity-100 bg-purple-50 border-purple-200 text-purple-700"
+                }`}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "12px" }}>redeem</span>
+                Add-Ons
+                <span className="opacity-60">{addonOrders.reduce((n, o) => n + o.items.reduce((m, i) => m + i.dates.length, 0), 0)} deliveries</span>
+              </button>
+            )}
           </div>
         )}
 
@@ -320,13 +376,15 @@ export default function CalendarPage() {
                   const dateStr = dayToDateStr(day);
                   const info = dateMap[dateStr];
                   const isToday = dateStr === todayStr;
-                  const hasActive   = (info?.activePlans ?? []).length > 0;
-                  const hasPaused   = (info?.pausedPlans ?? []).length > 0;
-                  const hasAddon    = (info?.addons ?? []).length > 0;
-                  const hasAny      = hasActive || hasPaused || hasAddon;
-                  const dlvStatus   = deliveryStatusMap[dateStr];
+                  const hasActive          = (info?.activePlans ?? []).length > 0;
+                  const hasPaused          = (info?.pausedPlans ?? []).length > 0;
+                  const hasAddon           = (info?.addons ?? []).length > 0;
+                  const hasCancelledAddon  = (info?.cancelledAddons ?? []).length > 0;
+                  const hasAny             = hasActive || hasPaused || hasAddon || hasCancelledAddon;
+                  // Only apply delivery status colouring when the date has actual scheduled deliveries
+                  const dlvStatus   = hasAny ? deliveryStatusMap[dateStr] : undefined;
                   const isDelivered = dlvStatus === "delivered";
-                  const isMissed    = dlvStatus === "not_delivered";
+                  const isMissed    = dlvStatus === "not_delivered" || dlvStatus === "failed";
 
                   return (
                     <div key={day} className={`aspect-square relative group flex flex-col items-center justify-center rounded-lg text-xs transition-all cursor-default
@@ -336,9 +394,10 @@ export default function CalendarPage() {
                         hasActive   ? "bg-[#ffdcc3]/60 border border-[#c4a052]/60 hover:bg-[#ffdcc3]" :
                         hasPaused   ? "bg-surface-container-high border border-outline-variant/30 hover:bg-surface-container-highest" :
                         hasAddon    ? "bg-purple-50 border border-purple-200 hover:bg-purple-100" :
+                        hasCancelledAddon ? "bg-gray-50 border border-gray-200 opacity-50" :
                         "bg-surface-container border border-transparent hover:border-outline-variant/20"}
                     `}>
-                      <span className={`font-bold leading-none ${isToday ? "text-primary" : isDelivered ? "text-green-800" : isMissed ? "text-red-800" : hasAny ? "text-on-surface" : "text-on-surface-variant"}`}>
+                      <span className={`font-bold leading-none ${isToday ? "text-primary" : isDelivered ? "text-green-800" : isMissed ? "text-red-800" : hasAddon || hasActive || hasPaused ? "text-on-surface" : hasCancelledAddon ? "text-gray-400 line-through" : "text-on-surface-variant"}`}>
                         {day}
                       </span>
 
@@ -355,6 +414,9 @@ export default function CalendarPage() {
                             <span className="material-symbols-outlined leading-none text-[#775a11]" style={{ fontSize: "10px", fontVariationSettings: "'FILL' 1" }}>
                               local_florist
                             </span>
+                          )}
+                          {hasCancelledAddon && !hasAddon && (
+                            <span className="material-symbols-outlined leading-none text-gray-400" style={{ fontSize: "10px" }}>block</span>
                           )}
                           {hasAddon && (
                             <span className="material-symbols-outlined leading-none text-[#ab3500]" style={{ fontSize: "10px" }}>
@@ -383,6 +445,12 @@ export default function CalendarPage() {
                                 <span className="truncate max-w-[120px]">{name}</span>
                               </p>
                             ))}
+                            {(info.cancelledAddons ?? []).map(name => (
+                              <p key={name} className="flex items-center gap-1 text-gray-400 line-through">
+                                <span className="material-symbols-outlined" style={{ fontSize: "10px" }}>block</span>
+                                <span className="truncate max-w-[120px]">{name} (cancelled)</span>
+                              </p>
+                            ))}
                           </div>
                           {/* Arrow */}
                           <div className="w-2 h-2 bg-[#2f1500] rotate-45 mx-auto -mt-1" />
@@ -406,6 +474,10 @@ export default function CalendarPage() {
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded bg-purple-50 border border-purple-200" />
                   <span>Add-on only</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded bg-gray-50 border border-gray-200 opacity-50" />
+                  <span>Cancelled add-on</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full ring-2 ring-primary" />

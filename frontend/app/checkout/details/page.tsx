@@ -26,7 +26,6 @@ export default function CheckoutDetailsPage() {
     deliveryNotes: cart.customer?.deliveryNotes ?? "",
     timeSlot: cart.customer?.timeSlot ?? "5:30 to 6:30",
     buildingType: cart.customer?.buildingType ?? "house",
-    createAccount: cart.customer?.createAccount ?? false,
   });
 
   useEffect(() => {
@@ -77,17 +76,6 @@ export default function CheckoutDetailsPage() {
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setCustomer({ ...form });
-
-    if (form.createAccount && !isLoggedIn) {
-      const params = new URLSearchParams({
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        redirect: "/checkout/pay",
-      });
-      router.push(`/signup?${params.toString()}`);
-      return;
-    }
 
     router.push("/checkout/pay");
   };
@@ -285,30 +273,6 @@ export default function CheckoutDetailsPage() {
             </select>
             {errors.buildingType && <p className="text-red-400 text-xs mt-1">{errors.buildingType}</p>}
           </div>
-
-          {/* Create Account — only show for guest checkout */}
-          {hydrated && !isLoggedIn && (
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                form.createAccount ? "bg-[#775a11] border-[#775a11]" : "border-[#d1c5b3] group-hover:border-[#c4a052]"
-              }`}>
-                {form.createAccount && (
-                  <span className="material-symbols-outlined text-white" style={{ fontSize: "14px" }}>check</span>
-                )}
-              </div>
-              <input
-                name="createAccount"
-                type="checkbox"
-                checked={form.createAccount}
-                onChange={handleChange}
-                className="sr-only"
-              />
-              <div>
-                <p className="font-semibold text-[#2f1500] text-sm">Create a Bloomme account</p>
-                <p className="text-[#4d4638]/60 text-xs mt-0.5">Track orders, manage subscriptions & get exclusive offers.</p>
-              </div>
-            </label>
-          )}
 
           <div className="h-24" />
         </div>

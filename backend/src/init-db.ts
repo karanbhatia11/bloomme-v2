@@ -297,6 +297,15 @@ const initDb = async () => {
                 UNIQUE(order_id, addon_name, delivery_date)
             );
 
+            -- Track cancellation status on individual order items
+            ALTER TABLE order_items ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
+
+            -- Delivery lifecycle status for addon-only orders (separate from payment status)
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_status TEXT DEFAULT 'active';
+
+            -- Track cancellation status on subscription add-ons
+            ALTER TABLE subscription_add_ons ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
+
             -- Unique email constraint on customers (needed for upsert on checkout)
             DO $$ BEGIN
                 IF NOT EXISTS (

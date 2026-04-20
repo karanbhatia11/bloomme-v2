@@ -115,7 +115,6 @@ router.post('/signup', signupLimiter, async (req, res) => {
                  JOIN customers c ON c.id = o.customer_id
                  WHERE LOWER(c.email) = LOWER($2)
                    AND s.user_id IS NULL
-                   AND ABS(EXTRACT(EPOCH FROM (s.created_at - o.created_at))) < 60
                )`,
             [newUserId, email]
         );
@@ -244,6 +243,41 @@ router.post('/login', loginLimiter, async (req, res) => {
                 maintenance: siteMode === 'maintenance',
                 message: siteMode === 'coming_soon' ? 'We are coming soon!' : 'Site is under maintenance.'
             });
+        }
+
+        // Claim any guest orders/subscriptions placed with this email
+        await pool.query(
+            `UPDATE customers SET user_id = $1 WHERE LOWER(email) = LOWER($2) AND user_id IS NULL`,
+            [id, userEmail]
+        );
+        await pool.query(
+            `UPDATE subscriptions SET user_id = $1
+             WHERE user_id IS NULL
+               AND id IN (
+                 SELECT s.id FROM subscriptions s
+                 JOIN order_items oi ON oi.item_type = 'subscription'
+                 JOIN orders o ON o.id = oi.order_id
+                 JOIN customers c ON c.id = o.customer_id
+                 WHERE LOWER(c.email) = LOWER($2) AND s.user_id IS NULL
+               )`,
+            [id, userEmail]
+        );
+        const guestOrders = await pool.query(
+            `SELECT o.id, o.amount FROM orders o
+             JOIN customers c ON c.id = o.customer_id
+             WHERE LOWER(c.email) = LOWER($1) AND o.status = 'paid' AND o.user_id IS NULL`,
+            [userEmail]
+        );
+        if (guestOrders.rows.length > 0) {
+            for (const order of guestOrders.rows) {
+                const credits = Math.ceil((order.amount / 100) / 10);
+                if (credits > 0) {
+                    await awardCredits(id, credits, 'earn_purchase',
+                        `Credits claimed for guest order #${order.id}`, order.id);
+                }
+                await pool.query(`UPDATE orders SET user_id = $1 WHERE id = $2`, [id, order.id]);
+            }
+            console.log(`Claimed ${guestOrders.rows.length} guest order(s) on login for user ${id}`);
         }
 
         console.log('Allowing login');
