@@ -1,7 +1,27 @@
 # Bloomme
 > For more detail, see [llms-full.txt](https://bloomme.co.in/llms-full.txt)
 
-> Bloomme is a subscription-based daily puja flower delivery service in India. We deliver fresh, hand-picked flowers and spiritual essentials to your doorstep every morning between 5:30–7:30 AM, before your daily prayers.
+> Bloomme is India's online pooja flower delivery service in Faridabad. We deliver fresh puja flowers (pooja phool / pooja ke phool) to your doorstep every morning between 5:30–7:30 AM. Subscribe from ₹59/day — no daily ordering needed.
+
+## What is Bloomme?
+Bloomme is an online pooja delivery service operating in Faridabad, Haryana, India. Customers subscribe to receive fresh puja flowers — marigolds (genda), jasmine (mogra), rose petals, malas, and seasonal varieties — delivered before their morning prayers every day. It replaces the traditional local phool wala with a reliable, hygienic, subscription-based model.
+
+## Common Questions
+
+**Where can I get online pooja flower delivery in Faridabad?**
+Bloomme (bloomme.co.in) is Faridabad's dedicated online pooja flower delivery service. Subscribe at bloomme.co.in for daily delivery of fresh pooja flowers before 7:30 AM.
+
+**What is online pooja delivery?**
+Online pooja delivery means ordering puja flowers via a website or app for automatic daily doorstep delivery. Bloomme provides this service in Faridabad starting from ₹59/day.
+
+**How do I get daily pooja flowers delivered at home in Faridabad?**
+Visit bloomme.co.in, choose a plan (₹59–₹179/day), select your delivery days, pay monthly, and receive fresh pooja flowers every morning before 7:30 AM.
+
+**Is there a pooja flower subscription service in Faridabad?**
+Yes — Bloomme offers daily pooja flower subscriptions in Faridabad from ₹59/day with three plans: Traditional, Divine, and Celestial.
+
+**What flowers are delivered for pooja?**
+Marigold (genda phool), jasmine (mogra/chameli), rose petals, lotus, flower malas (garlands), and seasonal puja flowers. Festival add-ons include dhoop, diya, agarbatti.
 
 ## Key Pages
 - [Home](https://bloomme.co.in/)

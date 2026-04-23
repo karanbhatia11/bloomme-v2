@@ -43,9 +43,15 @@ const FAQCategories = [
 const FAQItems = [
   {
     category: "general",
+    question: "Where can I get online pooja flower delivery in Faridabad?",
+    answer:
+      "Bloomme is Faridabad's dedicated online pooja flower delivery service. Subscribe at bloomme.co.in for daily delivery of fresh pooja flowers — marigolds (genda), jasmine (mogra), rose petals, and malas — delivered to your doorstep before 7:30 AM every morning. Plans start from ₹59/day with no daily ordering needed.",
+  },
+  {
+    category: "general",
     question: "What is Bloomme?",
     answer:
-      "Bloomme is a subscription-based flower delivery service for daily puja and spiritual rituals. We deliver fresh, hygienic, and beautifully packed flowers directly to your doorstep early in the morning, so your flowers are ready before your daily prayers. Unlike traditional flower vendors, Bloomme focuses on freshness, variety, and reliability.",
+      "Bloomme is an online pooja / puja flower delivery subscription service in Faridabad, Haryana. We deliver fresh, hygienic, and beautifully packed flowers directly to your doorstep early in the morning, so your pooja ke phool are ready before your daily prayers. Unlike traditional local vendors, Bloomme guarantees consistent freshness, rotating flower varieties, and reliable on-time delivery.",
   },
   {
     category: "general",
@@ -109,9 +115,9 @@ const FAQItems = [
   },
   {
     category: "delivery",
-    question: "What time are the flowers delivered?",
+    question: "What time are pooja flowers delivered?",
     answer:
-      "Flowers are delivered early in the morning, typically between 5:30 AM – 7:30 AM. This ensures flowers are available before most people perform their morning prayers.",
+      "Pooja flowers are delivered early in the morning, typically between 5:30 AM – 7:30 AM. This ensures your pooja phool are ready before morning prayers. Bloomme is currently the only online pooja delivery service in Faridabad offering guaranteed pre-sunrise delivery.",
   },
   {
     category: "delivery",
@@ -185,73 +191,6 @@ export default function FAQPage() {
 
   return (
     <main className="min-h-screen bg-surface">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: [
-              {
-                "@type": "Question",
-                name: "What is Bloomme?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "Bloomme is a subscription-based flower delivery service for daily puja and spiritual rituals. We deliver fresh, hygienic flowers to your doorstep early morning before your daily prayers.",
-                },
-              },
-              {
-                "@type": "Question",
-                name: "What time are flowers delivered?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "Flowers are delivered between 5:30 AM – 7:30 AM daily, ensuring they are ready before morning prayers.",
-                },
-              },
-              {
-                "@type": "Question",
-                name: "Can I pause my subscription?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "Yes. You can pause your subscription anytime if travelling or temporarily not requiring deliveries, and resume whenever you like.",
-                },
-              },
-              {
-                "@type": "Question",
-                name: "Which areas do you deliver to?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "Currently delivering in selected areas of Faridabad, starting with NIT areas. More areas coming soon.",
-                },
-              },
-              {
-                "@type": "Question",
-                name: "How much does Bloomme cost?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "Plans start from ₹59/day for the Traditional plan. The Divine plan is ₹89/day and the Celestial plan is ₹179/day.",
-                },
-              },
-              {
-                "@type": "Question",
-                name: "Can I customize my flowers?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "Yes, Bloomme allows limited customization. You can request a specific flower on a particular day, provided we receive the request at least 24 hours in advance.",
-                },
-              },
-              {
-                "@type": "Question",
-                name: "Is Bloomme environmentally friendly?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "Yes, we focus on eco-friendly packaging using paper bags, recyclable materials, and minimal plastic usage.",
-                },
-              },
-            ],
-          }),
-        }}
-      />
       <Navigation />
 
       <div className="pt-32 pb-20">
