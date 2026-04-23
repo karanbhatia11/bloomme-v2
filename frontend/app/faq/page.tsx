@@ -117,7 +117,7 @@ const FAQItems = [
     category: "delivery",
     question: "What time are pooja flowers delivered?",
     answer:
-      "Pooja flowers are delivered early in the morning, typically between 5:30 AM – 7:30 AM. This ensures your pooja phool are ready before morning prayers. Bloomme is currently the only online pooja delivery service in Faridabad offering guaranteed pre-sunrise delivery.",
+      "Pooja flowers are delivered early in the morning — before your morning puja begins. This ensures your pooja phool are at your door before prayers start. Bloomme is currently the only online pooja delivery service in Faridabad offering guaranteed early morning delivery.",
   },
   {
     category: "delivery",

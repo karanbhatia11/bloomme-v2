@@ -1,11 +1,12 @@
 export const NAV_LINKS = [
   { href: "/#how-it-works", label: "How It Works" },
-  { href: "/#plans", label: "Plans" },
+  { href: "/#plans", label: "Puja Plans" },
   { href: "/#festivals", label: "Festivals" },
   { href: "/#add-ons", label: "Add Ons" },
   { href: "/#features", label: "Delivery" },
-  { href: "/about", label: "Our Story" },
-  { href: "/faq", label: "FAQ" },
+  { href: "/about", label: "About Us" },
+  { href: "/blog", label: "Blog" },
+  { href: "/faq", label: "Pooja Delivery FAQ" },
   { href: "/contact", label: "Contact" },
 ];
 
