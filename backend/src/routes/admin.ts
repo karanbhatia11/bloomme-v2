@@ -421,22 +421,24 @@ router.get('/delivery-manifest', async (req, res) => {
                 'subscription' as order_type,
                 CASE WHEN EXISTS (
                     SELECT 1 FROM subscription_add_ons sa
-                    LEFT JOIN addon_delivery_dates add ON sa.id = add.subscription_addon_id
-                    WHERE sa.subscription_id = s.id AND add.delivery_date = sdd.delivery_date
+                    WHERE sa.subscription_id = s.id AND (sa.status IS NULL OR sa.status = 'active')
                 ) THEN 'sub+addons' ELSE 'subscription' END as delivery_type,
                 u.name as customer_name,
+                u.id as user_id,
                 u.phone,
                 a.house_number,
                 a.street,
                 a.area,
                 a.city,
                 a.pin_code,
-                NULL::text as delivery_slot,
+                cust.time_slot as delivery_slot,
                 s.plan_type as plan_name,
                 s.price as plan_price,
                 s.id as subscription_id,
-                NULL::integer as order_id,
-                COALESCE(d.status, 'scheduled') as delivery_status,
+                (SELECT o.id FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id AND o.status = 'paid' WHERE oi2.item_type = 'subscription' AND oi2.item_id = s.id LIMIT 1) as order_id,
+                'BLM-' || LPAD((SELECT o.id::text FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id AND o.status = 'paid' WHERE oi2.item_type = 'subscription' AND oi2.item_id = s.id LIMIT 1), 6, '0') AS bloomme_order_id,
+                CASE WHEN s.status = 'cancelled' THEN 'cancelled'
+                     ELSE COALESCE(d.status, 'scheduled') END as delivery_status,
                 NULL::text as payment_status,
                 NULL::text as notes,
                 (SELECT COALESCE(SUM(ao.price), 0) FROM subscription_add_ons sa LEFT JOIN add_ons ao ON sa.add_on_id = ao.id WHERE sa.subscription_id = s.id) as addon_total,
@@ -451,8 +453,9 @@ router.get('/delivery-manifest', async (req, res) => {
             LEFT JOIN subscriptions s ON sdd.subscription_id = s.id
             LEFT JOIN users u ON s.user_id = u.id
             LEFT JOIN addresses a ON a.user_id = s.user_id
+            LEFT JOIN customers cust ON cust.user_id = s.user_id
             LEFT JOIN deliveries d ON s.id = d.subscription_id AND sdd.delivery_date = d.delivery_date
-            WHERE s.status = 'active'
+            WHERE s.status IN ('active', 'cancelled')
             ${dateFilterSub}
 
             UNION ALL
@@ -465,18 +468,21 @@ router.get('/delivery-manifest', async (req, res) => {
                 'addon_only' as order_type,
                 'addon_only' as delivery_type,
                 u.name as customer_name,
+                u.id as user_id,
                 u.phone,
                 a.house_number,
                 a.street,
                 a.area,
                 a.city,
                 a.pin_code,
-                o.delivery_slot,
+                COALESCE(o.delivery_slot, cust.time_slot) as delivery_slot,
                 NULL::text as plan_name,
                 NULL::numeric as plan_price,
                 NULL::integer as subscription_id,
                 o.id as order_id,
-                CASE WHEN o.delivered_at IS NOT NULL THEN 'delivered'
+                'BLM-' || LPAD(o.id::text, 6, '0') AS bloomme_order_id,
+                CASE WHEN o.status = 'cancelled' THEN 'cancelled'
+                     WHEN o.delivered_at IS NOT NULL THEN 'delivered'
                      WHEN o.failed_reason IS NOT NULL THEN 'failed'
                      ELSE 'scheduled' END as delivery_status,
                 o.status as payment_status,
@@ -490,6 +496,7 @@ router.get('/delivery-manifest', async (req, res) => {
             FROM orders o
             LEFT JOIN users u ON o.user_id = u.id
             LEFT JOIN addresses a ON a.user_id = o.user_id
+            LEFT JOIN customers cust ON cust.user_id = o.user_id
             WHERE o.delivery_date IS NOT NULL AND o.order_type = 'addon'
             ${dateFilterAddon}
 
@@ -522,9 +529,8 @@ router.put('/deliveries/mark-status', async (req, res) => {
             // Addon-only order: UPDATE orders table
             const result = await pool.query(`
                 UPDATE orders
-                SET status = $1,
-                    delivered_at = CASE WHEN $1 = 'delivered' THEN CURRENT_TIMESTAMP ELSE delivered_at END,
-                    failed_reason = $2
+                SET delivered_at = CASE WHEN $1 = 'delivered' THEN CURRENT_TIMESTAMP ELSE NULL END,
+                    failed_reason = CASE WHEN $1 = 'failed' THEN COALESCE($2, 'marked failed by admin') ELSE NULL END
                 WHERE id = $3
                 RETURNING *
             `, [status, failed_reason || null, order_id]);

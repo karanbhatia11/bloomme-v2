@@ -252,7 +252,7 @@ app.put('/api/admin/deliveries/mark-status', authenticateToken, async (req: any,
             body: JSON.stringify(req.body)
         });
         const data = await response.json();
-        res.json(data);
+        res.status(response.status).json(data);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }

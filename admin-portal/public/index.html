@@ -382,6 +382,31 @@
             border-top: 2px solid #ddd;
             padding: 15px;
         }
+
+        /* Manifest sub-tabs */
+        .manifest-tab-btn {
+            padding: 8px 18px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background: white;
+            color: #555;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .manifest-tab-btn:hover { border-color: #667eea; color: #667eea; }
+        .manifest-tab-btn.manifest-tab-active { background: #667eea; color: white; border-color: #667eea; }
+        .manifest-count {
+            background: rgba(255,255,255,0.25);
+            border-radius: 99px;
+            padding: 1px 7px;
+            font-size: 11px;
+        }
+        .manifest-tab-btn:not(.manifest-tab-active) .manifest-count { background: #f0f0f0; color: #333; }
     </style>
 </head>
 <body>
@@ -443,10 +468,22 @@
                     <div id="usersTable"></div>
                 </div>
 
-                <!-- Orders Tab -->
+                <!-- Orders Tab (Delivery Manifest) -->
                 <div id="orders-tab" class="tab-content">
                     <h2>Delivery Manifest</h2>
-                    <div id="ordersTable"></div>
+                    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+                        <button id="manifest-btn-tomorrow" onclick="switchManifestPeriod('tomorrow')" class="manifest-tab-btn manifest-tab-active">
+                            Tomorrow <span id="manifest-count-tomorrow" class="manifest-count">…</span>
+                        </button>
+                        <button id="manifest-btn-nextweek" onclick="switchManifestPeriod('nextweek')" class="manifest-tab-btn">
+                            Next 7 Days <span id="manifest-count-nextweek" class="manifest-count">…</span>
+                        </button>
+                        <button id="manifest-btn-nextmonth" onclick="switchManifestPeriod('nextmonth')" class="manifest-tab-btn">
+                            Next 30 Days <span id="manifest-count-nextmonth" class="manifest-count">…</span>
+                        </button>
+                        <button onclick="printManifest()" style="padding:8px 16px;background:#667eea;color:white;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;margin-left:auto;">🖨 Print</button>
+                    </div>
+                    <div id="manifestContent"></div>
                 </div>
 
                 <!-- Subscriptions Tab -->
@@ -526,38 +563,43 @@
             }
         });
 
+        const VALID_TABS = ['dashboard','content','users','orders','subscriptions','addons','search','orderlookup','customer360'];
+
         async function showDashboard() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('dashboard').classList.add('active');
-            await loadDashboard();
+            const hash = location.hash.replace('#', '');
+            const tab = VALID_TABS.includes(hash) ? hash : 'dashboard';
+            activateTab(tab);
         }
 
         function switchTab(tabName) {
-            // Clear all polling intervals
+            location.hash = tabName;
+            activateTab(tabName);
+        }
+
+        function activateTab(tabName) {
             if (ordersPollingInterval) clearInterval(ordersPollingInterval);
-            if (subsPollingInterval) clearInterval(subsPollingInterval);
+            if (subsPollingInterval) { clearInterval(subsPollingInterval); subsPollingInterval = null; }
 
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+            const tabEl = document.getElementById(`${tabName}-tab`);
+            if (tabEl) tabEl.classList.add('active');
+
             document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
+                if (btn.getAttribute('onclick') === `switchTab('${tabName}')`) btn.classList.add('active');
             });
 
-            // Show selected tab
-            document.getElementById(`${tabName}-tab`).classList.add('active');
-            event.target.classList.add('active');
-
-            // Load tab content
             if (tabName === 'dashboard') loadDashboard();
-            if (tabName === 'content') loadContent();
-            if (tabName === 'users') loadUsers();
-            if (tabName === 'orders') loadOrders();
-            if (tabName === 'subscriptions') loadSubscriptions();
-            if (tabName === 'addons') loadAddOns();
-            if (tabName === 'customer360') loadCustomer360();
-            if (tabName === 'orderlookup') document.getElementById('orderLookupInput').focus();
+            else if (tabName === 'content') loadContent();
+            else if (tabName === 'users') loadUsers();
+            else if (tabName === 'orders') loadOrders();
+            else if (tabName === 'subscriptions') loadSubscriptions();
+            else if (tabName === 'addons') loadAddOns();
+            else if (tabName === 'customer360') loadCustomer360();
+            else if (tabName === 'orderlookup') setTimeout(() => document.getElementById('orderLookupInput')?.focus(), 50);
         }
 
         async function loadDashboard() {
@@ -726,46 +768,42 @@
             renderUsersTable(filtered);
         }
 
-        let ordersData = [];
-        let ordersSortField = null;
-        let ordersSortAsc = true;
         let ordersPollingInterval = null;
+        let currentManifestPeriod = 'tomorrow';
+
+        function switchManifestPeriod(period) {
+            currentManifestPeriod = period;
+            // Update button states
+            ['tomorrow', 'nextweek', 'nextmonth'].forEach(p => {
+                const btn = document.getElementById(`manifest-btn-${p}`);
+                if (btn) btn.classList.toggle('manifest-tab-active', p === period);
+            });
+            loadDeliveryManifest(period);
+        }
 
         async function loadOrders() {
-            const ordersDiv = document.getElementById('ordersTable');
-            ordersDiv.innerHTML = '<div class="loading">Loading orders...</div>';
+            // Load all 3 period counts in the background, show tomorrow by default
+            currentManifestPeriod = 'tomorrow';
+            ['tomorrow', 'nextweek', 'nextmonth'].forEach(p => prefetchManifestCount(p));
+            loadDeliveryManifest('tomorrow');
+        }
 
-            // Clear existing polling interval
-            if (ordersPollingInterval) clearInterval(ordersPollingInterval);
-
+        async function prefetchManifestCount(period) {
             try {
-                const response = await fetch(`${API_URL}/admin/orders`, {
+                const today = new Date();
+                let from_date = new Date(today); from_date.setDate(from_date.getDate() + 1);
+                let to_date = new Date(from_date);
+                if (period === 'nextweek') to_date.setDate(to_date.getDate() + 6);
+                else if (period === 'nextmonth') to_date.setDate(to_date.getDate() + 29);
+                const fromStr = from_date.toISOString().split('T')[0];
+                const toStr = to_date.toISOString().split('T')[0];
+                const res = await fetch(`${API_URL}/admin/delivery-manifest?from_date=${fromStr}&to_date=${toStr}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                ordersData = await response.json();
-
-                if (!ordersData.length) {
-                    ordersDiv.innerHTML = '<div class="no-data">No orders found</div>';
-                } else {
-                    renderOrdersTable(ordersData);
-                }
-
-                // Poll for updates every 5 seconds
-                ordersPollingInterval = setInterval(async () => {
-                    try {
-                        const response = await fetch(`${API_URL}/admin/orders`, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        ordersData = await response.json();
-                        renderOrdersTable(ordersData);
-                    } catch (err) {
-                        console.error('Polling error:', err);
-                    }
-                }, 5000);
-            } catch (err) {
-                console.error('Error:', err);
-                ordersDiv.innerHTML = '<div class="error">Failed to load orders: ' + err.message + '</div>';
-            }
+                const data = await res.json();
+                const countEl = document.getElementById(`manifest-count-${period}`);
+                if (countEl) countEl.textContent = Array.isArray(data) ? data.length : 0;
+            } catch {}
         }
 
         function renderOrdersTable(data) {
@@ -927,7 +965,7 @@
                     grouped[item.delivery_date].push(item);
                     totalDeliveries++;
                     if (item.delivery_status === 'delivered') totalDelivered++;
-                    totalRevenue += parseFloat(item.total_amount || 0) / 100;
+                    totalRevenue += parseFloat(item.total_amount || 0);
                 });
 
                 Object.keys(grouped).sort().forEach(date => {
@@ -941,44 +979,49 @@
                             <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
                                 <thead>
                                     <tr style="background: #f5f5f5;">
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Order ID</th>
                                         <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Type</th>
                                         <th style="border: 1px solid #ddd; padding: 8px; text-align: left; cursor: pointer;" onclick="sortManifest('customer_name')">Customer ↕️</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left; cursor: pointer;" onclick="sortManifest('user_id')">User ID ↕️</th>
                                         <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Phone</th>
                                         <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Address</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left; cursor: pointer;" onclick="sortManifest('delivery_slot')">Time Slot ↕️</th>
                                         <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Plan</th>
                                         <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Add-ons</th>
-                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Total</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left; cursor: pointer;" onclick="sortManifest('total_amount')">Total ↕️</th>
                                         <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Status</th>
-                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left; no-print" style="print: none;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${deliveries.map(d => {
-                                        const address = `${d.address_line1}${d.address_line2 ? ', ' + d.address_line2 : ''}, ${d.suburb} ${d.postcode}`;
+                                        const addrParts = [d.house_number, d.street, d.area, d.city, d.pin_code].filter(Boolean);
+                                        const address = addrParts.length > 0 ? addrParts.join(', ') : '-';
                                         const addons = d.addons && d.addons.length > 0
                                             ? d.addons.map(a => `${a.name} (${a.qty})`).join(', ')
                                             : (d.plan_name ? 'Plan only' : 'Add-ons only');
-                                        const notes = d.notes || '-';
-                                        const statusColor = d.delivery_status === 'pending' ? '#fff3cd' : d.delivery_status === 'delivered' ? '#d4edda' : '#f8d7da';
-                                        const statusTextColor = d.delivery_status === 'pending' ? '#856404' : d.delivery_status === 'delivered' ? '#155724' : '#721c24';
+                                        const statusColors = {
+                                            delivered: { bg: '#d4edda', color: '#155724' },
+                                            failed:    { bg: '#f8d7da', color: '#721c24' },
+                                            cancelled: { bg: '#e2e3e5', color: '#383d41' },
+                                            scheduled: { bg: '#cce5ff', color: '#004085' },
+                                        };
+                                        const sc = statusColors[d.delivery_status] || statusColors.scheduled;
                                         const typeBadge = d.delivery_type === 'subscription' ? 'badge-subscription' : d.delivery_type === 'sub+addons' ? 'badge-sub-addons' : 'badge-addon-only';
                                         const typeLabel = d.delivery_type === 'subscription' ? 'SUB' : d.delivery_type === 'sub+addons' ? 'SUB+AO' : 'AO';
-                                        const isDelivered = d.delivery_status === 'delivered';
 
                                         return `
                                             <tr style="border: 1px solid #ddd;">
+                                                <td style="border: 1px solid #ddd; padding: 8px; font-family: monospace; font-weight: 600; color: #5b21b6;">${d.bloomme_order_id || '-'}</td>
                                                 <td style="border: 1px solid #ddd; padding: 8px;"><span class="${typeBadge}">${typeLabel}</span></td>
                                                 <td style="border: 1px solid #ddd; padding: 8px;">${d.customer_name || 'N/A'}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px; color: #666; font-size: 11px;">${d.user_id || '-'}</td>
                                                 <td style="border: 1px solid #ddd; padding: 8px;">${d.phone || '-'}</td>
                                                 <td style="border: 1px solid #ddd; padding: 8px;">${address}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px; white-space: nowrap;">${d.delivery_slot || '-'}</td>
                                                 <td style="border: 1px solid #ddd; padding: 8px;">${d.plan_name || '-'}</td>
                                                 <td style="border: 1px solid #ddd; padding: 8px;">${addons}</td>
-                                                <td style="border: 1px solid #ddd; padding: 8px;">₹${(parseFloat(d.total_amount || 0) / 100).toFixed(2)}</td>
-                                                <td style="border: 1px solid #ddd; padding: 8px; background: ${statusColor}; color: ${statusTextColor}; font-weight: 600; border-radius: 3px;">${d.delivery_status}</td>
-                                                <td style="border: 1px solid #ddd; padding: 8px; no-print" style="print: none;">
-                                                    ${isDelivered ? `<button class="action-btn action-btn-delivered" disabled>✓ Delivered</button>` : `<button class="action-btn action-btn-delivered" onclick="markDeliveryStatus('${d.order_type}', ${d.subscription_id || 'null'}, '${d.delivery_date}', ${d.order_id || 'null'}, 'delivered')">✓ Delivered</button>`}
-                                                    ${isDelivered ? '' : `<button class="action-btn action-btn-failed" onclick="markDeliveryStatus('${d.order_type}', ${d.subscription_id || 'null'}, '${d.delivery_date}', ${d.order_id || 'null'}, 'failed')">✗ Failed</button>`}
-                                                </td>
+                                                <td style="border: 1px solid #ddd; padding: 8px;">₹${parseFloat(d.total_amount || 0).toFixed(2)}</td>
+                                                <td style="border: 1px solid #ddd; padding: 8px; background: ${sc.bg}; color: ${sc.color}; font-weight: 600;">${d.delivery_status}</td>
                                             </tr>
                                         `;
                                     }).join('')}
@@ -1020,9 +1063,7 @@
                 }
                 const data = await response.json();
                 if (data.success) {
-                    // Reload the current manifest
-                    const currentPeriod = 'nextmonth'; // This could be tracked better
-                    await loadDeliveryManifest(currentPeriod);
+                    await loadDeliveryManifest(currentManifestPeriod);
                 } else {
                     console.error('Error response:', data);
                     alert('Failed to update delivery status: ' + (data.error || 'Unknown error'));
@@ -1049,17 +1090,24 @@
             const filterPlan = document.getElementById('filterManifestPlan')?.value.toLowerCase() || '';
 
             let filtered = manifestData.filter(row => {
+                const addr = [row.house_number, row.street, row.area, row.city].filter(Boolean).join(' ').toLowerCase();
                 return (!filterCustomer || (row.customer_name && row.customer_name.toLowerCase().includes(filterCustomer))) &&
-                       (!filterAddress || (row.address_line1 && row.address_line1.toLowerCase().includes(filterAddress))) &&
+                       (!filterAddress || addr.includes(filterAddress)) &&
                        (!filterPlan || (row.plan_name && row.plan_name.toLowerCase().includes(filterPlan)));
             });
 
             if (manifestSortField) {
+                const numericFields = ['total_amount', 'addon_total', 'plan_price'];
                 filtered.sort((a, b) => {
-                    let aVal = a[manifestSortField] || '';
-                    let bVal = b[manifestSortField] || '';
-                    if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-                    if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                    let aVal = a[manifestSortField] ?? '';
+                    let bVal = b[manifestSortField] ?? '';
+                    if (numericFields.includes(manifestSortField)) {
+                        aVal = parseFloat(aVal) || 0;
+                        bVal = parseFloat(bVal) || 0;
+                    } else {
+                        aVal = String(aVal).toLowerCase();
+                        bVal = String(bVal).toLowerCase();
+                    }
                     return manifestSortAsc ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
                 });
             }
@@ -1126,19 +1174,6 @@
                 }
 
                 renderSubscriptionsTable(subsData);
-
-                // Poll for updates every 5 seconds
-                subsPollingInterval = setInterval(async () => {
-                    try {
-                        const response = await fetch(`${API_URL}/admin/subscriptions`, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        subsData = await response.json();
-                        renderSubscriptionsTable(subsData);
-                    } catch (err) {
-                        console.error('Polling error:', err);
-                    }
-                }, 5000);
             } catch (err) {
                 console.error('Error:', err);
                 subsDiv.innerHTML = '<div class="error">Failed to load subscriptions: ' + err.message + '</div>';

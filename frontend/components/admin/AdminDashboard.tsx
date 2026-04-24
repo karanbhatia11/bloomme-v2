@@ -7,13 +7,14 @@ import UsersTab from './tabs/UsersTab';
 import OrdersTab from './tabs/OrdersTab';
 import SubscriptionsTab from './tabs/SubscriptionsTab';
 import AddOnsTab from './tabs/AddOnsTab';
+import DeliveriesTab from './tabs/DeliveriesTab';
 
 interface AdminDashboardProps {
     token: string;
     onLogout: () => void;
 }
 
-type TabType = 'dashboard' | 'content' | 'users' | 'orders' | 'subscriptions' | 'addons';
+type TabType = 'dashboard' | 'content' | 'users' | 'orders' | 'subscriptions' | 'addons' | 'deliveries';
 
 export default function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
     const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -24,7 +25,8 @@ export default function AdminDashboard({ token, onLogout }: AdminDashboardProps)
         { id: 'users', label: '👥 Users', icon: '👥' },
         { id: 'orders', label: '📦 Orders', icon: '📦' },
         { id: 'subscriptions', label: '💳 Subscriptions', icon: '💳' },
-        { id: 'addons', label: '🎁 Add-Ons', icon: '🎁' }
+        { id: 'addons', label: '🎁 Add-Ons', icon: '🎁' },
+        { id: 'deliveries', label: '🚴 Deliveries', icon: '🚴' }
     ] as const;
 
     const renderTabContent = () => {
@@ -41,6 +43,8 @@ export default function AdminDashboard({ token, onLogout }: AdminDashboardProps)
                 return <SubscriptionsTab token={token} />;
             case 'addons':
                 return <AddOnsTab token={token} />;
+            case 'deliveries':
+                return <DeliveriesTab token={token} />;
             default:
                 return null;
         }
