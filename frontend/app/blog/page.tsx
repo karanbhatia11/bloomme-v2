@@ -1,8 +1,31 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Navigation } from "@/components/common/Navigation";
 import { Footer } from "@/components/sections/Footer";
 
 const posts = [
+  {
+    slug: "buddh-purnima-2026-puja-guide",
+    title: "Buddh Purnima 2026: Shanti Puja Guide & Samagri List",
+    description: "Shanti, sadgi aur bhakti ka din — Buddha Purnima. Everything you need for a peaceful and complete Shanti Puja on 1 May 2026, delivered fresh in Faridabad.",
+    date: "2026-05-01",
+    displayDate: "1 May 2026",
+    category: "Festival Guide",
+    image: "/images/Festivals/23April-Update/FestivalPlan1.jpeg",
+    imageAspect: "1122 / 1402" as const,
+    reversed: true,
+  },
+  {
+    slug: "apara-ekadashi-2026-puja-guide",
+    title: "Apara Ekadashi 2026: Complete Puja Guide & Bhakti Samagri List",
+    description: "Ekadashi ke din bhakti me shuddhta sabse zaruri hoti hai. Everything you need — fresh tulsi, flowers & ready puja setup — delivered in Faridabad on 13 May 2026.",
+    date: "2026-05-13",
+    displayDate: "13 May 2026",
+    category: "Festival Guide",
+    image: "/images/Festivals/23April-Update/FestivalPlan2.jpeg",
+    imageAspect: "1149 / 1369" as const,
+    reversed: false,
+  },
   {
     slug: "shani-jayanti-2026-puja-guide",
     title: "Shani Jayanti 2026: Complete Puja Guide & Samagri List",
@@ -10,7 +33,9 @@ const posts = [
     date: "2026-05-16",
     displayDate: "16 May 2026",
     category: "Festival Guide",
-    emoji: "⚫",
+    image: "/images/Festivals/23April-Update/FestivalPlan4.jpeg",
+    imageAspect: "1149 / 1369" as const,
+    reversed: true,
   },
 ];
 
@@ -29,17 +54,24 @@ export default function BlogPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="flex flex-col gap-8">
           {posts.map((post) => (
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
-              className="group bg-surface-container-lowest rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 border border-transparent hover:border-primary-container/20"
+              className={`group bg-surface-container-lowest rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 border border-transparent hover:border-primary-container/20 flex ${post.reversed ? "flex-row-reverse" : "flex-row"}`}
             >
-              <div className="h-48 bg-surface-container flex items-center justify-center text-7xl">
-                {post.emoji}
+              <div className="relative shrink-0 bg-[#0d0a06] overflow-hidden" style={{ width: "200px", aspectRatio: post.imageAspect }}>
+                <Image
+                  src={post.image}
+                  alt={post.title}
+                  fill
+                  style={{ objectFit: "cover" }}
+                  sizes="200px"
+                  priority
+                />
               </div>
-              <div className="p-8">
+              <div className="p-8 flex flex-col justify-center">
                 <span className="text-xs font-semibold text-primary uppercase tracking-widest">{post.category}</span>
                 <h2 className="text-xl font-bold mt-2 mb-3 text-on-surface group-hover:text-primary transition-colors">
                   {post.title}

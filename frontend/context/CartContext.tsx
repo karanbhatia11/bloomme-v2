@@ -69,6 +69,7 @@ interface CartContextType {
   ) => void;
   addAddon: (addon: Omit<CartAddon, "quantity">) => void;
   removeAddon: (id: number) => void;
+  decrementAddon: (id: number) => void;
   setAddonSchedule: (id: number, schedule: AddonSchedule) => void;
   setCustomer: (customer: CustomerDetails) => void;
   getAddonsTotal: () => number;
@@ -160,6 +161,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const addonSchedules = { ...cart.addonSchedules };
     delete addonSchedules[id];
     save({ ...cart, addons: cart.addons.filter((a) => a.id !== id), addonSchedules });
+  };
+
+  const decrementAddon = (id: number) => {
+    const existing = cart.addons.find((a) => a.id === id);
+    if (!existing) return;
+    if (existing.quantity <= 1) {
+      removeAddon(id);
+    } else {
+      save({ ...cart, addons: cart.addons.map((a) => a.id === id ? { ...a, quantity: a.quantity - 1 } : a) });
+    }
   };
 
   const setAddonSchedule = (id: number, schedule: AddonSchedule) => {
@@ -259,6 +270,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setPlanAndSchedule,
       addAddon,
       removeAddon,
+      decrementAddon,
       setAddonSchedule,
       setCustomer,
       getAddonsTotal,

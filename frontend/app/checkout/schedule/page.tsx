@@ -75,14 +75,19 @@ export default function CheckoutSchedulePage() {
   const next30Dates = useMemo<Date[]>(() => {
     if (!hydrated) return [];
     const offset = getCalendarStartOffset();
-    const dates: Date[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const minDate = new Date(today);
+    minDate.setDate(minDate.getDate() + offset);
+    const windowStart = new Date(2026, 4, 1); // not before May 1 2026
+    const start = minDate > windowStart ? minDate : windowStart;
+    const result: Date[] = [];
     for (let i = 0; i < 30; i++) {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() + offset + i);
-      dates.push(d);
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      result.push(d);
     }
-    return dates;
+    return result;
   }, [hydrated]);
 
   // ── Hydrate from localStorage after mount (avoids SSR/client mismatch) ─────────────
@@ -109,12 +114,17 @@ export default function CheckoutSchedulePage() {
 
     // Build dates now (client-side only, correct timezone)
     const offset = getCalendarStartOffset();
+    const _today = new Date();
+    _today.setHours(0, 0, 0, 0);
+    const _minDate = new Date(_today);
+    _minDate.setDate(_minDate.getDate() + offset);
+    const _winStart = new Date(2026, 4, 1);
+    const _start = _minDate > _winStart ? _minDate : _winStart;
     const dates: Date[] = [];
     for (let i = 0; i < 30; i++) {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() + offset + i);
-      dates.push(d);
+      const _d = new Date(_start);
+      _d.setDate(_start.getDate() + i);
+      dates.push(_d);
     }
 
     // Filter deselectedDates to only include dates that match the current recurring pattern

@@ -36,13 +36,16 @@ export default function ShaniJayantiPage() {
           Shani Jayanti — the birth anniversary of Lord Shani Dev — is one of the most significant days in the Hindu calendar. In 2026, it falls on <strong>16 May (Saturday)</strong>. On this day, a correct and complete puja can bring relief from Shani dosha and seek the blessings of the most powerful of the Navagrahas. <em>"Shani dev ki puja me sahi samagri ka hona bahut zaruri hai"</em> — and this guide ensures you have everything ready.
         </p>
 
-        {/* Hero image placeholder */}
-        <div className="w-full h-64 bg-surface-container rounded-2xl flex flex-col items-center justify-center mb-10 text-center px-6">
-          <div className="flex items-center gap-3 mb-3">
-            <Image src="/images/backgroundlesslogo.png" alt="Bloomme" width={48} height={48} className="opacity-60" />
-          </div>
-          <span className="text-5xl mb-2">⚫🪔</span>
-          <p className="text-on-surface-variant text-sm">Shani Jayanti 2026 — Bloomme Puja Kit</p>
+        {/* Hero image */}
+        <div className="w-full rounded-2xl overflow-hidden mb-10 bg-[#0d0a06]">
+          <Image
+            src="/images/Festivals/23April-Update/FestivalPlan4.jpeg"
+            alt="Bloomme Shani Puja Kit for Shani Jayanti 2026"
+            width={1149}
+            height={1369}
+            style={{ width: "100%", height: "auto" }}
+            priority
+          />
         </div>
 
         {/* Section 1 */}
@@ -176,6 +179,18 @@ export default function ShaniJayantiPage() {
 
       </article>
       <Footer />
+
+      {/* Sticky Coming Soon Banner */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 pointer-events-none">
+        <div className="max-w-2xl mx-auto pointer-events-auto flex items-center gap-4 px-5 py-4 rounded-2xl" style={{ background: "linear-gradient(135deg, #fff8ed 0%, #fef0c2 50%, #fde9a2 100%)", border: "1.5px solid #f6c94e", boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 12px rgba(246,180,30,0.2)" }}>
+          <span className="text-2xl flex-shrink-0">🪔</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-[#7c4a00] text-sm leading-snug">Festival Puja Kits — Coming Soon</p>
+            <p className="text-[#a0621a] text-xs mt-0.5 hidden sm:block">Fresh flowers &amp; samagri delivered in Faridabad before sunrise.</p>
+          </div>
+          <span className="flex-shrink-0 text-xs font-semibold tracking-wider uppercase px-3 py-1.5 rounded-full whitespace-nowrap" style={{ background: "#f6c94e", color: "#5c3300" }}>Launching Soon</span>
+        </div>
+      </div>
     </main>
   );
 }
