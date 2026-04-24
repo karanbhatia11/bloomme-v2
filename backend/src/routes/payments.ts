@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import pool from '../db';
 import { optionalAuth } from '../middleware/auth';
 import { awardCredits } from './credits';
-import { sendOrderConfirmationEmail, OrderConfirmationData } from '../utils/email';
+import { sendOrderConfirmationEmail, sendAdminNewOrderEmail, OrderConfirmationData } from '../utils/email';
 
 const router = express.Router();
 
@@ -565,6 +565,30 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
                 };
 
                 sendOrderConfirmationEmail(emailData); // fire and forget
+
+                // Admin notification
+                const addonSchedules = addonItems.map((a: any) => {
+                    let sched: any = {};
+                    try { sched = typeof a.schedule === 'string' ? JSON.parse(a.schedule) : (a.schedule || {}); } catch {}
+                    const dates = sched.mode === 'different' ? (sched.customDates || []) : planSchedule;
+                    return { name: a.addon_name, dates };
+                });
+                let isNewUser = false;
+                if (user_id) {
+                    const firstOrderCheck = await pool.query(
+                        `SELECT COUNT(*) FROM orders WHERE user_id = $1 AND status = 'paid' AND id != $2`,
+                        [user_id, orderId]
+                    );
+                    isNewUser = parseInt(firstOrderCheck.rows[0].count) === 0;
+                }
+                sendAdminNewOrderEmail({
+                    ...emailData,
+                    orderId: parseInt(orderId),
+                    paidAt: new Date().toISOString(),
+                    isNewUser,
+                    planScheduleDates: planSchedule,
+                    addonSchedules,
+                }); // fire and forget
             }
         } catch (emailErr) {
             console.error('Failed to send confirmation email:', emailErr);

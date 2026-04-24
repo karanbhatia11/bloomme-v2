@@ -2,6 +2,7 @@ import express from 'express';
 import pool from '../db';
 import { authenticateToken, requireEmailVerification } from '../middleware/auth';
 import { generateForSubscription } from '../services/scheduler';
+import { sendAdminCancellationEmail } from '../utils/email';
 
 const router = express.Router();
 
@@ -420,10 +421,20 @@ router.post('/addon-orders/:orderId/cancel', authenticateToken as any, async (re
         const user_id = (req as any).user.id;
         const { orderId } = req.params;
         const check = await pool.query(
-            `SELECT id FROM orders WHERE id = $1 AND user_id = $2 AND order_type = 'addon'`,
+            `SELECT o.id, o.amount,
+                    c.name, c.email, c.phone,
+                    'BLM-' || LPAD(o.id::text, 6, '0') AS bloomme_order_id,
+                    ARRAY_AGG(a.name) FILTER (WHERE a.name IS NOT NULL) AS addon_names
+             FROM orders o
+             LEFT JOIN customers c ON c.id = o.customer_id
+             LEFT JOIN order_items oi ON oi.order_id = o.id AND oi.item_type = 'addon'
+             LEFT JOIN add_ons a ON a.id = oi.item_id
+             WHERE o.id = $1 AND o.user_id = $2 AND o.order_type = 'addon'
+             GROUP BY o.id, c.name, c.email, c.phone`,
             [orderId, user_id]
         );
         if (check.rows.length === 0) return res.status(404).json({ error: 'Order not found' });
+        const addonOrder = check.rows[0];
         await pool.query(
             `UPDATE orders SET delivery_status = 'cancelled' WHERE id = $1`,
             [orderId]
@@ -432,6 +443,18 @@ router.post('/addon-orders/:orderId/cancel', authenticateToken as any, async (re
             `UPDATE order_items SET status = 'cancelled' WHERE order_id = $1 AND item_type = 'addon'`,
             [orderId]
         );
+
+        sendAdminCancellationEmail({
+            bloommeOrderId: addonOrder.bloomme_order_id,
+            customerName: addonOrder.name,
+            customerEmail: addonOrder.email,
+            customerPhone: addonOrder.phone,
+            cancelledAt: new Date().toISOString(),
+            type: 'addon_order',
+            addonNames: addonOrder.addon_names || [],
+            total: addonOrder.amount ? Math.round(addonOrder.amount / 100) : undefined,
+        }); // fire and forget
+
         res.json({ success: true });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -642,13 +665,21 @@ router.post('/:subscriptionId/cancel', authenticateToken as any, async (req, res
 
         // Verify subscription belongs to user
         const verification = await pool.query(
-            'SELECT id, plan_type, created_at FROM subscriptions WHERE id = $1 AND user_id = $2',
+            `SELECT s.id, s.plan_type, s.price,
+                    c.name, c.email, c.phone,
+                    (SELECT 'BLM-' || LPAD(o.id::text, 6, '0')
+                     FROM order_items oi JOIN orders o ON o.id = oi.order_id
+                     WHERE oi.item_type = 'subscription' AND oi.item_id = s.id AND o.status = 'paid'
+                     LIMIT 1) AS bloomme_order_id
+             FROM subscriptions s
+             LEFT JOIN customers c ON c.user_id = s.user_id
+             WHERE s.id = $1 AND s.user_id = $2`,
             [subscription_id, user_id]
         );
         if (verification.rows.length === 0) {
             return res.status(404).json({ error: 'Subscription not found' });
         }
-        const { plan_type, created_at: sub_created_at } = verification.rows[0];
+        const sub = verification.rows[0];
 
         // Mark subscription add-ons as cancelled (keep rows for calendar history)
         await pool.query(
@@ -660,6 +691,18 @@ router.post('/:subscriptionId/cancel', authenticateToken as any, async (req, res
             "UPDATE subscriptions SET status = 'cancelled' WHERE id = $1",
             [subscription_id]
         );
+
+        sendAdminCancellationEmail({
+            bloommeOrderId: sub.bloomme_order_id,
+            customerName: sub.name,
+            customerEmail: sub.email,
+            customerPhone: sub.phone,
+            cancelledAt: new Date().toISOString(),
+            type: 'subscription',
+            planName: sub.plan_type,
+            total: sub.price ? Math.round(parseFloat(sub.price)) : undefined,
+        }); // fire and forget
+
         res.json({ message: 'Subscription cancelled' });
     } catch (err: any) {
         res.status(400).json({ error: err.message });

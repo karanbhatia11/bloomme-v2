@@ -842,3 +842,310 @@ function getOrderConfirmationText(d: OrderConfirmationData): string {
     lines.push(``, `---`, `Bloomme Flowers | Faridabad, Haryana, India`);
     return lines.join('\n');
 }
+
+// ── Admin Notification Emails ──────────────────────────────────────────────────
+
+export interface AdminOrderNotificationData extends OrderConfirmationData {
+    orderId: number;
+    paidAt?: string;
+    isNewUser: boolean;
+    planScheduleDates?: string[];
+    addonSchedules?: { name: string; dates: string[] }[];
+}
+
+export const sendAdminNewOrderEmail = async (data: AdminOrderNotificationData): Promise<boolean> => {
+    const raw = process.env.ADMIN_NOTIFICATION_EMAIL || '';
+    const adminEmails = raw.split(',').map(e => e.trim()).filter(Boolean);
+    if (adminEmails.length === 0) return false;
+    try {
+        await getResend().emails.send({
+            from: `Bloomme <${SENDER_EMAIL}>`,
+            to: adminEmails,
+            subject: `New Order Received 🎉 — ${data.bloommeOrderId || ''} | ${data.customerName}`,
+            html: getAdminNewOrderHtml(data),
+            text: getAdminNewOrderText(data),
+        });
+        console.log(`Admin new-order notification sent for ${data.bloommeOrderId}`);
+        return true;
+    } catch (err) {
+        console.error('Failed to send admin new-order notification:', err);
+        return false;
+    }
+};
+
+export interface AdminCancellationData {
+    bloommeOrderId?: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone?: string;
+    cancelledAt: string;
+    type: 'subscription' | 'addon_order';
+    planName?: string;
+    addonNames?: string[];
+    total?: number;
+}
+
+export const sendAdminCancellationEmail = async (data: AdminCancellationData): Promise<boolean> => {
+    const raw = process.env.ADMIN_NOTIFICATION_EMAIL || '';
+    const adminEmails = raw.split(',').map(e => e.trim()).filter(Boolean);
+    if (adminEmails.length === 0) return false;
+    try {
+        await getResend().emails.send({
+            from: `Bloomme <${SENDER_EMAIL}>`,
+            to: adminEmails,
+            subject: `Order Cancelled ⚠️ — ${data.bloommeOrderId || ''} | ${data.customerName}`,
+            html: getAdminCancellationHtml(data),
+            text: getAdminCancellationText(data),
+        });
+        console.log(`Admin cancellation notification sent for ${data.bloommeOrderId}`);
+        return true;
+    } catch (err) {
+        console.error('Failed to send admin cancellation notification:', err);
+        return false;
+    }
+};
+
+function fmtDateShort(iso: string): string {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
+
+function fmtTs(iso: string): string {
+    try {
+        return new Date(iso).toLocaleString('en-IN', {
+            day: 'numeric', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata'
+        });
+    } catch { return iso; }
+}
+
+function infoRow(icon: string, label: string, value: string): string {
+    return `<tr><td style="padding:8px 0;border-bottom:1px solid #f0ece4;">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td width="28" style="font-size:15px;vertical-align:top;padding-top:2px;">${icon}</td>
+            <td style="padding-left:10px;">
+                <p style="margin:0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7f7666;">${label}</p>
+                <p style="margin:3px 0 0;font-size:13px;font-weight:600;color:#2f1500;word-break:break-all;">${value}</p>
+            </td>
+        </tr></table>
+    </td></tr>`;
+}
+
+function sectionCard(title: string, innerHtml: string): string {
+    return `<tr><td style="padding:0 32px 20px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:14px;box-shadow:0 0 20px rgba(26,28,27,0.05);overflow:hidden;">
+            <tr><td style="padding:20px 24px 4px;">
+                <p style="margin:0 0 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#7f7666;">${title}</p>
+                <table width="100%" cellpadding="0" cellspacing="0">${innerHtml}</table>
+            </td></tr>
+        </table>
+    </td></tr>`;
+}
+
+function adminEmailWrapper(bodyRows: string): string {
+    return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
+<body style="margin:0;padding:0;background:#faf9f7;font-family:'Segoe UI',Arial,sans-serif;color:#1a1c1b;">
+<div style="width:100%;height:4px;background:linear-gradient(90deg,#775a11,#c4a052);"></div>
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#faf9f7;border-bottom:1px solid #e3e2e0;">
+    <tr><td align="center"><table width="600" cellpadding="0" cellspacing="0"><tr><td style="padding:16px 32px;">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td style="vertical-align:middle;">
+                <img src="https://www.bloomme.co.in/images/backgroundlesslogo.png" alt="Bloomme" width="36" height="36" style="display:inline-block;vertical-align:middle;border-radius:7px;"/>
+                <span style="font-size:20px;font-weight:700;color:#775a11;vertical-align:middle;margin-left:8px;">Bloomme</span>
+                <span style="font-size:11px;color:#7f7666;vertical-align:middle;margin-left:8px;">· Admin Notification</span>
+            </td>
+        </tr></table>
+    </td></tr></table></td></tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px 48px;">
+    <tr><td align="center"><table width="600" cellpadding="0" cellspacing="0">
+        ${bodyRows}
+        <tr><td style="padding:8px 32px 24px;text-align:center;">
+            <a href="${process.env.FRONTEND_URL || 'https://www.bloomme.co.in'}/admin" style="display:inline-block;background:linear-gradient(135deg,#5c4300,#775a11);color:#fff;padding:14px 40px;border-radius:50px;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:0.03em;box-shadow:0 4px 12px rgba(92,67,0,0.25);">
+                👉 Open Admin Portal
+            </a>
+            <p style="margin:10px 0 0;font-size:12px;color:#7f7666;">View full details, delivery schedule, and take action.</p>
+        </td></tr>
+    </table></td></tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f3f1;border-top:1px solid #d1c5b3;">
+    <tr><td align="center"><table width="600" cellpadding="0" cellspacing="0"><tr><td style="padding:24px 32px;text-align:center;">
+        <p style="margin:0;font-size:12px;color:#7f7666;">&copy; 2026 Bloomme. Internal notification — do not share.</p>
+    </td></tr></table></td></tr>
+</table>
+</body></html>`;
+}
+
+function getAdminNewOrderHtml(d: AdminOrderNotificationData): string {
+    const paidAtStr = d.paidAt ? fmtTs(d.paidAt) : 'Just now';
+
+    const newUserBanner = d.isNewUser ? `<tr><td style="padding:0 32px 20px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#d4edda,#f0fff4);border-radius:12px;border:1px solid #b2dfdb;">
+            <tr><td style="padding:14px 20px;">
+                <p style="margin:0;font-size:14px;font-weight:700;color:#1b5e20;">🆕 Brand new customer — first order ever!</p>
+                <p style="margin:4px 0 0;font-size:12px;color:#2e7d32;">Make sure their first delivery is perfect.</p>
+            </td></tr>
+        </table>
+    </td></tr>` : '';
+
+    const heroRow = `<tr><td style="padding:32px 32px 8px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+        <p style="margin:0 0 6px;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#775a11;">Hey Admins!</p>
+        <h1 style="margin:0 0 10px;font-size:28px;font-weight:800;color:#2f1500;letter-spacing:-0.5px;">Congratulations! A new order just came in.</h1>
+        <p style="margin:0 0 16px;font-size:15px;color:#4d4638;line-height:1.6;">A customer has successfully placed and paid for their order. Here are all the details:</p>
+        <div style="display:inline-block;background:#e8f5e9;border-radius:8px;padding:8px 20px;margin-bottom:4px;">
+            <span style="font-size:14px;font-weight:700;color:#1b5e20;">✅ PAID &nbsp;·&nbsp; ${d.bloommeOrderId || ''} &nbsp;·&nbsp; ${paidAtStr}</span>
+        </div>
+    </td></tr>`;
+
+    const customerRows = [
+        infoRow('👤', 'Name', d.customerName || '—'),
+        infoRow('📧', 'Email', d.customerEmail || '—'),
+        d.customerPhone ? infoRow('📱', 'Phone', d.customerPhone) : '',
+        d.timeSlot ? infoRow('🕐', 'Time Slot', d.timeSlot) : '',
+        d.customerAddress ? infoRow('📍', 'Address', d.customerAddress) : '',
+    ].join('');
+
+    const planRow = d.planName ? `<tr><td style="padding:10px 0;border-bottom:1px solid #f0ece4;">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td width="36"><div style="width:32px;height:32px;background:#ffdcc3;border-radius:8px;text-align:center;line-height:32px;font-size:16px;">🌸</div></td>
+            <td style="padding-left:10px;"><p style="margin:0;font-size:13px;font-weight:700;color:#2f1500;">${d.planName} — ${d.planDeliveries || 0} deliveries</p></td>
+            <td align="right"><p style="margin:0;font-size:13px;font-weight:700;color:#2f1500;">₹${(d.planPrice || 0).toLocaleString('en-IN')}</p></td>
+        </tr></table>
+    </td></tr>` : '';
+
+    const addonRows = (d.addons || []).map(a => `<tr><td style="padding:10px 0;border-bottom:1px solid #f0ece4;">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td width="36"><div style="width:32px;height:32px;background:#e8f5e9;border-radius:8px;text-align:center;line-height:32px;font-size:16px;">🎁</div></td>
+            <td style="padding-left:10px;"><p style="margin:0;font-size:13px;font-weight:700;color:#2f1500;">${a.name} — ${a.deliveries} deliveries</p></td>
+            <td align="right"><p style="margin:0;font-size:13px;font-weight:700;color:#2f1500;">₹${a.price.toLocaleString('en-IN')}</p></td>
+        </tr></table>
+    </td></tr>`).join('');
+
+    const totalRow = `<tr><td style="padding:12px 0 6px;"><table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td><p style="margin:0;font-size:15px;font-weight:700;color:#2f1500;">Total Paid</p></td>
+        <td align="right"><p style="margin:0;font-size:20px;font-weight:800;color:#2f1500;">₹${d.total.toLocaleString('en-IN')}</p></td>
+    </tr></table></td></tr>`;
+
+    const paymentRows = [
+        infoRow('💳', 'Total Paid', `₹${d.total.toLocaleString('en-IN')}`),
+        infoRow('🧾', 'Transaction ID', d.razorpayPaymentId || '—'),
+        infoRow('🕐', 'Paid At', paidAtStr),
+    ].join('');
+
+    // Delivery schedule
+    let scheduleHtml = '';
+    if (d.planScheduleDates && d.planScheduleDates.length > 0) {
+        const dates = d.planScheduleDates.map(fmtDateShort).join(' · ');
+        scheduleHtml += `<tr><td style="padding:8px 0;border-bottom:1px solid #f0ece4;">
+            <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#775a11;">${d.planName || 'Plan'} (${d.planScheduleDates.length} deliveries)</p>
+            <p style="margin:0;font-size:12px;color:#4d4638;line-height:1.6;">${dates}</p>
+        </td></tr>`;
+    }
+    (d.addonSchedules || []).forEach(ao => {
+        if (ao.dates.length > 0) {
+            const dates = ao.dates.map(fmtDateShort).join(' · ');
+            scheduleHtml += `<tr><td style="padding:8px 0;border-bottom:1px solid #f0ece4;">
+                <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#775a11;">${ao.name} (${ao.dates.length} deliveries)</p>
+                <p style="margin:0;font-size:12px;color:#4d4638;line-height:1.6;">${dates}</p>
+            </td></tr>`;
+        }
+    });
+
+    const scheduleSection = scheduleHtml ? sectionCard('Delivery Schedule', scheduleHtml) : '';
+
+    return adminEmailWrapper(`
+        ${heroRow}
+        ${newUserBanner}
+        ${sectionCard('Customer', customerRows)}
+        ${sectionCard('Items', planRow + addonRows + totalRow)}
+        ${sectionCard('Payment', paymentRows)}
+        ${scheduleSection}
+    `);
+}
+
+function getAdminNewOrderText(d: AdminOrderNotificationData): string {
+    const lines = [
+        `Hey Admins! 🎉 Congratulations — a new order just came in.`,
+        ``,
+        `A customer has successfully placed and paid for their order.`,
+        d.isNewUser ? `🆕 BRAND NEW CUSTOMER — their first order ever!` : ``,
+        ``,
+        `✅ PAID | ${d.bloommeOrderId || ''} | ${d.paidAt ? fmtTs(d.paidAt) : 'Just now'}`,
+        ``,
+        `CUSTOMER`,
+        `Name: ${d.customerName}`,
+        `Email: ${d.customerEmail}`,
+        d.customerPhone ? `Phone: ${d.customerPhone}` : '',
+        d.timeSlot ? `Time Slot: ${d.timeSlot}` : '',
+        d.customerAddress ? `Address: ${d.customerAddress}` : '',
+        ``,
+        `ITEMS`,
+    ];
+    if (d.planName) lines.push(`${d.planName} Plan — ${d.planDeliveries} deliveries: ₹${d.planPrice}`);
+    (d.addons || []).forEach(a => lines.push(`${a.name} — ${a.deliveries} deliveries: ₹${a.price}`));
+    lines.push(`Total: ₹${d.total}`);
+    lines.push(``, `Transaction ID: ${d.razorpayPaymentId}`);
+    if (d.planScheduleDates?.length) {
+        lines.push(``, `DELIVERY SCHEDULE`, `${d.planName}: ${d.planScheduleDates.map(fmtDateShort).join(', ')}`);
+    }
+    (d.addonSchedules || []).forEach(ao => {
+        if (ao.dates.length) lines.push(`${ao.name}: ${ao.dates.map(fmtDateShort).join(', ')}`);
+    });
+    lines.push(``, `---`, `Bloomme Admin Notification`);
+    return lines.filter(l => l !== undefined).join('\n');
+}
+
+function getAdminCancellationHtml(d: AdminCancellationData): string {
+    const cancelledAtStr = fmtTs(d.cancelledAt);
+    const typeLabel = d.type === 'subscription' ? 'Subscription' : 'Add-On Order';
+
+    const heroRow = `<tr><td style="padding:32px 32px 8px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+        <p style="margin:0 0 6px;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#b71c1c;">Hey Admins!</p>
+        <h1 style="margin:0 0 10px;font-size:28px;font-weight:800;color:#b71c1c;letter-spacing:-0.5px;">An order has been cancelled.</h1>
+        <p style="margin:0 0 16px;font-size:15px;color:#4d4638;line-height:1.6;">A customer has cancelled their ${typeLabel.toLowerCase()}. Please review immediately and check if any action is needed.</p>
+        <div style="display:inline-block;background:#ffebee;border-radius:8px;padding:8px 20px;margin-bottom:4px;">
+            <span style="font-size:14px;font-weight:700;color:#b71c1c;">❌ CANCELLED &nbsp;·&nbsp; ${d.bloommeOrderId || ''} &nbsp;·&nbsp; ${cancelledAtStr}</span>
+        </div>
+    </td></tr>`;
+
+    const customerRows = [
+        infoRow('👤', 'Name', d.customerName || '—'),
+        infoRow('📧', 'Email', d.customerEmail || '—'),
+        d.customerPhone ? infoRow('📱', 'Phone', d.customerPhone) : '',
+    ].join('');
+
+    let detailRows = infoRow('📋', 'Type', typeLabel);
+    if (d.planName) detailRows += infoRow('🌸', 'Plan', d.planName);
+    if (d.addonNames?.length) detailRows += infoRow('🎁', 'Add-Ons', d.addonNames.join(', '));
+    if (d.total) detailRows += infoRow('💳', 'Order Value', `₹${d.total.toLocaleString('en-IN')}`);
+    detailRows += infoRow('🕐', 'Cancelled At', cancelledAtStr);
+
+    return adminEmailWrapper(`${heroRow}${sectionCard('Customer', customerRows)}${sectionCard('Cancellation Details', detailRows)}`);
+}
+
+function getAdminCancellationText(d: AdminCancellationData): string {
+    const lines = [
+        `Hey Admins! ⚠️ An order has been cancelled.`,
+        ``,
+        `A customer has cancelled their ${d.type === 'subscription' ? 'subscription' : 'add-on order'}. Please review immediately.`,
+        ``,
+        `❌ CANCELLED | ${d.bloommeOrderId || ''} | ${fmtTs(d.cancelledAt)}`,
+        `Type: ${d.type === 'subscription' ? 'Subscription' : 'Add-On Order'}`,
+        ``,
+        `CUSTOMER`,
+        `Name: ${d.customerName}`,
+        `Email: ${d.customerEmail}`,
+        d.customerPhone ? `Phone: ${d.customerPhone}` : '',
+        ``,
+        `DETAILS`,
+        d.planName ? `Plan: ${d.planName}` : '',
+        d.addonNames?.length ? `Add-Ons: ${d.addonNames.join(', ')}` : '',
+        d.total ? `Order Value: ₹${d.total}` : '',
+        `Cancelled At: ${fmtTs(d.cancelledAt)}`,
+        ``, `---`, `Bloomme Admin Notification`,
+    ];
+    return lines.filter(l => l !== undefined && l !== '').join('\n');
+}
