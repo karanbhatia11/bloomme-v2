@@ -423,11 +423,11 @@ const initDb = async () => {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
-            -- Plan → product mapping
+            -- Plan → add-on mapping
             CREATE TABLE IF NOT EXISTS plan_product_map (
                 id SERIAL PRIMARY KEY,
                 plan_id INTEGER NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
-                product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+                add_on_id INTEGER NOT NULL REFERENCES add_ons(id) ON DELETE CASCADE,
                 quantity INTEGER DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
