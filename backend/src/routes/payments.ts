@@ -74,9 +74,9 @@ router.post('/create', optionalAuth as any, async (req, res) => {
             return res.status(400).json({ error: 'Customer details required' });
         }
 
-        // Create Razorpay order (skip in development)
+        // Create Razorpay order (skip if keys not configured)
         let razorpayOrderId: string;
-        if (process.env.NODE_ENV === 'development') {
+        if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
             razorpayOrderId = `rzp_dev_${Date.now()}`;
         } else {
             try {
@@ -233,8 +233,9 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
 
         const order = orderCheck.rows[0];
 
-        // Verify Razorpay signature with secret key (skip in development)
-        if (process.env.NODE_ENV !== 'development') {
+        // Verify Razorpay signature with secret key (skip if keys not configured or DEV_PAYMENT_OVERRIDE is set)
+        const devOverride = process.env.DEV_PAYMENT_OVERRIDE === 'true';
+        if (process.env.RAZORPAY_KEY_SECRET && !devOverride) {
             const RAZORPAY_SECRET = process.env.RAZORPAY_KEY_SECRET;
             if (!RAZORPAY_SECRET) {
                 return res.status(500).json({ error: 'Razorpay secret key not configured' });
