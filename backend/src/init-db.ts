@@ -462,6 +462,17 @@ const initDb = async () => {
             ALTER TABLE addresses ADD COLUMN IF NOT EXISTS instructions TEXT;
             CREATE INDEX IF NOT EXISTS idx_addresses_user_id ON addresses(user_id);
 
+            -- New address schema columns (guest-friendly, customer_id based)
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id);
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS address_line1 TEXT;
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS address_line2 TEXT;
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS suburb TEXT;
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS postcode TEXT;
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS delivery_notes TEXT;
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS time_slot TEXT DEFAULT '5:30 to 6:30';
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS building_type TEXT DEFAULT 'house';
+            CREATE INDEX IF NOT EXISTS idx_addresses_customer_id ON addresses(customer_id);
+
             ALTER TABLE order_items ADD COLUMN IF NOT EXISTS unit_price DECIMAL;
             ALTER TABLE order_items ADD COLUMN IF NOT EXISTS price_type TEXT;
 
