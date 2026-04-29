@@ -74,9 +74,9 @@ router.post('/create', optionalAuth as any, async (req, res) => {
             return res.status(400).json({ error: 'Customer details required' });
         }
 
-        // Create Razorpay order (skip if keys not configured)
+        // Create Razorpay order (skip if keys not configured or dev override)
         let razorpayOrderId: string;
-        if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+        if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET || process.env.DEV_PAYMENT_OVERRIDE === 'true') {
             razorpayOrderId = `rzp_dev_${Date.now()}`;
         } else {
             try {
