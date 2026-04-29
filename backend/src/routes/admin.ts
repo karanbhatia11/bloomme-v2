@@ -84,8 +84,8 @@ router.get('/subscriptions', async (req, res) => {
                 u.name as user_name,
                 u.email as user_email,
                 u.phone as user_phone,
-                (SELECT city FROM addresses WHERE user_id = s.user_id LIMIT 1) as city,
-                (SELECT pin_code FROM addresses WHERE user_id = s.user_id LIMIT 1) as pin_code,
+                (SELECT suburb FROM addresses a JOIN customers c ON a.customer_id = c.id WHERE c.user_id = s.user_id LIMIT 1) as city,
+                (SELECT postcode FROM addresses a JOIN customers c ON a.customer_id = c.id WHERE c.user_id = s.user_id LIMIT 1) as pin_code,
                 (SELECT COUNT(*) FROM subscription_delivery_dates WHERE subscription_id = s.id) as delivery_count
             FROM subscriptions s
             LEFT JOIN users u ON s.user_id = u.id
@@ -109,16 +109,21 @@ router.get('/subscriptions/:id/details', async (req, res) => {
                 u.name as user_name,
                 u.email as user_email,
                 u.phone as user_phone,
-                a.full_name,
-                a.house_number,
-                a.street,
-                a.area,
-                a.city,
-                a.pin_code,
-                a.instructions
+                cust.name as full_name,
+                a.address_line1 as house_number,
+                NULL::text as street,
+                a.address_line2 as area,
+                a.suburb as city,
+                a.postcode as pin_code,
+                a.delivery_notes as instructions,
+                p.name as plan_name,
+                COALESCE(p.price, s.price) as plan_price,
+                cust.time_slot
             FROM subscriptions s
             LEFT JOIN users u ON s.user_id = u.id
-            LEFT JOIN addresses a ON a.user_id = s.user_id
+            LEFT JOIN plans p ON p.name = s.plan_type
+            LEFT JOIN customers cust ON cust.user_id = s.user_id
+            LEFT JOIN addresses a ON a.customer_id = cust.id
             WHERE s.id = $1
             LIMIT 1
         `, [id]);
@@ -168,24 +173,26 @@ router.get('/subscriptions/:id/details', async (req, res) => {
             ORDER BY add.delivery_date
         `, [id]);
 
-        // Order and payment info
+        // Order and payment info — find the subscription order specifically
         const orderResult = await pool.query(`
             SELECT
-                id,
-                razorpay_order_id,
-                razorpay_payment_id,
-                amount,
-                currency,
-                status,
-                order_type,
-                promo_code,
-                promo_discount,
-                referral_discount,
-                created_at,
-                paid_at
-            FROM orders
-            WHERE user_id = $1
-            ORDER BY created_at DESC
+                o.id,
+                'BLM-' || LPAD(o.id::text, 6, '0') AS bloomme_order_id,
+                o.razorpay_order_id,
+                o.razorpay_payment_id,
+                o.amount,
+                o.currency,
+                o.status,
+                o.order_type,
+                o.promo_code,
+                o.promo_discount,
+                o.referral_discount,
+                o.created_at,
+                o.paid_at
+            FROM orders o
+            JOIN order_items oi ON oi.order_id = o.id AND oi.item_type = 'subscription'
+            WHERE o.user_id = $1 AND o.status = 'paid'
+            ORDER BY o.created_at DESC
             LIMIT 1
         `, [subResult.rows[0].user_id]);
 
@@ -400,7 +407,7 @@ router.get('/delivery-manifest', async (req, res) => {
 
         if (from_date && to_date) {
             dateFilterSub = 'AND sdd.delivery_date BETWEEN $1 AND $2';
-            dateFilterAddon = 'AND o.delivery_date BETWEEN $1 AND $2';
+            dateFilterAddon = 'AND d.delivery_date BETWEEN $1 AND $2';
             params = [from_date, to_date];
         }
 
@@ -426,23 +433,23 @@ router.get('/delivery-manifest', async (req, res) => {
                 u.name as customer_name,
                 u.id as user_id,
                 u.phone,
-                a.house_number,
-                a.street,
-                a.area,
-                a.city,
-                a.pin_code,
+                a.address_line1 as house_number,
+                NULL::text as street,
+                a.address_line2 as area,
+                a.suburb as city,
+                a.postcode as pin_code,
                 cust.time_slot as delivery_slot,
                 s.plan_type as plan_name,
-                s.price as plan_price,
+                COALESCE(p.price, s.price) as plan_price,
                 s.id as subscription_id,
-                (SELECT o.id FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id AND o.status = 'paid' WHERE oi2.item_type = 'subscription' AND oi2.item_id = s.id LIMIT 1) as order_id,
-                'BLM-' || LPAD((SELECT o.id::text FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id AND o.status = 'paid' WHERE oi2.item_type = 'subscription' AND oi2.item_id = s.id LIMIT 1), 6, '0') AS bloomme_order_id,
+                (SELECT o.id FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id AND o.status = 'paid' WHERE oi2.item_type = 'subscription' AND oi2.item_id = p.id AND o.user_id = u.id LIMIT 1) as order_id,
+                'BLM-' || LPAD((SELECT o.id::text FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id AND o.status = 'paid' WHERE oi2.item_type = 'subscription' AND oi2.item_id = p.id AND o.user_id = u.id LIMIT 1), 6, '0') AS bloomme_order_id,
                 CASE WHEN s.status = 'cancelled' THEN 'cancelled'
                      ELSE COALESCE(d.status, 'scheduled') END as delivery_status,
                 NULL::text as payment_status,
                 NULL::text as notes,
                 (SELECT COALESCE(SUM(ao.price), 0) FROM subscription_add_ons sa LEFT JOIN add_ons ao ON sa.add_on_id = ao.id WHERE sa.subscription_id = s.id) as addon_total,
-                s.price + (SELECT COALESCE(SUM(ao.price), 0) FROM subscription_add_ons sa LEFT JOIN add_ons ao ON sa.add_on_id = ao.id WHERE sa.subscription_id = s.id) as total_amount,
+                COALESCE(p.price, s.price) + (SELECT COALESCE(SUM(ao.price), 0) FROM subscription_add_ons sa LEFT JOIN add_ons ao ON sa.add_on_id = ao.id WHERE sa.subscription_id = s.id) as total_amount,
                 (
                     SELECT json_agg(json_build_object('name', ao.name, 'qty', 1))
                     FROM subscription_add_ons sa
@@ -451,30 +458,31 @@ router.get('/delivery-manifest', async (req, res) => {
                 ) as addons
             FROM subscription_delivery_dates sdd
             LEFT JOIN subscriptions s ON sdd.subscription_id = s.id
+            LEFT JOIN plans p ON p.name = s.plan_type
             LEFT JOIN users u ON s.user_id = u.id
-            LEFT JOIN addresses a ON a.user_id = s.user_id
             LEFT JOIN customers cust ON cust.user_id = s.user_id
+            LEFT JOIN addresses a ON a.customer_id = cust.id
             LEFT JOIN deliveries d ON s.id = d.subscription_id AND sdd.delivery_date = d.delivery_date
             WHERE s.status IN ('active', 'cancelled')
             ${dateFilterSub}
 
             UNION ALL
 
-            -- Addon-only orders
+            -- Addon-only orders (one row per delivery date, expanded from order_items.custom_schedule_dates)
             SELECT
                 o.id as delivery_id,
-                o.delivery_date,
-                TO_CHAR(o.delivery_date, 'Day') as delivery_day,
+                d.delivery_date::date as delivery_date,
+                TO_CHAR(d.delivery_date::date, 'Day') as delivery_day,
                 'addon_only' as order_type,
                 'addon_only' as delivery_type,
-                u.name as customer_name,
+                COALESCE(u.name, cust.name) as customer_name,
                 u.id as user_id,
-                u.phone,
-                a.house_number,
-                a.street,
-                a.area,
-                a.city,
-                a.pin_code,
+                COALESCE(u.phone, cust.phone) as phone,
+                a.address_line1 as house_number,
+                NULL::text as street,
+                a.address_line2 as area,
+                a.suburb as city,
+                a.postcode as pin_code,
                 COALESCE(o.delivery_slot, cust.time_slot) as delivery_slot,
                 NULL::text as plan_name,
                 NULL::numeric as plan_price,
@@ -487,17 +495,23 @@ router.get('/delivery-manifest', async (req, res) => {
                      ELSE 'scheduled' END as delivery_status,
                 o.status as payment_status,
                 NULL::text as notes,
-                (SELECT COALESCE(SUM(oi.price * oi.quantity), 0) FROM order_items oi WHERE oi.order_id = o.id AND oi.item_type = 'addon') as addon_total,
-                COALESCE(o.amount, 0) as total_amount,
-                (SELECT json_agg(json_build_object('name', ao.name, 'qty', oi.quantity))
-                 FROM order_items oi
-                 LEFT JOIN add_ons ao ON oi.item_id = ao.id
-                 WHERE oi.order_id = o.id AND oi.item_type = 'addon') as addons
-            FROM orders o
+                (SELECT COALESCE(SUM(oi2.price * oi2.quantity) / 100.0, 0) FROM order_items oi2 WHERE oi2.order_id = o.id AND oi2.item_type = 'addon') as addon_total,
+                COALESCE(o.amount / 100.0, 0) as total_amount,
+                (SELECT json_agg(json_build_object('name', ao.name, 'qty', oi2.quantity))
+                 FROM order_items oi2
+                 LEFT JOIN add_ons ao ON oi2.item_id = ao.id
+                 WHERE oi2.order_id = o.id AND oi2.item_type = 'addon') as addons
+            FROM (
+                SELECT DISTINCT oi.order_id, unnested.delivery_date
+                FROM order_items oi
+                CROSS JOIN LATERAL UNNEST(oi.custom_schedule_dates) AS unnested(delivery_date)
+                WHERE oi.item_type = 'addon'
+            ) d
+            JOIN orders o ON o.id = d.order_id
             LEFT JOIN users u ON o.user_id = u.id
-            LEFT JOIN addresses a ON a.user_id = o.user_id
             LEFT JOIN customers cust ON cust.user_id = o.user_id
-            WHERE o.delivery_date IS NOT NULL AND o.order_type = 'addon'
+            LEFT JOIN addresses a ON a.customer_id = cust.id
+            WHERE o.order_type = 'addon' AND o.status = 'paid'
             ${dateFilterAddon}
 
             ORDER BY delivery_date, customer_name
@@ -552,15 +566,16 @@ router.get('/orders', async (req, res) => {
                 u.name as user_name,
                 u.email as user_email,
                 u.phone as user_phone,
-                a.house_number,
-                a.street,
-                a.area,
-                a.city,
-                a.pin_code,
-                a.instructions as delivery_notes
+                a.address_line1 as house_number,
+                NULL::text as street,
+                a.address_line2 as area,
+                a.suburb as city,
+                a.postcode as pin_code,
+                a.delivery_notes
             FROM orders o
             LEFT JOIN users u ON o.user_id = u.id
-            LEFT JOIN addresses a ON a.user_id = o.user_id
+            LEFT JOIN customers cust_addr ON cust_addr.user_id = o.user_id
+            LEFT JOIN addresses a ON a.customer_id = cust_addr.id
             ORDER BY o.created_at DESC
         `);
         res.json(result.rows);
@@ -942,8 +957,11 @@ router.get('/order-lookup', async (req, res) => {
 
         // Address
         const addrRes = order.user_id ? await pool.query(`
-            SELECT full_name, house_number, street, area, city, pin_code, instructions
-            FROM addresses WHERE user_id = $1 ORDER BY id DESC LIMIT 1
+            SELECT c.name as full_name, a.address_line1 as house_number, NULL::text as street,
+                   a.address_line2 as area, a.suburb as city, a.postcode as pin_code, a.delivery_notes as instructions
+            FROM addresses a
+            JOIN customers c ON c.id = a.customer_id
+            WHERE c.user_id = $1 ORDER BY a.id DESC LIMIT 1
         `, [order.user_id]) : { rows: [] };
 
         // Credits used
@@ -995,6 +1013,29 @@ router.get('/customers', async (req, res) => {
                 first_seen,
                 last_order_at
             FROM customer_360
+
+            UNION ALL
+
+            SELECT
+                u.id        AS customer_id,
+                u.name,
+                u.email,
+                u.phone,
+                u.id        AS user_id,
+                TRUE        AS is_registered,
+                0           AS total_orders,
+                0           AS paid_orders,
+                0           AS total_spent,
+                0           AS total_subscriptions,
+                0           AS active_subscriptions,
+                u.created_at AS first_seen,
+                NULL        AS last_order_at
+            FROM users u
+            WHERE u.role = 'user'
+              AND NOT EXISTS (
+                SELECT 1 FROM customers c WHERE LOWER(c.email) = LOWER(u.email)
+              )
+
             ORDER BY last_order_at DESC NULLS LAST, first_seen DESC
         `);
         res.json({ customers: result.rows });
@@ -1065,8 +1106,12 @@ router.get('/customers/:id/profile', async (req, res) => {
 
         // Addresses
         const addressesRes = identity.user_id ? await pool.query(`
-            SELECT id, full_name, phone, house_number, street, area, city, pin_code, instructions
-            FROM addresses WHERE user_id = $1 ORDER BY id DESC
+            SELECT a.id, c.name as full_name, c.phone, a.address_line1 as house_number,
+                   NULL::text as street, a.address_line2 as area, a.suburb as city,
+                   a.postcode as pin_code, a.delivery_notes as instructions
+            FROM addresses a
+            JOIN customers c ON c.id = a.customer_id
+            WHERE c.user_id = $1 ORDER BY a.id DESC
         `, [identity.user_id]) : { rows: [] };
 
         // Deliveries

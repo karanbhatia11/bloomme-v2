@@ -1274,6 +1274,7 @@
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
                 const sub = data.subscription;
+                const order = data.order;
                 const deliveryDates = data.delivery_dates || [];
                 const addons = data.addons || [];
                 const addonDeliveryDates = data.addon_delivery_dates || [];
@@ -1282,10 +1283,10 @@
                     <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
                         <h3>Subscription #${sub.id} Details</h3>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            <div><strong>Order ID:</strong> ${order ? order.bloomme_order_id : '-'}</div>
                             <div><strong>User ID:</strong> ${sub.user_id || 'Guest'}</div>
-                            <div><strong>Plan:</strong> ${sub.plan_name} (₹${sub.plan_price})</div>
+                            <div><strong>Plan:</strong> ${sub.plan_name || sub.plan_type} (₹${sub.plan_price || sub.price})</div>
                             <div><strong>Status:</strong> ${sub.status}</div>
-                            <div><strong>Period:</strong> ${new Date(sub.start_date).toLocaleDateString()} - ${new Date(sub.end_date).toLocaleDateString()}</div>
                             <div><strong>Time Slot:</strong> ${sub.time_slot || '-'}</div>
                             <div><strong>Created:</strong> ${new Date(sub.created_at).toLocaleDateString()}</div>
                             <div><strong>Notes:</strong> ${sub.notes || '-'}</div>

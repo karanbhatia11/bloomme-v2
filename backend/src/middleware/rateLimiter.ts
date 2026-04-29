@@ -28,4 +28,5 @@ export const generalLimiter = rateLimit({
     max: 100, // 100 requests per window
     standardHeaders: true,
     legacyHeaders: false,
+    skip,
 });

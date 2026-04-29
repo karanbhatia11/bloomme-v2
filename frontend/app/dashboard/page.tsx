@@ -182,10 +182,10 @@ export default function DashboardPage() {
                   <span className="material-symbols-outlined text-base">dashboard</span>Dashboard
                 </a>
                 <a href="/dashboard/subscriptions" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
-                  <span className="material-symbols-outlined text-base">loyalty</span>Subscriptions
+                  <span className="material-symbols-outlined text-base">loyalty</span>Subscriptions & Add-ons
                 </a>
-                <a href="/dashboard/add-ons" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
-                  <span className="material-symbols-outlined text-base">featured_video</span>Add-ons
+                <a href="/dashboard/festival-packages" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">celebration</span>Festival Packages
                 </a>
                 <a href="/dashboard/calendar" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
                   <span className="material-symbols-outlined text-base">calendar_today</span>Calendar
@@ -284,11 +284,11 @@ export default function DashboardPage() {
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
               loyalty
             </span>
-            Subscriptions
+            Subscriptions & Add-ons
           </a>
-          <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium leading-relaxed hover:bg-[#ffdcc3]/50 transition-all" href="/dashboard/add-ons">
-            <span className="material-symbols-outlined">featured_video</span>
-            Add-ons
+          <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium leading-relaxed hover:bg-[#ffdcc3]/50 transition-all" href="/dashboard/festival-packages">
+            <span className="material-symbols-outlined">celebration</span>
+            Festival Packages
           </a>
           <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium leading-relaxed hover:bg-[#ffdcc3]/50 transition-all" href="/dashboard/calendar">
             <span className="material-symbols-outlined">calendar_today</span>
@@ -473,15 +473,15 @@ export default function DashboardPage() {
                   </div>
                 </Link>
 
-                <Link href="/dashboard/add-ons" className="block bg-surface-container-low p-5 rounded-xl group hover:bg-surface-container transition-colors duration-300">
+                <Link href="/dashboard/festival-packages" className="block bg-surface-container-low p-5 rounded-xl group hover:bg-surface-container transition-colors duration-300">
                   <div className="flex justify-between items-start">
                     <div className="flex gap-4">
                       <div className="flex items-center justify-center bg-surface-container-highest w-14 h-14 rounded-lg">
-                        <span className="material-symbols-outlined text-primary text-2xl">add_circle</span>
+                        <span className="material-symbols-outlined text-primary text-2xl">celebration</span>
                       </div>
                       <div>
-                        <div className="font-bold text-on-surface">Add-ons</div>
-                        <div className="text-sm text-on-surface-variant">Enhance your deliveries</div>
+                        <div className="font-bold text-on-surface">Festival Packages</div>
+                        <div className="text-sm text-on-surface-variant">Curated kits for every ritual</div>
                       </div>
                     </div>
                     <span className="material-symbols-outlined text-outline opacity-40 group-hover:opacity-100 transition-opacity">

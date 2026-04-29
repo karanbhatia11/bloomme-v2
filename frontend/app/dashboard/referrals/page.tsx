@@ -132,10 +132,10 @@ export default function ReferralsPage() {
                   <span className="material-symbols-outlined text-base">dashboard</span>Dashboard
                 </a>
                 <a href="/dashboard/subscriptions" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
-                  <span className="material-symbols-outlined text-base">loyalty</span>Subscriptions
+                  <span className="material-symbols-outlined text-base">loyalty</span>Subscriptions & Add-ons
                 </a>
-                <a href="/dashboard/add-ons" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
-                  <span className="material-symbols-outlined text-base">featured_video</span>Add-ons
+                <a href="/dashboard/festival-packages" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
+                  <span className="material-symbols-outlined text-base">celebration</span>Festival Packages
                 </a>
                 <a href="/dashboard/calendar" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
                   <span className="material-symbols-outlined text-base">calendar_today</span>Calendar
@@ -250,7 +250,7 @@ export default function ReferralsPage() {
             </span>
             Subscriptions
           </a>
-          <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium leading-relaxed hover:bg-[#ffdcc3]/50 transition-all" href="/dashboard/add-ons">
+          <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium leading-relaxed hover:bg-[#ffdcc3]/50 transition-all" href="/dashboard/festival-packages">
             <span className="material-symbols-outlined">featured_video</span>
             Add-ons
           </a>

@@ -117,13 +117,23 @@ export function getCalendarStartOffset(): number {
   // Convert to IST (UTC+5:30)
   const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
   const hours = istTime.getHours();
-  const minutes = istTime.getMinutes();
 
-  // Check if time is >= 5 PM (17:00)
-  if (hours >= 17) {
-    return 2; // After 5 PM: today+2
+  const baseOffset = hours >= 17 ? 2 : 1;
+
+  // Enforce May 1, 2026 as the earliest delivery date
+  const launchDate = new Date('2026-05-01T00:00:00');
+  const earliest = new Date(istTime);
+  earliest.setDate(earliest.getDate() + baseOffset);
+  earliest.setHours(0, 0, 0, 0);
+
+  if (earliest < launchDate) {
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const today = new Date(istTime);
+    today.setHours(0, 0, 0, 0);
+    return Math.ceil((launchDate.getTime() - today.getTime()) / msPerDay);
   }
-  return 1; // Before 5 PM: today+1
+
+  return baseOffset;
 }
 
 /**

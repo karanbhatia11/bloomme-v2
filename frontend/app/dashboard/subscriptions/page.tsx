@@ -129,8 +129,8 @@ export default function SubscriptionsPage() {
               {mobileMenuOpen && (
                 <div className="absolute left-0 top-full mt-1 w-52 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/10 py-2 z-50">
                   <a href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors"><span className="material-symbols-outlined text-base">dashboard</span>Dashboard</a>
-                  <a href="/dashboard/subscriptions" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-primary bg-primary/5"><span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>loyalty</span>Subscriptions</a>
-                  <a href="/dashboard/add-ons" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors"><span className="material-symbols-outlined text-base">featured_video</span>Add-ons</a>
+                  <a href="/dashboard/subscriptions" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-primary bg-primary/5"><span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>loyalty</span>Subscriptions & Add-ons</a>
+                  <a href="/dashboard/festival-packages" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors"><span className="material-symbols-outlined text-base">celebration</span>Festival Packages</a>
                   <a href="/dashboard/calendar" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors"><span className="material-symbols-outlined text-base">calendar_today</span>Calendar</a>
                   <a href="/dashboard/referrals" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors"><span className="material-symbols-outlined text-base">redeem</span>Referrals</a>
                   <a href="/dashboard/settings" className="flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors"><span className="material-symbols-outlined text-base">settings</span>Settings</a>
@@ -144,7 +144,7 @@ export default function SubscriptionsPage() {
           <div className="flex items-center gap-3">
             <div className="hidden md:flex gap-8 mr-4">
               <Link className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="/dashboard">Dashboard</Link>
-              <a className="text-[#C4A052] font-bold border-b-2 border-[#C4A052]" href="#">Subscriptions</a>
+              <a className="text-[#C4A052] font-bold border-b-2 border-[#C4A052]" href="#">Subscriptions & Add-ons</a>
               <Link className="text-on-surface-variant font-semibold tracking-tight hover:text-[#C4A052] transition-colors" href="/contact">Support</Link>
             </div>
             <div className="relative">
@@ -188,8 +188,8 @@ export default function SubscriptionsPage() {
           <div className="text-xs text-on-surface-variant font-medium">Premium Floral Management</div>
         </div>
         <nav className="flex-grow space-y-1">
-          <a className="flex items-center gap-3 px-4 py-3 bg-[#ffdcc3] text-on-surface rounded-lg mx-2 text-sm font-medium" href="/dashboard/subscriptions"><span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>loyalty</span>Subscriptions</a>
-          <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium hover:bg-[#ffdcc3]/50 transition-all" href="/dashboard/add-ons"><span className="material-symbols-outlined">featured_video</span>Add-ons</a>
+          <a className="flex items-center gap-3 px-4 py-3 bg-[#ffdcc3] text-on-surface rounded-lg mx-2 text-sm font-medium" href="/dashboard/subscriptions"><span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>loyalty</span>Subscriptions & Add-ons</a>
+          <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium hover:bg-[#ffdcc3]/50 transition-all" href="/dashboard/festival-packages"><span className="material-symbols-outlined">celebration</span>Festival Packages</a>
           <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium hover:bg-[#ffdcc3]/50 transition-all" href="/dashboard/calendar"><span className="material-symbols-outlined">calendar_today</span>Calendar</a>
           <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium hover:bg-[#ffdcc3]/50 transition-all" href="/dashboard/referrals"><span className="material-symbols-outlined">redeem</span>Referrals</a>
           <a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant mx-2 text-sm font-medium hover:bg-[#ffdcc3]/50 transition-all" href="/dashboard/settings"><span className="material-symbols-outlined">settings</span>Settings</a>
@@ -275,19 +275,22 @@ export default function SubscriptionsPage() {
                           <div className="flex items-center gap-2">
                             <p className="text-xl font-bold text-on-surface">₹{(() => {
                               const pDays = sub.customSchedule?.length || 30;
-                              const pTotal = Math.round(sub.price / 30) * pDays;
+                              const pTotal = Math.round(sub.planUnitPrice ?? sub.price) * pDays;
                               const aTotal = (sub.addOns ?? []).reduce((s, a) => s + a.price * (a.deliveryCount ?? 1), 0);
-                              return (pTotal + aTotal).toLocaleString();
+                              const discount = sub.creditsDiscount ?? 0;
+                              return Math.max(0, pTotal + aTotal - discount).toLocaleString();
                             })()}</p>
                             <div className="relative">
                               <button onClick={() => setPriceInfoOpen(priceInfoOpen === sub.id ? null : sub.id)}
                                 className="w-5 h-5 rounded-full border border-on-surface-variant/50 text-on-surface-variant text-[10px] font-bold flex items-center justify-center hover:bg-surface-container transition-colors flex-shrink-0">i</button>
                               {priceInfoOpen === sub.id && (() => {
                                 const planDays = (sub.customSchedule && sub.customSchedule.length > 0) ? sub.customSchedule.length : 30;
-                                const perDay = Math.round(sub.price / 30);
+                                const perDay = Math.round(sub.planUnitPrice ?? sub.price);
                                 const planTotal = perDay * planDays;
                                 const addonEntries = (sub.addOns ?? []).map(a => [a.name, { price: a.price, count: a.deliveryCount ?? 1 }] as const);
                                 const addonTotal = addonEntries.reduce((s, [, { price, count }]) => s + price * count, 0);
+                                const creditsDiscount = sub.creditsDiscount ?? 0;
+                                const grandTotal = Math.max(0, planTotal + addonTotal - creditsDiscount);
                                 return (
                                   <div className="absolute left-0 top-7 w-72 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/10 p-4 z-50 text-sm">
                                     <div className="flex justify-between items-start py-1.5 border-b border-outline-variant/10">
@@ -300,7 +303,13 @@ export default function SubscriptionsPage() {
                                         <span className="text-right font-medium text-on-surface">₹{price}/day × {count} {count === 1 ? "day" : "days"}<br /><span className="text-xs text-on-surface-variant">= ₹{(price * count).toLocaleString()}</span></span>
                                       </div>
                                     ))}
-                                    <div className="flex justify-between items-center pt-2 font-bold text-on-surface"><span>Total</span><span>₹{(planTotal + addonTotal).toLocaleString()}</span></div>
+                                    {creditsDiscount > 0 && (
+                                      <div className="flex justify-between items-center py-1.5 border-b border-outline-variant/10">
+                                        <span className="text-on-surface-variant">Bloom Credits</span>
+                                        <span className="text-green-600 font-medium">−₹{creditsDiscount.toLocaleString()}</span>
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between items-center pt-2 font-bold text-on-surface"><span>Total Paid</span><span>₹{grandTotal.toLocaleString()}</span></div>
                                   </div>
                                 );
                               })()}
@@ -398,7 +407,7 @@ export default function SubscriptionsPage() {
               <span className="material-symbols-outlined text-6xl text-outline mb-4">redeem</span>
               <h2 className="text-2xl font-bold text-on-surface mb-2">No add-on orders yet</h2>
               <p className="text-on-surface-variant mb-8">Add standalone flower add-ons to your deliveries.</p>
-              <Link href="/dashboard/add-ons" className="bg-primary text-on-primary px-8 py-3 rounded-lg font-bold hover:scale-[1.02] transition-all">Browse Add-Ons</Link>
+              <Link href="/dashboard/festival-packages" className="bg-primary text-on-primary px-8 py-3 rounded-lg font-bold hover:scale-[1.02] transition-all">Browse Add-Ons</Link>
             </div>
           ) : (
             <div className="grid grid-cols-12 gap-6">

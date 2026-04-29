@@ -14,6 +14,9 @@ export interface Subscription {
   planType: string;
   status: "active" | "paused" | "cancelled";
   price: number;
+  planUnitPrice?: number;
+  creditsUsed?: number;
+  creditsDiscount?: number;
   addOnsPrice?: number;
   totalPrice?: number;
   addOns?: AddOn[];

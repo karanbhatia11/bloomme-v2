@@ -112,21 +112,20 @@ router.post('/create', optionalAuth as any, async (req, res) => {
         // If the customer record already had a user_id (existing user checking out as guest), use it
         const effectiveUserId = customerResult.rows[0].user_id || user_id;
 
-        // Insert address linked to user (if authenticated) or standalone (if guest)
+        // Insert address linked to customer record
         if (customer.addressLine1 && customer.suburb && customer.postcode) {
             await pool.query(
-                `INSERT INTO addresses (user_id, full_name, phone, house_number, street, area, city, pin_code, instructions)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                `INSERT INTO addresses (customer_id, address_line1, address_line2, suburb, postcode, delivery_notes, time_slot, building_type)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
                 [
-                    user_id || null,
-                    customer.name,
-                    customer.phone,
-                    customer.houseNumber || customer.addressLine1,
-                    customer.street || customer.addressLine1,
-                    customer.area || customer.addressLine2 || '',
-                    customer.city || customer.suburb,
-                    customer.pinCode || customer.postcode,
+                    customerId,
+                    customer.addressLine1,
+                    customer.addressLine2 || null,
+                    customer.suburb,
+                    customer.postcode,
                     customer.deliveryNotes || null,
+                    customer.timeSlot || '5:30 to 6:30',
+                    customer.buildingType || 'house',
                 ]
             );
         }
@@ -503,13 +502,15 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
 
             if (customer?.email) {
                 const addrResult = await pool.query(
-                    `SELECT house_number, street, area, city, pin_code FROM addresses
-                     WHERE user_id = $1 ORDER BY id DESC LIMIT 1`,
-                    [user_id || -1]
+                    `SELECT a.address_line1, a.address_line2, a.suburb, a.postcode
+                     FROM addresses a
+                     JOIN customers c ON c.id = a.customer_id
+                     WHERE c.id = $1 ORDER BY a.id DESC LIMIT 1`,
+                    [order.customer_id || -1]
                 );
                 const addr = addrResult.rows[0];
                 const addressStr = addr
-                    ? [addr.house_number, addr.street, addr.area, addr.city, addr.pin_code].filter(Boolean).join(', ')
+                    ? [addr.address_line1, addr.address_line2, addr.suburb, addr.postcode].filter(Boolean).join(', ')
                     : undefined;
 
                 // Fetch order items for email

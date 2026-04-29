@@ -205,10 +205,12 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
     try {
         const user_id = (req as any).user.id;
         const result = await pool.query(
-            `SELECT id, plan_type, status, price, delivery_days, start_date, custom_schedule, created_at
-             FROM subscriptions
-             WHERE user_id = $1
-             ORDER BY created_at DESC`,
+            `SELECT s.id, s.plan_type, s.status, s.price, s.delivery_days, s.start_date, s.custom_schedule, s.created_at,
+                    p.price AS plan_unit_price
+             FROM subscriptions s
+             LEFT JOIN plans p ON p.name = s.plan_type
+             WHERE s.user_id = $1
+             ORDER BY s.created_at DESC`,
             [user_id]
         );
 
@@ -295,11 +297,30 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
                 if (!deliveryStatuses[date]) deliveryStatuses[date] = d.status;
             }
 
+            const planUnitPrice = row.plan_unit_price ? parseFloat(row.plan_unit_price) : basePrice;
+
+            // Fetch credits redeemed for the order that created this subscription
+            const creditsResult = await pool.query(
+                `SELECT COALESCE(SUM(ABS(bct.amount)), 0) AS credits_used
+                 FROM bloom_credit_transactions bct
+                 JOIN orders o ON o.id = bct.order_id
+                 JOIN order_items oi ON oi.order_id = o.id
+                 WHERE oi.item_type = 'subscription'
+                   AND oi.item_id = $1
+                   AND bct.type = 'redeem'`,
+                [row.id]
+            );
+            const creditsUsed = parseInt(creditsResult.rows[0]?.credits_used || 0);
+            const creditsDiscount = parseFloat((creditsUsed * 0.10).toFixed(2));
+
             return {
                 id: row.id.toString(),
                 planType: row.plan_type,
                 status: row.status,
                 price: basePrice,
+                planUnitPrice,
+                creditsUsed,
+                creditsDiscount,
                 addOnsPrice: addOnsPrice,
                 totalPrice: totalPrice,
                 addOns: addOns,
@@ -643,7 +664,7 @@ router.patch('/:subscriptionId/plan', authenticateToken as any, async (req, res)
         }
 
         // Get new plan price
-        const plans: Record<string, number> = { Traditional: 1770, Divine: 2670, Celestial: 5370 };
+        const plans: Record<string, number> = { Traditional: 59, Divine: 89, Celestial: 179 };
         const newPrice = plans[planType] || plans.BASIC;
 
         await pool.query(

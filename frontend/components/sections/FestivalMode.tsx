@@ -90,7 +90,7 @@ export const FestivalMode: React.FC = () => {
       try {
         const response = await fetch('/api/admin/page-content?page=home');
         if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+          return; // silently use fallback FESTIVAL_DETAILS
         }
 
         const text = await response.text();

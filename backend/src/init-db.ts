@@ -350,6 +350,135 @@ const initDb = async () => {
             LEFT JOIN subscriptions s ON s.user_id = c.user_id
             GROUP BY c.id;
 
+            -- Auth token tables
+            CREATE TABLE IF NOT EXISTS email_verification_tokens (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                token TEXT NOT NULL,
+                expires_at TIMESTAMPTZ NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                token TEXT NOT NULL,
+                expires_at TIMESTAMPTZ NOT NULL,
+                used BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS refresh_tokens (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                token TEXT NOT NULL,
+                expires_at TIMESTAMPTZ NOT NULL,
+                revoked BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- Delivery ops tables
+            CREATE TABLE IF NOT EXISTS delivery_schedules (
+                id SERIAL PRIMARY KEY,
+                order_item_id INTEGER REFERENCES order_items(id) ON DELETE CASCADE,
+                frequency TEXT,
+                interval_value INTEGER,
+                day_of_week TEXT,
+                start_date DATE,
+                end_date DATE,
+                schedule_type TEXT,
+                custom_dates DATE[],
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS delivery_preferences (
+                id SERIAL PRIMARY KEY,
+                address_id INTEGER REFERENCES addresses(id) ON DELETE CASCADE,
+                time_slot TEXT,
+                notes TEXT,
+                building_type TEXT,
+                preferred_day_of_week TEXT,
+                skip_weekends BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS delivery_items (
+                id SERIAL PRIMARY KEY,
+                delivery_id INTEGER NOT NULL REFERENCES deliveries(id) ON DELETE CASCADE,
+                item_type TEXT,
+                item_ref_id INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- Bloom credits / loyalty
+            CREATE TABLE IF NOT EXISTS bloom_credit_transactions (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                amount DECIMAL NOT NULL,
+                type TEXT NOT NULL,
+                order_id INTEGER REFERENCES orders(id),
+                description TEXT,
+                expires_at TIMESTAMPTZ,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- Plan → product mapping
+            CREATE TABLE IF NOT EXISTS plan_product_map (
+                id SERIAL PRIMARY KEY,
+                plan_id INTEGER NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
+                product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+                quantity INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- Site content (generic section-based CMS)
+            CREATE TABLE IF NOT EXISTS site_content (
+                id SERIAL PRIMARY KEY,
+                section TEXT NOT NULL UNIQUE,
+                content JSONB NOT NULL DEFAULT '{}',
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- Missing columns on existing tables
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_notes TEXT;
+
+            ALTER TABLE add_ons ADD COLUMN IF NOT EXISTS icon TEXT;
+
+            ALTER TABLE plans ADD COLUMN IF NOT EXISTS original_price DECIMAL;
+            ALTER TABLE plans ADD COLUMN IF NOT EXISTS duration_unit TEXT;
+
+            ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS plan_type TEXT;
+
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS delivery_time_slot TEXT;
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id);
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS full_name TEXT;
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS phone TEXT;
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS house_number TEXT;
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS street TEXT;
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS area TEXT;
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS city TEXT;
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS pin_code TEXT;
+            ALTER TABLE addresses ADD COLUMN IF NOT EXISTS instructions TEXT;
+            CREATE INDEX IF NOT EXISTS idx_addresses_user_id ON addresses(user_id);
+
+            ALTER TABLE order_items ADD COLUMN IF NOT EXISTS unit_price DECIMAL;
+            ALTER TABLE order_items ADD COLUMN IF NOT EXISTS price_type TEXT;
+
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS rating INTEGER;
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS rating_comment TEXT;
+
+            ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS delivery_schedule_id INTEGER REFERENCES delivery_schedules(id);
+            ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS order_item_id INTEGER REFERENCES order_items(id);
+            ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1;
+            ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS delivered_at TIMESTAMPTZ;
+            ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS skip_reason TEXT;
+            ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS notes TEXT;
+            ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS unit_price DECIMAL;
+            ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS total_price DECIMAL;
+            ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS failed_reason TEXT;
+            ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
             -- Initial App Config
             INSERT INTO app_config (key, value) VALUES ('site_mode', '{"mode": "coming_soon"}') ON CONFLICT (key) DO NOTHING;
         `);
@@ -359,9 +488,9 @@ const initDb = async () => {
         if (parseInt(plansCount.rows[0].count) === 0) {
             await pool.query(`
                 INSERT INTO plans (name, tagline, price, image_url, features, is_popular) VALUES
-                ('BASIC', 'Traditional', 1499, '/images/basic.png', '["60–100g Fresh Marigolds", "3 Flower Varieties", "Eco Paper Bag Delivery"]', false),
-                ('PREMIUM', 'Divine', 2699, '/images/premium.png', '["150g Premium Variety", "Rose & Jasmine Mix", "Delivered in Bloomme Box"]', true),
-                ('ELITE', 'Celestial', 4499, '/images/elite.png', '["200g Exotic Offerings", "Lotus & Seasonal Specials", "Luxury Bloomme Box"]', false);
+                ('Traditional', 'Traditional', 59, '/images/basic.png', '["60–100g Fresh Marigolds", "3 Flower Varieties", "Eco Paper Bag Delivery"]', false),
+                ('Divine', 'Divine', 89, '/images/premium.png', '["150g Premium Variety", "Rose & Jasmine Mix", "Delivered in Bloomme Box"]', true),
+                ('Celestial', 'Celestial', 179, '/images/elite.png', '["200g Exotic Offerings", "Lotus & Seasonal Specials", "Luxury Bloomme Box"]', false);
             `);
             console.log('Subscription plans seeded successfully');
         }
