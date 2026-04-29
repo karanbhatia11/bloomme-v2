@@ -463,6 +463,7 @@ const initDb = async () => {
             CREATE INDEX IF NOT EXISTS idx_addresses_user_id ON addresses(user_id);
 
             -- New address schema columns (guest-friendly, customer_id based)
+            ALTER TABLE addresses ALTER COLUMN full_name DROP NOT NULL;
             ALTER TABLE addresses ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id);
             ALTER TABLE addresses ADD COLUMN IF NOT EXISTS address_line1 TEXT;
             ALTER TABLE addresses ADD COLUMN IF NOT EXISTS address_line2 TEXT;
