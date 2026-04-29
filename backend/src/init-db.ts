@@ -462,8 +462,14 @@ const initDb = async () => {
             ALTER TABLE addresses ADD COLUMN IF NOT EXISTS instructions TEXT;
             CREATE INDEX IF NOT EXISTS idx_addresses_user_id ON addresses(user_id);
 
-            -- New address schema columns (guest-friendly, customer_id based)
+            -- New address schema: drop NOT NULL from old columns, add new columns
             ALTER TABLE addresses ALTER COLUMN full_name DROP NOT NULL;
+            ALTER TABLE addresses ALTER COLUMN phone DROP NOT NULL;
+            ALTER TABLE addresses ALTER COLUMN house_number DROP NOT NULL;
+            ALTER TABLE addresses ALTER COLUMN street DROP NOT NULL;
+            ALTER TABLE addresses ALTER COLUMN area DROP NOT NULL;
+            ALTER TABLE addresses ALTER COLUMN city DROP NOT NULL;
+            ALTER TABLE addresses ALTER COLUMN pin_code DROP NOT NULL;
             ALTER TABLE addresses ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id);
             ALTER TABLE addresses ADD COLUMN IF NOT EXISTS address_line1 TEXT;
             ALTER TABLE addresses ADD COLUMN IF NOT EXISTS address_line2 TEXT;
