@@ -24,6 +24,7 @@ interface Delivery {
     plan_price: number | null;
     subscription_id: number | null;
     order_id: number | null;
+    bloomme_order_id: string | null;
     delivery_status: string;
     payment_status: string | null;
     addon_total: number;
@@ -189,6 +190,7 @@ export default function DeliveriesTab({ token }: DeliveriesTabProps) {
                                 <table className="w-full min-w-full">
                                     <thead>
                                         <tr className="text-left text-xs text-gray-500 border-b border-gray-100">
+                                            <th className="px-4 sm:px-6 py-2.5 font-medium whitespace-nowrap">BLM ID</th>
                                             <th className="px-4 sm:px-6 py-2.5 font-medium whitespace-nowrap">Customer</th>
                                             <th className="px-4 sm:px-6 py-2.5 font-medium whitespace-nowrap">Address</th>
                                             <th className="px-4 sm:px-6 py-2.5 font-medium whitespace-nowrap">Type</th>
@@ -201,6 +203,11 @@ export default function DeliveriesTab({ token }: DeliveriesTabProps) {
                                     <tbody className="divide-y divide-gray-50">
                                         {rows.map((d, i) => (
                                             <tr key={i} className="hover:bg-gray-50 transition-colors">
+                                                <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
+                                                    <span className="text-xs font-mono font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded">
+                                                        {d.bloomme_order_id || '—'}
+                                                    </span>
+                                                </td>
                                                 <td className="px-4 sm:px-6 py-3">
                                                     <div className="font-medium text-sm text-gray-900">{d.customer_name || '—'}</div>
                                                     <div className="text-xs text-gray-500">{d.phone || '—'}</div>

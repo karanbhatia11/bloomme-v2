@@ -442,8 +442,8 @@ router.get('/delivery-manifest', async (req, res) => {
                 s.plan_type as plan_name,
                 COALESCE(p.price, s.price) as plan_price,
                 s.id as subscription_id,
-                (SELECT o.id FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id AND o.status = 'paid' WHERE oi2.item_type = 'subscription' AND oi2.item_id = s.id AND o.user_id = u.id LIMIT 1) as order_id,
-                'BLM-' || LPAD((SELECT o.id::text FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id AND o.status = 'paid' WHERE oi2.item_type = 'subscription' AND oi2.item_id = s.id AND o.user_id = u.id LIMIT 1), 6, '0') AS bloomme_order_id,
+                (SELECT o.id FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id JOIN plans pl ON pl.id = oi2.item_id WHERE oi2.item_type = 'subscription' AND pl.name = s.plan_type AND o.user_id = u.id ORDER BY o.id DESC LIMIT 1) as order_id,
+                'BLM-' || LPAD((SELECT o.id::text FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id JOIN plans pl ON pl.id = oi2.item_id WHERE oi2.item_type = 'subscription' AND pl.name = s.plan_type AND o.user_id = u.id ORDER BY o.id DESC LIMIT 1), 6, '0') AS bloomme_order_id,
                 CASE WHEN s.status = 'cancelled' THEN 'cancelled'
                      ELSE COALESCE(d.status, 'scheduled') END as delivery_status,
                 NULL::text as payment_status,
