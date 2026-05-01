@@ -276,7 +276,7 @@ export default function SubscriptionsPage() {
                             <p className="text-xl font-bold text-on-surface">₹{(() => {
                               const pDays = sub.customSchedule?.length || 30;
                               const pTotal = Math.round(sub.planUnitPrice ?? sub.price) * pDays;
-                              const aTotal = (sub.addOns ?? []).reduce((s, a) => s + a.price * (a.deliveryCount ?? 1), 0);
+                              const aTotal = (sub.addOns ?? []).reduce((s, a) => s + a.price * ((a as any).quantity ?? 1) * (a.deliveryCount ?? 1), 0);
                               const discount = sub.creditsDiscount ?? 0;
                               return Math.max(0, pTotal + aTotal - discount).toLocaleString();
                             })()}</p>
@@ -287,8 +287,8 @@ export default function SubscriptionsPage() {
                                 const planDays = (sub.customSchedule && sub.customSchedule.length > 0) ? sub.customSchedule.length : 30;
                                 const perDay = Math.round(sub.planUnitPrice ?? sub.price);
                                 const planTotal = perDay * planDays;
-                                const addonEntries = (sub.addOns ?? []).map(a => [a.name, { price: a.price, count: a.deliveryCount ?? 1 }] as const);
-                                const addonTotal = addonEntries.reduce((s, [, { price, count }]) => s + price * count, 0);
+                                const addonEntries = (sub.addOns ?? []).map(a => [a.name, { price: a.price, qty: (a as any).quantity ?? 1, count: a.deliveryCount ?? 1 }] as const);
+                                const addonTotal = addonEntries.reduce((s, [, { price, qty, count }]) => s + price * qty * count, 0);
                                 const creditsDiscount = sub.creditsDiscount ?? 0;
                                 const grandTotal = Math.max(0, planTotal + addonTotal - creditsDiscount);
                                 return (
@@ -297,10 +297,10 @@ export default function SubscriptionsPage() {
                                       <span className="text-on-surface-variant">Plan</span>
                                       <span className="text-right font-medium text-on-surface">₹{perDay}/day × {planDays} days<br /><span className="text-xs text-on-surface-variant">= ₹{planTotal.toLocaleString()}</span></span>
                                     </div>
-                                    {addonEntries.map(([name, { price, count }]) => (
+                                    {addonEntries.map(([name, { price, qty, count }]) => (
                                       <div key={name} className="flex justify-between items-start py-1.5 border-b border-outline-variant/10">
-                                        <span className="text-on-surface-variant mr-2 max-w-[6rem] leading-tight">{name}</span>
-                                        <span className="text-right font-medium text-on-surface">₹{price}/day × {count} {count === 1 ? "day" : "days"}<br /><span className="text-xs text-on-surface-variant">= ₹{(price * count).toLocaleString()}</span></span>
+                                        <span className="text-on-surface-variant mr-2 max-w-[6rem] leading-tight">{name}{qty > 1 ? ` ×${qty}` : ''}</span>
+                                        <span className="text-right font-medium text-on-surface">₹{price}{qty > 1 ? ` × ${qty}` : ''} × {count} {count === 1 ? "day" : "days"}<br /><span className="text-xs text-on-surface-variant">= ₹{(price * qty * count).toLocaleString()}</span></span>
                                       </div>
                                     ))}
                                     {creditsDiscount > 0 && (
@@ -351,15 +351,18 @@ export default function SubscriptionsPage() {
                           <div className="bg-surface-container-low p-4 rounded-lg col-span-2">
                             <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-3">Active Add-ons</p>
                             <div className="space-y-2">
-                              {sub.addOns.map(addon => (
-                                <div key={addon.id} className="flex items-center justify-between p-2 bg-primary/10 rounded">
-                                  <div>
-                                    <p className="text-sm font-semibold text-on-surface">{addon.name}</p>
-                                    {addon.oneOffDate && <p className="text-xs text-on-surface-variant">{fmtDate(addon.oneOffDate)}</p>}
+                              {sub.addOns.map(addon => {
+                                const qty = (addon as any).quantity ?? 1;
+                                return (
+                                  <div key={addon.id} className="flex items-center justify-between p-2 bg-primary/10 rounded">
+                                    <div>
+                                      <p className="text-sm font-semibold text-on-surface">{addon.name}{qty > 1 ? ` (×${qty})` : ''}</p>
+                                      {addon.oneOffDate && <p className="text-xs text-on-surface-variant">{fmtDate(addon.oneOffDate)}</p>}
+                                    </div>
+                                    <p className="text-sm font-bold text-primary">₹{(addon.price * qty).toLocaleString()}<span className="text-xs font-normal text-on-surface-variant">/delivery</span></p>
                                   </div>
-                                  <p className="text-sm font-bold text-primary">₹{addon.price.toLocaleString()}</p>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           </div>
                         )}

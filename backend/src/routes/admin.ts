@@ -403,11 +403,13 @@ router.get('/delivery-manifest', async (req, res) => {
         const { from_date, to_date } = req.query;
         let dateFilterSub = '';
         let dateFilterAddon = '';
+        let dateFilterSubAddon = '';
         let params: any[] = [];
 
         if (from_date && to_date) {
             dateFilterSub = 'AND sdd.delivery_date BETWEEN $1 AND $2';
             dateFilterAddon = 'AND d.delivery_date BETWEEN $1 AND $2';
+            dateFilterSubAddon = 'AND addon_day.delivery_date BETWEEN $1 AND $2';
             params = [from_date, to_date];
         }
 
@@ -420,15 +422,18 @@ router.get('/delivery-manifest', async (req, res) => {
                 FROM addon_delivery_dates add
                 GROUP BY add.subscription_addon_id, add.delivery_date
             )
-            -- Subscription deliveries
+            -- Subscription deliveries (plan-only or plan+addons on same day)
             SELECT
                 sdd.id as delivery_id,
                 sdd.delivery_date,
                 TO_CHAR(sdd.delivery_date, 'Day') as delivery_day,
                 'subscription' as order_type,
                 CASE WHEN EXISTS (
-                    SELECT 1 FROM subscription_add_ons sa
-                    WHERE sa.subscription_id = s.id AND (sa.status IS NULL OR sa.status = 'active')
+                    SELECT 1 FROM subscription_add_ons sa2
+                    JOIN addon_delivery_dates add2 ON add2.subscription_addon_id = sa2.id
+                    WHERE sa2.subscription_id = s.id
+                    AND add2.delivery_date = sdd.delivery_date
+                    AND (sa2.status IS NULL OR sa2.status = 'active')
                 ) THEN 'sub+addons' ELSE 'subscription' END as delivery_type,
                 u.name as customer_name,
                 u.id as user_id,
@@ -448,27 +453,42 @@ router.get('/delivery-manifest', async (req, res) => {
                      ELSE COALESCE(d.status, 'scheduled') END as delivery_status,
                 NULL::text as payment_status,
                 NULL::text as notes,
-                (SELECT COALESCE(SUM(ao.price), 0) FROM subscription_add_ons sa LEFT JOIN add_ons ao ON sa.add_on_id = ao.id WHERE sa.subscription_id = s.id) as addon_total,
-                COALESCE(p.price, s.price) + (SELECT COALESCE(SUM(ao.price), 0) FROM subscription_add_ons sa LEFT JOIN add_ons ao ON sa.add_on_id = ao.id WHERE sa.subscription_id = s.id) as total_amount,
                 (
-                    SELECT json_agg(json_build_object('name', ao.name, 'qty', 1))
-                    FROM subscription_add_ons sa
-                    LEFT JOIN add_ons ao ON sa.add_on_id = ao.id
-                    WHERE sa.subscription_id = s.id
+                    SELECT COALESCE(SUM(ao.price), 0)
+                    FROM subscription_add_ons sa2
+                    JOIN addon_delivery_dates add2 ON add2.subscription_addon_id = sa2.id
+                    LEFT JOIN add_ons ao ON sa2.add_on_id = ao.id
+                    WHERE sa2.subscription_id = s.id AND add2.delivery_date = sdd.delivery_date
+                ) as addon_total,
+                COALESCE(p.price, s.price) + (
+                    SELECT COALESCE(SUM(ao.price), 0)
+                    FROM subscription_add_ons sa2
+                    JOIN addon_delivery_dates add2 ON add2.subscription_addon_id = sa2.id
+                    LEFT JOIN add_ons ao ON sa2.add_on_id = ao.id
+                    WHERE sa2.subscription_id = s.id AND add2.delivery_date = sdd.delivery_date
+                ) as total_amount,
+                (
+                    SELECT json_agg(json_build_object('name', ao.name, 'qty', COALESCE(ac.qty, 1)))
+                    FROM subscription_add_ons sa2
+                    JOIN addon_counts ac ON ac.subscription_addon_id = sa2.id AND ac.delivery_date = sdd.delivery_date
+                    LEFT JOIN add_ons ao ON sa2.add_on_id = ao.id
+                    WHERE sa2.subscription_id = s.id
                 ) as addons
             FROM subscription_delivery_dates sdd
             LEFT JOIN subscriptions s ON sdd.subscription_id = s.id
             LEFT JOIN plans p ON p.name = s.plan_type
             LEFT JOIN users u ON s.user_id = u.id
             LEFT JOIN customers cust ON cust.user_id = s.user_id
-            LEFT JOIN addresses a ON a.customer_id = cust.id
+            LEFT JOIN LATERAL (
+                SELECT * FROM addresses WHERE customer_id = cust.id ORDER BY id LIMIT 1
+            ) a ON true
             LEFT JOIN deliveries d ON s.id = d.subscription_id AND sdd.delivery_date = d.delivery_date
             WHERE s.status IN ('active', 'cancelled')
             ${dateFilterSub}
 
             UNION ALL
 
-            -- Addon-only orders (one row per delivery date, expanded from order_items.custom_schedule_dates)
+            -- Addon-only standalone orders (order_type = 'addon', dates from custom_schedule_dates)
             SELECT
                 o.id as delivery_id,
                 d.delivery_date::date as delivery_date,
@@ -510,9 +530,102 @@ router.get('/delivery-manifest', async (req, res) => {
             JOIN orders o ON o.id = d.order_id
             LEFT JOIN users u ON o.user_id = u.id
             LEFT JOIN customers cust ON cust.user_id = o.user_id
-            LEFT JOIN addresses a ON a.customer_id = cust.id
+            LEFT JOIN LATERAL (
+                SELECT * FROM addresses WHERE customer_id = cust.id ORDER BY id LIMIT 1
+            ) a ON true
             WHERE o.order_type = 'addon' AND o.status = 'paid'
             ${dateFilterAddon}
+
+            UNION ALL
+
+            -- Subscription-linked addon deliveries on non-plan days (SUB+AO orders where addon dates differ from plan dates)
+            SELECT
+                MIN(sa.id) as delivery_id,
+                addon_day.delivery_date::date as delivery_date,
+                TO_CHAR(addon_day.delivery_date::date, 'Day') as delivery_day,
+                'addon_only' as order_type,
+                'addon_only' as delivery_type,
+                u.name as customer_name,
+                u.id as user_id,
+                u.phone,
+                a.address_line1 as house_number,
+                NULL::text as street,
+                a.address_line2 as area,
+                a.suburb as city,
+                a.postcode as pin_code,
+                cust.time_slot as delivery_slot,
+                NULL::text as plan_name,
+                NULL::numeric as plan_price,
+                s.id as subscription_id,
+                (SELECT o.id FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id JOIN plans pl ON pl.id = oi2.item_id WHERE oi2.item_type = 'subscription' AND pl.name = s.plan_type AND o.user_id = u.id ORDER BY o.id DESC LIMIT 1) as order_id,
+                'BLM-' || LPAD((SELECT o.id::text FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id JOIN plans pl ON pl.id = oi2.item_id WHERE oi2.item_type = 'subscription' AND pl.name = s.plan_type AND o.user_id = u.id ORDER BY o.id DESC LIMIT 1), 6, '0') AS bloomme_order_id,
+                CASE WHEN s.status = 'cancelled' THEN 'cancelled' ELSE 'scheduled' END as delivery_status,
+                NULL::text as payment_status,
+                NULL::text as notes,
+                (
+                    SELECT COALESCE(SUM(ao.price * COALESCE(oi_q.quantity, 1)), 0)
+                    FROM subscription_add_ons sa2
+                    JOIN addon_delivery_dates add2 ON add2.subscription_addon_id = sa2.id
+                    LEFT JOIN add_ons ao ON sa2.add_on_id = ao.id
+                    LEFT JOIN LATERAL (
+                        SELECT oi.quantity FROM order_items oi
+                        JOIN orders ord ON ord.id = oi.order_id
+                        WHERE oi.item_type = 'addon' AND oi.item_id = sa2.add_on_id
+                        AND ord.user_id = s.user_id
+                        ORDER BY ord.id DESC LIMIT 1
+                    ) oi_q ON true
+                    WHERE sa2.subscription_id = s.id AND add2.delivery_date = addon_day.delivery_date
+                ) as addon_total,
+                (
+                    SELECT COALESCE(SUM(ao.price * COALESCE(oi_q.quantity, 1)), 0)
+                    FROM subscription_add_ons sa2
+                    JOIN addon_delivery_dates add2 ON add2.subscription_addon_id = sa2.id
+                    LEFT JOIN add_ons ao ON sa2.add_on_id = ao.id
+                    LEFT JOIN LATERAL (
+                        SELECT oi.quantity FROM order_items oi
+                        JOIN orders ord ON ord.id = oi.order_id
+                        WHERE oi.item_type = 'addon' AND oi.item_id = sa2.add_on_id
+                        AND ord.user_id = s.user_id
+                        ORDER BY ord.id DESC LIMIT 1
+                    ) oi_q ON true
+                    WHERE sa2.subscription_id = s.id AND add2.delivery_date = addon_day.delivery_date
+                ) as total_amount,
+                (
+                    SELECT json_agg(json_build_object('name', ao.name, 'qty', COALESCE(oi_q.quantity, 1)))
+                    FROM subscription_add_ons sa2
+                    JOIN addon_delivery_dates add2 ON add2.subscription_addon_id = sa2.id
+                    LEFT JOIN add_ons ao ON sa2.add_on_id = ao.id
+                    LEFT JOIN LATERAL (
+                        SELECT oi.quantity FROM order_items oi
+                        JOIN orders ord ON ord.id = oi.order_id
+                        WHERE oi.item_type = 'addon' AND oi.item_id = sa2.add_on_id
+                        AND ord.user_id = s.user_id
+                        ORDER BY ord.id DESC LIMIT 1
+                    ) oi_q ON true
+                    WHERE sa2.subscription_id = s.id AND add2.delivery_date = addon_day.delivery_date
+                ) as addons
+            FROM (
+                SELECT DISTINCT sa.subscription_id, add_d.delivery_date
+                FROM subscription_add_ons sa
+                JOIN addon_delivery_dates add_d ON add_d.subscription_addon_id = sa.id
+                WHERE (sa.status IS NULL OR sa.status = 'active')
+                AND NOT EXISTS (
+                    SELECT 1 FROM subscription_delivery_dates sdd2
+                    WHERE sdd2.subscription_id = sa.subscription_id AND sdd2.delivery_date = add_d.delivery_date
+                )
+            ) addon_day
+            JOIN subscription_add_ons sa ON sa.subscription_id = addon_day.subscription_id
+            JOIN subscriptions s ON s.id = addon_day.subscription_id
+            LEFT JOIN users u ON s.user_id = u.id
+            LEFT JOIN customers cust ON cust.user_id = s.user_id
+            LEFT JOIN LATERAL (
+                SELECT * FROM addresses WHERE customer_id = cust.id ORDER BY id LIMIT 1
+            ) a ON true
+            WHERE s.status IN ('active', 'cancelled')
+            ${dateFilterSubAddon}
+            GROUP BY addon_day.delivery_date, s.id, u.name, u.id, u.phone,
+                     a.address_line1, a.address_line2, a.suburb, a.postcode,
+                     cust.time_slot, s.plan_type, s.status
 
             ORDER BY delivery_date, customer_name
         `, params);
