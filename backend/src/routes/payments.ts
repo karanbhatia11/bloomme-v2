@@ -382,7 +382,7 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
                         `INSERT INTO subscriptions (user_id, plan_type, price, delivery_days, status, start_date, custom_schedule, address_id, created_at)
                          VALUES ($1, $2, $3, $4, $5, CURRENT_DATE, $6, $7, CURRENT_TIMESTAMP)
                          RETURNING id`,
-                        [resolvedUserId, plan.name, plan.price, JSON.stringify([]), 'active', scheduleForDb, addressId]
+                        [resolvedUserId, plan.name, plan.price, JSON.stringify([]), 'active', scheduleForDb, order.address_id]
                     );
 
                     const subscriptionId = subResult.rows[0].id;
