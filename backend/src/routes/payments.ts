@@ -74,9 +74,9 @@ router.post('/create', optionalAuth as any, async (req, res) => {
             return res.status(400).json({ error: 'Customer details required' });
         }
 
-        // Create Razorpay order (skip if keys not configured or dev override)
+        // Create Razorpay order (skip if keys not configured)
         let razorpayOrderId: string;
-        if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET || process.env.DEV_PAYMENT_OVERRIDE === 'true') {
+        if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
             razorpayOrderId = `rzp_dev_${Date.now()}`;
         } else {
             try {
@@ -237,17 +237,11 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
 
         const order = orderCheck.rows[0];
 
-        // Verify Razorpay signature with secret key (skip if keys not configured or DEV_PAYMENT_OVERRIDE is set)
-        const devOverride = process.env.DEV_PAYMENT_OVERRIDE === 'true';
-        if (process.env.RAZORPAY_KEY_SECRET && !devOverride) {
-            const RAZORPAY_SECRET = process.env.RAZORPAY_KEY_SECRET;
-            if (!RAZORPAY_SECRET) {
-                return res.status(500).json({ error: 'Razorpay secret key not configured' });
-            }
-
+        // Verify Razorpay signature with secret key
+        if (process.env.RAZORPAY_KEY_SECRET) {
             const message = razorpayOrderId + '|' + razorpayPaymentId;
             const expectedSignature = crypto
-                .createHmac('sha256', RAZORPAY_SECRET)
+                .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
                 .update(message)
                 .digest('hex');
 
@@ -648,62 +642,6 @@ router.post('/webhook', async (req, res) => {
         res.json({ status: 'ok' });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
-    }
-});
-
-// POST /api/payments/test-signature-failure
-// Test signature verification failure (dev/local only)
-router.post('/test-signature-failure', async (req, res) => {
-    if (process.env.NODE_ENV !== 'development') {
-        return res.status(403).json({ error: 'This endpoint is only available in development' });
-    }
-
-    return res.status(400).json({ error: 'Invalid payment signature - signature verification failed' });
-});
-
-// GET /api/payments/test
-// Test Razorpay credentials and connection (dev only)
-router.get('/test', async (req, res) => {
-    const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
-    const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
-
-    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-        return res.status(400).json({
-            error: 'Razorpay credentials not configured',
-            hasKeyId: !!RAZORPAY_KEY_ID,
-            hasKeySecret: !!RAZORPAY_KEY_SECRET
-        });
-    }
-
-    try {
-        const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
-        const response = await fetch('https://api.razorpay.com/v1/orders', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Basic ${auth}`,
-                'Content-Type': 'application/json',
-            },
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            return res.status(response.status).json({
-                error: 'Razorpay API error',
-                status: response.status,
-                details: error
-            });
-        }
-
-        return res.json({
-            success: true,
-            message: 'Razorpay credentials are valid',
-            keyIdPrefix: RAZORPAY_KEY_ID.substring(0, 15) + '...'
-        });
-    } catch (err: any) {
-        return res.status(500).json({
-            error: 'Connection test failed',
-            message: err.message
-        });
     }
 });
 

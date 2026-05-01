@@ -173,125 +173,6 @@ export default function CheckoutPayPage() {
   //   } catch (err) { console.error("Subscription creation error:", err); }
   // };
 
-  // ── Dev test payment (skip Razorpay, guest or authenticated) ─────────────
-  const handleDevPay = async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      console.log('Dev payment initiated. preview:', !!preview, 'cart.planId:', cart.planId);
-
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-
-      // Map plan type string to a numeric plan ID for testing
-      const planIdMap: Record<string, number> = {
-        "TRADITIONAL": 1,
-        "DIVINE": 2,
-        "CELESTIAL": 3,
-      };
-
-      // Step 1: Create order (works for both guest and authenticated users)
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      // Extract delivery dates from preview for dev payment
-      let customScheduleForDev: string[] = [];
-      if (preview && cart.planId) {
-        const datesWithSubscription = Object.entries(preview.queue)
-          .filter(([_, items]) => items.some(item => item.type === "subscription"))
-          .map(([date]) => date)
-          .sort();
-        customScheduleForDev = datesWithSubscription;
-        console.log('customScheduleForDev extracted:', customScheduleForDev);
-      } else {
-        console.log('Skipping schedule extraction: preview=', preview, 'planId=', cart.planId);
-      }
-
-      const createOrderRes = await fetch("/api/payments/create", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          planId: cart.planId ? planIdMap[cart.planId] || null : null,
-          deliveryDays: cart.frequency === "weekly" ? cart.deliveryDays : [],
-          addOns: cart.addons.map(a => {
-            const sched = cart.addonSchedules[a.id] ?? { mode: "same" };
-            let multiplier = 1;
-            if (sched.mode === "same") {
-              multiplier = cart.selectedDeliveryDatesCount || 1;
-            } else if (sched.mode === "different" && sched.customDates) {
-              multiplier = sched.customDates.length || 1;
-            }
-            return {
-              id: a.id,
-              quantity: a.quantity,
-              price: a.price * a.quantity * multiplier,
-              schedule: cart.addonSchedules[a.id] || null,
-            };
-          }),
-          promoCode: null,
-          referralCode: null,
-          customer: cart.customer,
-          subtotal: cart.planPrice || 0,
-          tax: 0,
-          promoDiscount: 0,
-          referralDiscount: 0,
-          total: getTotal(),
-          customSchedule: customScheduleForDev.length > 0 ? customScheduleForDev : null,
-        }),
-      });
-
-      if (!createOrderRes.ok) {
-        const errData = await createOrderRes.json().catch(() => ({}));
-        setError(errData.error || "Failed to create order");
-        setLoading(false);
-        return;
-      }
-
-      const { orderId, bloommeOrderId: devBloommeOrderId, razorpayOrderId } = await createOrderRes.json();
-
-      // Step 2: Verify with dev data
-      const verifyHeaders: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) {
-        verifyHeaders["Authorization"] = `Bearer ${token}`;
-      }
-
-      const verifyRes = await fetch("/api/payments/verify", {
-        method: "POST",
-        headers: verifyHeaders,
-        body: JSON.stringify({
-          orderId,
-          razorpayOrderId,
-          razorpayPaymentId: `dev_payment_${Date.now()}`,
-          razorpaySignature: "dev_signature",
-          customer: cart.customer, // Add guest customer info
-        }),
-      });
-
-      if (verifyRes.ok) {
-        const verifyData = await verifyRes.json();
-        // Only create subscription for logged-in users
-        // Guests will create account after payment
-        // if (!verifyData.isGuest) { await createSubscription(); } // subscription created in payments/verify
-        sessionStorage.setItem("confirmedOrder", JSON.stringify(buildOrderSummary(`dev_payment_${Date.now()}`, orderId, devBloommeOrderId)));
-        clearCart();
-        router.push("/checkout/confirmed");
-      } else {
-        const errData = await verifyRes.json();
-        setError(errData.error || "Dev payment verification failed.");
-      }
-    } catch (err: any) {
-      setError(err.message || "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // ── Razorpay payment handler ───────────────────────────────────────────────
   const handlePay = async () => {
     setLoading(true);
@@ -358,7 +239,10 @@ export default function CheckoutPayPage() {
         }),
       });
 
-      if (!orderRes.ok) throw new Error("Failed to create order");
+      if (!orderRes.ok) {
+        const errData = await orderRes.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to create order");
+      }
       const { orderId, bloommeOrderId: rzpBloommeOrderId, razorpayOrderId, amount, currency } = await orderRes.json();
 
       // Get Razorpay key from environment (this should be set in your NEXT_PUBLIC_ env var)
@@ -881,15 +765,7 @@ export default function CheckoutPayPage() {
                 </>
               )}
             </button>
-            {process.env.NODE_ENV === "development" && (
-              <button
-                onClick={handleDevPay}
-                disabled={loading || hasInvalidAddons}
-                className="w-full md:w-auto px-6 py-2 rounded-full bg-slate-600 text-white font-semibold text-sm hover:bg-slate-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                Dev: Complete
-              </button>
-            )}
+
             {hasInvalidAddons && (
               <p className="text-xs text-red-600 font-medium">
                 Please select delivery dates for {addonsNeedingDates.length} add-on{addonsNeedingDates.length > 1 ? "s" : ""}
