@@ -112,11 +112,13 @@ router.post('/create', optionalAuth as any, async (req, res) => {
         // If the customer record already had a user_id (existing user checking out as guest), use it
         const effectiveUserId = customerResult.rows[0].user_id || user_id;
 
-        // Insert address linked to customer record
+        // Insert address linked to customer record and capture its ID
+        let addressId: number | null = null;
         if (customer.addressLine1 && customer.suburb && customer.postcode) {
-            await pool.query(
+            const addrResult = await pool.query(
                 `INSERT INTO addresses (customer_id, address_line1, address_line2, suburb, postcode, delivery_notes, time_slot, building_type)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                 RETURNING id`,
                 [
                     customerId,
                     customer.addressLine1,
@@ -128,16 +130,18 @@ router.post('/create', optionalAuth as any, async (req, res) => {
                     customer.buildingType || 'house',
                 ]
             );
+            addressId = addrResult.rows[0].id;
         }
 
         // Create order record in DB
         const orderResult = await pool.query(
-            `INSERT INTO orders (user_id, customer_id, razorpay_order_id, amount, currency, status, order_type, promo_code, promo_discount, referral_discount, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP)
+            `INSERT INTO orders (user_id, customer_id, address_id, razorpay_order_id, amount, currency, status, order_type, promo_code, promo_discount, referral_discount, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP)
              RETURNING id`,
             [
                 effectiveUserId,
                 customerId,
+                addressId,
                 razorpayOrderId,
                 Math.round(total * 100),
                 'INR',
@@ -381,10 +385,10 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
                     const scheduleForDb = schedule ? (typeof schedule === 'string' ? schedule : JSON.stringify(schedule)) : null;
 
                     const subResult = await pool.query(
-                        `INSERT INTO subscriptions (user_id, plan_type, price, delivery_days, status, start_date, custom_schedule, created_at)
-                         VALUES ($1, $2, $3, $4, $5, CURRENT_DATE, $6, CURRENT_TIMESTAMP)
+                        `INSERT INTO subscriptions (user_id, plan_type, price, delivery_days, status, start_date, custom_schedule, address_id, created_at)
+                         VALUES ($1, $2, $3, $4, $5, CURRENT_DATE, $6, $7, CURRENT_TIMESTAMP)
                          RETURNING id`,
-                        [resolvedUserId, plan.name, plan.price, JSON.stringify([]), 'active', scheduleForDb]
+                        [resolvedUserId, plan.name, plan.price, JSON.stringify([]), 'active', scheduleForDb, addressId]
                     );
 
                     const subscriptionId = subResult.rows[0].id;
@@ -433,8 +437,8 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
                         for (const addonItem of addonItems.rows) {
                             // Insert into subscription_add_ons
                             const subAddonResult = await pool.query(
-                                `INSERT INTO subscription_add_ons (subscription_id, add_on_id) VALUES ($1, $2) RETURNING id`,
-                                [subscriptionId, addonItem.item_id]
+                                `INSERT INTO subscription_add_ons (subscription_id, add_on_id, quantity) VALUES ($1, $2, $3) RETURNING id`,
+                                [subscriptionId, addonItem.item_id, addonItem.quantity || 1]
                             );
 
                             const subAddonId = subAddonResult.rows[0].id;

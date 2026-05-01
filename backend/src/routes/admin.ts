@@ -479,9 +479,10 @@ router.get('/delivery-manifest', async (req, res) => {
             LEFT JOIN plans p ON p.name = s.plan_type
             LEFT JOIN users u ON s.user_id = u.id
             LEFT JOIN customers cust ON cust.user_id = s.user_id
-            LEFT JOIN LATERAL (
-                SELECT * FROM addresses WHERE customer_id = cust.id ORDER BY id LIMIT 1
-            ) a ON true
+            LEFT JOIN addresses a ON a.id = COALESCE(
+                s.address_id,
+                (SELECT id FROM addresses WHERE customer_id = cust.id ORDER BY id LIMIT 1)
+            )
             LEFT JOIN deliveries d ON s.id = d.subscription_id AND sdd.delivery_date = d.delivery_date
             WHERE s.status IN ('active', 'cancelled')
             ${dateFilterSub}
@@ -515,8 +516,8 @@ router.get('/delivery-manifest', async (req, res) => {
                      ELSE 'scheduled' END as delivery_status,
                 o.status as payment_status,
                 NULL::text as notes,
-                (SELECT COALESCE(SUM(oi2.price * oi2.quantity) / 100.0, 0) FROM order_items oi2 WHERE oi2.order_id = o.id AND oi2.item_type = 'addon') as addon_total,
-                COALESCE(o.amount / 100.0, 0) as total_amount,
+                (SELECT COALESCE(SUM(ao.price * oi2.quantity), 0) FROM order_items oi2 LEFT JOIN add_ons ao ON oi2.item_id = ao.id WHERE oi2.order_id = o.id AND oi2.item_type = 'addon') as addon_total,
+                (SELECT COALESCE(SUM(ao.price * oi2.quantity), 0) FROM order_items oi2 LEFT JOIN add_ons ao ON oi2.item_id = ao.id WHERE oi2.order_id = o.id AND oi2.item_type = 'addon') as total_amount,
                 (SELECT json_agg(json_build_object('name', ao.name, 'qty', oi2.quantity))
                  FROM order_items oi2
                  LEFT JOIN add_ons ao ON oi2.item_id = ao.id
@@ -530,9 +531,10 @@ router.get('/delivery-manifest', async (req, res) => {
             JOIN orders o ON o.id = d.order_id
             LEFT JOIN users u ON o.user_id = u.id
             LEFT JOIN customers cust ON cust.user_id = o.user_id
-            LEFT JOIN LATERAL (
-                SELECT * FROM addresses WHERE customer_id = cust.id ORDER BY id LIMIT 1
-            ) a ON true
+            LEFT JOIN addresses a ON a.id = COALESCE(
+                o.address_id,
+                (SELECT id FROM addresses WHERE customer_id = cust.id ORDER BY id LIMIT 1)
+            )
             WHERE o.order_type = 'addon' AND o.status = 'paid'
             ${dateFilterAddon}
 
@@ -563,45 +565,24 @@ router.get('/delivery-manifest', async (req, res) => {
                 NULL::text as payment_status,
                 NULL::text as notes,
                 (
-                    SELECT COALESCE(SUM(ao.price * COALESCE(oi_q.quantity, 1)), 0)
+                    SELECT COALESCE(SUM(ao.price * sa2.quantity), 0)
                     FROM subscription_add_ons sa2
                     JOIN addon_delivery_dates add2 ON add2.subscription_addon_id = sa2.id
                     LEFT JOIN add_ons ao ON sa2.add_on_id = ao.id
-                    LEFT JOIN LATERAL (
-                        SELECT oi.quantity FROM order_items oi
-                        JOIN orders ord ON ord.id = oi.order_id
-                        WHERE oi.item_type = 'addon' AND oi.item_id = sa2.add_on_id
-                        AND ord.user_id = s.user_id
-                        ORDER BY ord.id DESC LIMIT 1
-                    ) oi_q ON true
                     WHERE sa2.subscription_id = s.id AND add2.delivery_date = addon_day.delivery_date
                 ) as addon_total,
                 (
-                    SELECT COALESCE(SUM(ao.price * COALESCE(oi_q.quantity, 1)), 0)
+                    SELECT COALESCE(SUM(ao.price * sa2.quantity), 0)
                     FROM subscription_add_ons sa2
                     JOIN addon_delivery_dates add2 ON add2.subscription_addon_id = sa2.id
                     LEFT JOIN add_ons ao ON sa2.add_on_id = ao.id
-                    LEFT JOIN LATERAL (
-                        SELECT oi.quantity FROM order_items oi
-                        JOIN orders ord ON ord.id = oi.order_id
-                        WHERE oi.item_type = 'addon' AND oi.item_id = sa2.add_on_id
-                        AND ord.user_id = s.user_id
-                        ORDER BY ord.id DESC LIMIT 1
-                    ) oi_q ON true
                     WHERE sa2.subscription_id = s.id AND add2.delivery_date = addon_day.delivery_date
                 ) as total_amount,
                 (
-                    SELECT json_agg(json_build_object('name', ao.name, 'qty', COALESCE(oi_q.quantity, 1)))
+                    SELECT json_agg(json_build_object('name', ao.name, 'qty', sa2.quantity))
                     FROM subscription_add_ons sa2
                     JOIN addon_delivery_dates add2 ON add2.subscription_addon_id = sa2.id
                     LEFT JOIN add_ons ao ON sa2.add_on_id = ao.id
-                    LEFT JOIN LATERAL (
-                        SELECT oi.quantity FROM order_items oi
-                        JOIN orders ord ON ord.id = oi.order_id
-                        WHERE oi.item_type = 'addon' AND oi.item_id = sa2.add_on_id
-                        AND ord.user_id = s.user_id
-                        ORDER BY ord.id DESC LIMIT 1
-                    ) oi_q ON true
                     WHERE sa2.subscription_id = s.id AND add2.delivery_date = addon_day.delivery_date
                 ) as addons
             FROM (
@@ -618,9 +599,10 @@ router.get('/delivery-manifest', async (req, res) => {
             JOIN subscriptions s ON s.id = addon_day.subscription_id
             LEFT JOIN users u ON s.user_id = u.id
             LEFT JOIN customers cust ON cust.user_id = s.user_id
-            LEFT JOIN LATERAL (
-                SELECT * FROM addresses WHERE customer_id = cust.id ORDER BY id LIMIT 1
-            ) a ON true
+            LEFT JOIN addresses a ON a.id = COALESCE(
+                s.address_id,
+                (SELECT id FROM addresses WHERE customer_id = cust.id ORDER BY id LIMIT 1)
+            )
             WHERE s.status IN ('active', 'cancelled')
             ${dateFilterSubAddon}
             GROUP BY addon_day.delivery_date, s.id, u.name, u.id, u.phone,

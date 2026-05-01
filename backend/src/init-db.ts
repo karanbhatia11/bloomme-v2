@@ -497,6 +497,12 @@ const initDb = async () => {
             ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS failed_reason TEXT;
             ALTER TABLE deliveries ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
+            -- Link orders and subscriptions directly to the address used at checkout
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS address_id INTEGER REFERENCES addresses(id);
+
+            -- Store addon quantity per subscription so manifest doesn't cross-contaminate across orders
+            ALTER TABLE subscription_add_ons ADD COLUMN IF NOT EXISTS quantity INTEGER NOT NULL DEFAULT 1;
+
             -- Initial App Config
             INSERT INTO app_config (key, value) VALUES ('site_mode', '{"mode": "coming_soon"}') ON CONFLICT (key) DO NOTHING;
         `);

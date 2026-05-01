@@ -245,26 +245,20 @@ router.get('/my-subscriptions', authenticateToken as any, async (req, res) => {
             // Fetch add-ons with delivery count, dates, and cancellation status
             const addonsResult = await pool.query(
                 `SELECT sa.id, a.name, a.price, sa.one_off_date, sa.status AS addon_status,
+                        sa.quantity,
                         COUNT(add_dates.delivery_date) AS delivery_count,
-                        ARRAY_AGG(TO_CHAR(add_dates.delivery_date, 'YYYY-MM-DD') ORDER BY add_dates.delivery_date) FILTER (WHERE add_dates.delivery_date IS NOT NULL) AS delivery_dates,
-                        COALESCE((
-                            SELECT oi.quantity FROM order_items oi
-                            JOIN orders o ON o.id = oi.order_id
-                            WHERE oi.item_type = 'addon' AND oi.item_id = sa.add_on_id
-                            AND o.user_id = $2
-                            ORDER BY o.id DESC LIMIT 1
-                        ), 1) AS quantity
+                        ARRAY_AGG(TO_CHAR(add_dates.delivery_date, 'YYYY-MM-DD') ORDER BY add_dates.delivery_date) FILTER (WHERE add_dates.delivery_date IS NOT NULL) AS delivery_dates
                  FROM subscription_add_ons sa
                  JOIN add_ons a ON a.id = sa.add_on_id
                  LEFT JOIN addon_delivery_dates add_dates ON add_dates.subscription_addon_id = sa.id
                  WHERE sa.subscription_id = $1
-                 GROUP BY sa.id, a.name, a.price, sa.one_off_date, sa.status`,
-                [row.id, user_id]
+                 GROUP BY sa.id, a.name, a.price, sa.one_off_date, sa.status, sa.quantity`,
+                [row.id]
             );
 
             const addOns = addonsResult.rows.map((addon) => {
                 const deliveryCount = parseInt(addon.delivery_count) || 1;
-                const quantity = parseInt(addon.quantity) || 1;
+                const quantity = parseInt(addon.quantity) || 1;  // from subscription_add_ons.quantity
                 const deliveryDates: string[] = (addon.delivery_dates || []).filter(Boolean) as string[];
                 return {
                     id: addon.id.toString(),
