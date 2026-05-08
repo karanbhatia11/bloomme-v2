@@ -449,6 +449,7 @@ const initDb = async () => {
             ALTER TABLE plans ADD COLUMN IF NOT EXISTS duration_unit TEXT;
 
             ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS plan_type TEXT;
+            ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS order_id INTEGER REFERENCES orders(id);
 
             ALTER TABLE addresses ADD COLUMN IF NOT EXISTS delivery_time_slot TEXT;
             ALTER TABLE addresses ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id);

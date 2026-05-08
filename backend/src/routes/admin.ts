@@ -418,9 +418,9 @@ router.get('/delivery-manifest', async (req, res) => {
                 SELECT
                     add.subscription_addon_id,
                     add.delivery_date,
-                    COUNT(*) as qty
+                    sa.quantity as qty
                 FROM addon_delivery_dates add
-                GROUP BY add.subscription_addon_id, add.delivery_date
+                JOIN subscription_add_ons sa ON sa.id = add.subscription_addon_id
             )
             -- Subscription deliveries (plan-only or plan+addons on same day)
             SELECT
@@ -447,21 +447,21 @@ router.get('/delivery-manifest', async (req, res) => {
                 s.plan_type as plan_name,
                 COALESCE(p.price, s.price) as plan_price,
                 s.id as subscription_id,
-                (SELECT o.id FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id JOIN plans pl ON pl.id = oi2.item_id WHERE oi2.item_type = 'subscription' AND pl.name = s.plan_type AND o.user_id = u.id ORDER BY o.id DESC LIMIT 1) as order_id,
-                'BLM-' || LPAD((SELECT o.id::text FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id JOIN plans pl ON pl.id = oi2.item_id WHERE oi2.item_type = 'subscription' AND pl.name = s.plan_type AND o.user_id = u.id ORDER BY o.id DESC LIMIT 1), 6, '0') AS bloomme_order_id,
+                s.order_id as order_id,
+                'BLM-' || LPAD(s.order_id::text, 6, '0') AS bloomme_order_id,
                 CASE WHEN s.status = 'cancelled' THEN 'cancelled'
                      ELSE COALESCE(d.status, 'scheduled') END as delivery_status,
                 NULL::text as payment_status,
                 NULL::text as notes,
                 (
-                    SELECT COALESCE(SUM(ao.price), 0)
+                    SELECT COALESCE(SUM(ao.price * sa2.quantity), 0)
                     FROM subscription_add_ons sa2
                     JOIN addon_delivery_dates add2 ON add2.subscription_addon_id = sa2.id
                     LEFT JOIN add_ons ao ON sa2.add_on_id = ao.id
                     WHERE sa2.subscription_id = s.id AND add2.delivery_date = sdd.delivery_date
                 ) as addon_total,
                 COALESCE(p.price, s.price) + (
-                    SELECT COALESCE(SUM(ao.price), 0)
+                    SELECT COALESCE(SUM(ao.price * sa2.quantity), 0)
                     FROM subscription_add_ons sa2
                     JOIN addon_delivery_dates add2 ON add2.subscription_addon_id = sa2.id
                     LEFT JOIN add_ons ao ON sa2.add_on_id = ao.id
@@ -559,8 +559,8 @@ router.get('/delivery-manifest', async (req, res) => {
                 NULL::text as plan_name,
                 NULL::numeric as plan_price,
                 s.id as subscription_id,
-                (SELECT o.id FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id JOIN plans pl ON pl.id = oi2.item_id WHERE oi2.item_type = 'subscription' AND pl.name = s.plan_type AND o.user_id = u.id ORDER BY o.id DESC LIMIT 1) as order_id,
-                'BLM-' || LPAD((SELECT o.id::text FROM order_items oi2 JOIN orders o ON o.id = oi2.order_id JOIN plans pl ON pl.id = oi2.item_id WHERE oi2.item_type = 'subscription' AND pl.name = s.plan_type AND o.user_id = u.id ORDER BY o.id DESC LIMIT 1), 6, '0') AS bloomme_order_id,
+                s.order_id as order_id,
+                'BLM-' || LPAD(s.order_id::text, 6, '0') AS bloomme_order_id,
                 CASE WHEN s.status = 'cancelled' THEN 'cancelled' ELSE 'scheduled' END as delivery_status,
                 NULL::text as payment_status,
                 NULL::text as notes,
