@@ -12,7 +12,7 @@ interface StickyCartProps {
 
 export default function StickyCart({ isOpen, onClose }: StickyCartProps) {
   const router = useRouter();
-  const { cart, getTotal, clearCart, addAddon, removeAddon, removePlan } = useCart();
+  const { cart, getTotal, clearCart, addAddon, removeAddon, decrementAddon, removePlan } = useCart();
 
   const addonCount = cart.addons.reduce((s, a) => s + a.quantity, 0);
 
@@ -113,7 +113,7 @@ export default function StickyCart({ isOpen, onClose }: StickyCartProps) {
                     <span className="text-sm font-semibold text-[#2f1500]">{addon.title}</span>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => removeAddon(addon.id)}
+                        onClick={() => decrementAddon(addon.id)}
                         className="w-8 h-8 sm:w-6 sm:h-6 rounded-full bg-[#ffdcc3] text-[#775a11] font-bold flex items-center justify-center hover:bg-[#c4a052] hover:text-white transition-colors text-sm min-w-[2rem]"
                       >
                         −

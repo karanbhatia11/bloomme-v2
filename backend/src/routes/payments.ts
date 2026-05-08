@@ -52,7 +52,7 @@ router.post('/create', optionalAuth as any, async (req, res) => {
     try {
         // Get user_id from auth token if authenticated, otherwise null for guest
         const user_id = (req as any).user?.id || null;
-        const { planId, deliveryDays, addOns, promoCode, referralCode, customer, subtotal, tax, promoDiscount, referralDiscount, total, customSchedule } = req.body;
+        const { planId, deliveryDays, addOns, promoCode, referralCode, customer, subtotal, tax, promoDiscount, referralDiscount, total, customSchedule, devMode } = req.body;
 
         console.log('Payment create request:', {
             planId,
@@ -74,9 +74,9 @@ router.post('/create', optionalAuth as any, async (req, res) => {
             return res.status(400).json({ error: 'Customer details required' });
         }
 
-        // Create Razorpay order (skip if keys not configured)
+        // Create Razorpay order (skip if keys not configured or devMode)
         let razorpayOrderId: string;
-        if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+        if (devMode || !process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
             razorpayOrderId = `rzp_dev_${Date.now()}`;
         } else {
             try {
@@ -237,8 +237,9 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
 
         const order = orderCheck.rows[0];
 
-        // Verify Razorpay signature with secret key
-        if (process.env.RAZORPAY_KEY_SECRET) {
+        // Verify Razorpay signature with secret key (skip for dev orders)
+        const isDevOrder = order.razorpay_order_id?.startsWith('rzp_dev_');
+        if (process.env.RAZORPAY_KEY_SECRET && !isDevOrder) {
             const message = razorpayOrderId + '|' + razorpayPaymentId;
             const expectedSignature = crypto
                 .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
@@ -557,6 +558,7 @@ router.post('/verify', optionalAuth as any, async (req, res) => {
                             name: a.addon_name,
                             deliveries: dates.length || a.quantity,
                             price: Math.round(a.price / 100),
+                            quantity: a.quantity || 1,
                             customDates: sched.mode === 'different' ? dates : [],
                         };
                     }),

@@ -230,11 +230,13 @@ export default function CheckoutPayPage() {
           promoCode: null,
           referralCode: null,
           customer: cart.customer,
-          subtotal: cart.planPrice || 0,
+          subtotal: cart.adjustedPrice || cart.planPrice || 0,
           tax: 0,
           promoDiscount: 0,
           referralDiscount: 0,
-          total: getTotal(),
+          creditsRedeemed: creditsToRedeem,
+          creditDiscount,
+          total,
           customSchedule: customSchedule.length > 0 ? customSchedule : null,
         }),
       });
@@ -327,8 +329,79 @@ export default function CheckoutPayPage() {
     }
   };
 
+  // ── Dev: simulate payment without Razorpay ────────────────────────────────
+  const handleDevPay = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const planIdMap: Record<string, number> = { "TRADITIONAL": 1, "DIVINE": 2, "CELESTIAL": 3 };
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      let customSchedule: string[] = [];
+      if (preview && cart.planId) {
+        customSchedule = Object.entries(preview.queue)
+          .filter(([_, items]) => items.some(item => item.type === "subscription"))
+          .map(([date]) => date).sort();
+      }
+
+      const orderRes = await fetch("/api/payments/create", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          planId: cart.planId ? planIdMap[cart.planId] || null : null,
+          deliveryDays: cart.frequency === "weekly" ? cart.deliveryDays : [],
+          addOns: cart.addons.map(a => {
+            const sched = cart.addonSchedules[a.id] ?? { mode: "same" };
+            const multiplier = sched.mode === "same" ? (cart.selectedDeliveryDatesCount || 1) : (sched.customDates?.length || 1);
+            return { id: a.id, quantity: a.quantity, price: a.price * a.quantity * multiplier, schedule: sched };
+          }),
+          promoCode: null, referralCode: null, customer: cart.customer,
+          subtotal: cart.adjustedPrice || cart.planPrice || 0, tax: 0, promoDiscount: 0, referralDiscount: 0,
+          creditsRedeemed: creditsToRedeem, creditDiscount,
+          total, customSchedule: customSchedule.length > 0 ? customSchedule : null, devMode: true,
+        }),
+      });
+
+      if (!orderRes.ok) {
+        const errData = await orderRes.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to create order");
+      }
+      const { orderId, bloommeOrderId: rzpBloommeOrderId, razorpayOrderId } = await orderRes.json();
+
+      const devPaymentId = `pay_dev_${Date.now()}`;
+      const verifyHeaders: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) verifyHeaders["Authorization"] = `Bearer ${token}`;
+
+      const verifyRes = await fetch("/api/payments/verify", {
+        method: "POST",
+        headers: verifyHeaders,
+        body: JSON.stringify({
+          orderId,
+          razorpayOrderId,
+          razorpayPaymentId: devPaymentId,
+          razorpaySignature: `dev_sig_${Date.now()}`,
+        }),
+      });
+
+      if (verifyRes.ok) {
+        sessionStorage.setItem("confirmedOrder", JSON.stringify(buildOrderSummary(devPaymentId, orderId, rzpBloommeOrderId)));
+        clearCart();
+        router.push("/checkout/confirmed");
+      } else {
+        const errData = await verifyRes.json();
+        setError(errData.error || "Dev payment verification failed.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Dev payment failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const baseTotal = getTotal();
-  const creditDiscount = parseFloat((creditsToRedeem * 0.10).toFixed(2));
+  const creditDiscount = Math.round(creditsToRedeem * 0.10);
   const total = Math.max(0, baseTotal - creditDiscount);
   const maxRedeemableCredits = Math.min(bloomCredits, Math.floor((baseTotal * 0.20) / 0.10));
 
@@ -501,7 +574,7 @@ export default function CheckoutPayPage() {
           )}
           <div className="pt-3 border-t-2 border-[#d1c5b3]/30 flex items-center justify-between">
             <p className="font-bold text-[#2f1500]">Total</p>
-            <p className="text-2xl font-extrabold text-[#2f1500]">₹{total}.00</p>
+            <p className="text-2xl font-extrabold text-[#2f1500]">₹{total}</p>
           </div>
         </div>
 
@@ -691,7 +764,7 @@ export default function CheckoutPayPage() {
                 type="range"
                 min={0}
                 max={maxRedeemableCredits}
-                step={10}
+                step={1}
                 value={creditsToRedeem}
                 onChange={e => setCreditsToRedeem(Number(e.target.value))}
                 className="w-full accent-[#775a11]"
@@ -743,7 +816,7 @@ export default function CheckoutPayPage() {
             </div>
             <div>
               <p className="text-xs font-bold text-[#4d4638] tracking-widest uppercase opacity-60">Amount to Pay</p>
-              <p className="text-2xl font-extrabold text-[#2f1500]">₹{total}.00</p>
+              <p className="text-2xl font-extrabold text-[#2f1500]">₹{total}</p>
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
@@ -771,6 +844,15 @@ export default function CheckoutPayPage() {
                 Please select delivery dates for {addonsNeedingDates.length} add-on{addonsNeedingDates.length > 1 ? "s" : ""}
               </p>
             )}
+
+            {/* Dev-only: simulate payment without Razorpay */}
+            <button
+              onClick={handleDevPay}
+              disabled={loading || hasInvalidAddons}
+              className="w-full md:w-auto px-6 py-2 rounded-full border-2 border-dashed border-[#775a11]/40 text-[#775a11] text-xs font-bold hover:bg-[#ffdcc3]/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              [DEV] Skip Payment →
+            </button>
           </div>
         </div>
       </div>

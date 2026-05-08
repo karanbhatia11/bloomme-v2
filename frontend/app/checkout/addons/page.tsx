@@ -216,7 +216,7 @@ function AddonSchedulePanel({
 
 export default function CheckoutAddonsPage() {
   const router = useRouter();
-  const { cart, addAddon, removeAddon, getTotal } = useCart();
+  const { cart, addAddon, removeAddon, decrementAddon, getTotal } = useCart();
   const [expanded, setExpanded] = useState<number | null>(null);
   const [validationError, setValidationError] = useState<string>("");
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -261,6 +261,15 @@ export default function CheckoutAddonsPage() {
   const handleRemove = (id: number) => {
     removeAddon(id);
     if (expanded === id) setExpanded(null);
+  };
+
+  const handleDecrement = (id: number) => {
+    const qty = getQty(id);
+    if (qty <= 1) {
+      handleRemove(id);
+    } else {
+      decrementAddon(id);
+    }
   };
 
   const addonCount = cart.addons.reduce((s, a) => s + a.quantity, 0);
@@ -371,7 +380,7 @@ export default function CheckoutAddonsPage() {
                     ) : (
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleRemove(product.id)}
+                          onClick={() => handleDecrement(product.id)}
                           className="w-8 h-8 rounded-xl bg-[#ffdcc3] text-[#775a11] font-bold flex items-center justify-center hover:bg-[#c4a052] hover:text-white transition-colors"
                         >
                           <span className="material-symbols-outlined text-sm">remove</span>

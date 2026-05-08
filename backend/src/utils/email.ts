@@ -532,7 +532,7 @@ export interface OrderConfirmationData {
     planFrequency?: string;
     planStartDate?: string;
     planEndDate?: string;
-    addons?: { name: string; deliveries: number; price: number; customDates?: string[] }[];
+    addons?: { name: string; deliveries: number; price: number; quantity?: number; customDates?: string[] }[];
     creditsRedeemed?: number;
     creditDiscount?: number;
     total: number;
@@ -600,6 +600,7 @@ function getOrderConfirmationHtml(d: OrderConfirmationData): string {
                 </td>
                 <td style="padding-left:12px;">
                   <p style="margin:0;font-size:14px;font-weight:700;color:#2f1500;">${a.name} — ${a.deliveries} deliveries</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:#7f7666;">Qty ${a.quantity ?? 1} · ${(a.quantity ?? 1) > 1 ? `${a.quantity}× per delivery` : 'per delivery'}</p>
                   ${a.customDates && a.customDates.length > 0
                     ? `<p style="margin:4px 0 0;font-size:12px;color:#7f7666;">${a.customDates.map(fmtDate).join(' · ')}</p>`
                     : ''}
@@ -828,7 +829,7 @@ function getOrderConfirmationHtml(d: OrderConfirmationData): string {
 function getOrderConfirmationText(d: OrderConfirmationData): string {
     const lines = [`Order Confirmed — Bloomme`, ``, `Hello ${d.customerName || ''},`, ``];
     if (d.planName) lines.push(`${d.planName} Plan — ${d.planDeliveries} deliveries: ₹${d.planPrice}`);
-    (d.addons || []).forEach(a => lines.push(`${a.name} — ${a.deliveries} deliveries: ₹${a.price}`));
+    (d.addons || []).forEach(a => lines.push(`${a.name} — ${a.deliveries} deliveries (Qty ${a.quantity ?? 1}): ₹${a.price}`));
     lines.push(``, `Incl. all taxes`);
     if (d.creditsRedeemed) lines.push(`Bloom Credits (${d.creditsRedeemed}): −₹${d.creditDiscount}`);
     lines.push(`Total: ₹${d.total}`, ``);
@@ -1018,7 +1019,7 @@ function getAdminNewOrderHtml(d: AdminOrderNotificationData): string {
     const addonRows = (d.addons || []).map(a => `<tr><td style="padding:10px 0;border-bottom:1px solid #f0ece4;">
         <table width="100%" cellpadding="0" cellspacing="0"><tr>
             <td width="36"><div style="width:32px;height:32px;background:#e8f5e9;border-radius:8px;text-align:center;line-height:32px;font-size:16px;">🎁</div></td>
-            <td style="padding-left:10px;"><p style="margin:0;font-size:13px;font-weight:700;color:#2f1500;">${a.name} — ${a.deliveries} deliveries</p></td>
+            <td style="padding-left:10px;"><p style="margin:0;font-size:13px;font-weight:700;color:#2f1500;">${a.name} — ${a.deliveries} deliveries</p><p style="margin:2px 0 0;font-size:11px;color:#7f7666;">Qty ${a.quantity ?? 1}</p></td>
             <td align="right"><p style="margin:0;font-size:13px;font-weight:700;color:#2f1500;">₹${a.price.toLocaleString('en-IN')}</p></td>
         </tr></table>
     </td></tr>`).join('');
@@ -1084,7 +1085,7 @@ function getAdminNewOrderText(d: AdminOrderNotificationData): string {
         `ITEMS`,
     ];
     if (d.planName) lines.push(`${d.planName} Plan — ${d.planDeliveries} deliveries: ₹${d.planPrice}`);
-    (d.addons || []).forEach(a => lines.push(`${a.name} — ${a.deliveries} deliveries: ₹${a.price}`));
+    (d.addons || []).forEach(a => lines.push(`${a.name} — ${a.deliveries} deliveries (Qty ${a.quantity ?? 1}): ₹${a.price}`));
     lines.push(`Total: ₹${d.total}`);
     lines.push(``, `Transaction ID: ${d.razorpayPaymentId}`);
     if (d.planScheduleDates?.length) {

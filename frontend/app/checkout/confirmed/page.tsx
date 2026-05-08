@@ -191,7 +191,7 @@ export default function CheckoutConfirmedPage() {
           {order && (
             <div className="flex items-center justify-between pt-3 border-t border-[#d1c5b3]/30 mt-1">
               <p className="font-bold text-[#2f1500] text-base">Total</p>
-              <p className="text-2xl font-extrabold text-[#2f1500]">₹{order.total.toLocaleString()}.00</p>
+              <p className="text-2xl font-extrabold text-[#2f1500]">₹{order.total.toLocaleString()}</p>
             </div>
           )}
         </motion.div>
